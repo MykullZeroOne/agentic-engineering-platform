@@ -34,6 +34,19 @@ ID_PATTERN = {"adr": r"^ADR-\d{3}$", "prd": r"^PRD-\d{3}$", "ads": r"^ADS-\d{3}$
 
 ENFORCEMENT_STAGES = {"prose", "check", "hook"}
 
+# Required ADR sections, per docs/spec/DOCUMENT_LIFECYCLE.md. ADR-001..008 predate the
+# requirement and are accepted and immutable, so they are grandfathered rather than rewritten.
+ADR_SECTIONS = ["## Context", "## Decision", "## Alternatives considered",
+                "## Consequences", "## Risks"]
+ADR_STRUCTURE_FROM = 9
+
+# Approved before ADR-013 established approval records. Listed so the absence is visible
+# rather than silently tolerated; they are reported as warnings, not errors.
+PRE_RECORD_APPROVALS = {"PRINCIPLES", "ADR-001", "ADR-002", "ADR-003", "ADR-004",
+                        "ADR-005", "ADR-006", "ADR-007", "ADR-008"}
+APPROVAL_FIELDS = ["id", "gate", "surface", "approver", "approved_on",
+                   "artifacts", "request", "statement"]
+
 errors: list[str] = []
 warnings: list[str] = []
 
@@ -124,6 +137,13 @@ def check_documents(docs, states):
         elif fm["human_approved"]:
             err(rel, f"human_approved: true is invalid for status {status!r}")
 
+        if typ == "adr" and re.match(r"^ADR-\d{3}$", str(fid)):
+            if int(str(fid)[4:]) >= ADR_STRUCTURE_FROM:
+                text = path.read_text()
+                absent = [s for s in ADR_SECTIONS if s not in text]
+                if absent:
+                    err(rel, f"ADR missing required section(s): {', '.join(absent)}")
+
         if "enforcement" in fm and fm["enforcement"] not in ENFORCEMENT_STAGES:
             err(rel, f"enforcement {fm['enforcement']!r} not in {sorted(ENFORCEMENT_STAGES)}")
 
@@ -137,7 +157,7 @@ def check_documents(docs, states):
                 err(by_id[fid], f"{target} does not declare superseded_by: {fid}")
             elif fms[target]["status"] != "superseded":
                 err(by_id[target], f"superseded by {fid} but status is {fms[target]['status']!r}")
-    return by_id
+    return by_id, fms
 
 
 def check_index(by_id):
@@ -197,6 +217,41 @@ def check_hooks(points):
                     err(rel, f"hook id {hid!r} is outside the closed domain namespace")
 
 
+def check_approvals(gates, by_id, fms):
+    """Approval records are the provenance behind every closed gate (ADR-013)."""
+    known_gates = {g["id"] for g in gates["gates"]}
+    approved_ids: set[str] = set()
+
+    for path in sorted((ROOT / ".agentic" / "approvals").glob("APR-*.yaml")):
+        rel = str(path.relative_to(ROOT))
+        rec = yaml.safe_load(path.read_text())
+
+        for field in APPROVAL_FIELDS:
+            if field not in rec:
+                err(rel, f"approval record missing required field {field!r}")
+        if not re.match(r"^APR-\d{4}$", str(rec.get("id", ""))):
+            err(rel, f"approval id {rec.get('id')!r} does not match APR-NNNN")
+        if rec.get("gate") not in known_gates:
+            err(rel, f"unknown gate id {rec.get('gate')!r}")
+        if rec.get("surface") not in gates["closure"]["surfaces"]:
+            err(rel, f"surface {rec.get('surface')!r} is not a valid closure surface")
+
+        for art in rec.get("artifacts", []) or []:
+            aid = art.get("id")
+            if aid not in by_id:
+                err(rel, f"approves unknown artifact {aid!r}")
+                continue
+            if not str(art.get("content_hash", "")).startswith("sha256:"):
+                err(rel, f"artifact {aid} missing a sha256 content_hash")
+            approved_ids.add(aid)
+
+    # An artifact carrying authority should be able to name the approval that granted it.
+    for fid, fm in fms.items():
+        if fm["status"] in AUTHORITATIVE and fid not in approved_ids:
+            if fid not in PRE_RECORD_APPROVALS:
+                warnings.append(f"{by_id[fid]}: {fm['status']} with no approval record (ADR-013)")
+
+
 def main() -> int:
     quiet = "--quiet" in sys.argv
     states = load_registry("states.yaml")
@@ -204,10 +259,11 @@ def main() -> int:
     points = load_registry("hook-points.yaml")
 
     docs = collect()
-    by_id = check_documents(docs, states)
+    by_id, fms = check_documents(docs, states)
     check_index(by_id)
     check_gates(gates)
     check_hooks(points)
+    check_approvals(gates, by_id, fms)
 
     for w in warnings:
         print(f"warning: {w}")

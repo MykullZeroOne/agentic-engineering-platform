@@ -29,6 +29,9 @@ duplicating a registry in markdown guarantees drift. Read the YAML; it is commen
 | `hook-points.yaml` | The closed set of lifecycle boundaries and the hook ID namespace | 3 divergent sets across `hooks.yaml`, `HOOKS.md`, ADR-007 |
 | `states.yaml` | Six state axes and their canonical tokens | 5 overlapping vocabularies with colliding tokens |
 
+Approval records live alongside them in `.agentic/approvals/`. They are not a registry — each is a
+single immutable event — but they are the provenance the registries' gates depend on. See ADR-013.
+
 ## Rules
 
 1. **A registry is the sole source for its vocabulary.** A document that names a gate, hook point,
@@ -58,10 +61,5 @@ Recorded rather than invented. Each needs a decision before it can be added:
 - **Evidence package schema.** Required for merge by `CLAUDE.md`, produced by
   `docs/agents/ENGINEERING_LOOP.md`, consumed by QA and review — and undefined. It should become
   the pull request template.
-- **Approval provenance.** `docs/security/GOVERNANCE.md` requires material decisions and human
-  interventions to be durable events with provenance. Front matter records `approved_by` and
-  `approved_on`, but nothing links an approval to the evidence that produced it — the PR, review,
-  or conversation in which the human actually closed the gate. Until an event store exists, an
-  approval is an assertion rather than a record.
 - **Capability namespace.** `agent-role.example.yaml` grants `github.read`, `repository.write`,
   `deployment.*`. The namespace, wildcard semantics, and deny-precedence rules are unspecified.

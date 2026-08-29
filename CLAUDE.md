@@ -68,8 +68,12 @@ These come from `docs/vision/PRINCIPLES.md` and constrain every change:
 - **Only `approved` and `accepted` artifacts carry authority.** A `draft` document may guide your
   work but must never be cited as binding, and a drafted requirement is not approved intent. See
   `docs/spec/AUTHORITY_MODEL.md`.
-- **Never set `human_approved`, `approved_by`, or `approved_on` yourself.** Those record a closed
-  human gate. Principle 1.
+- **Never close a human gate.** You may *record* a human's approval by writing an approval record
+  under `.agentic/approvals/` and pointing `human_approved` / `approved_by` / `approved_on` at it
+  (ADR-013). Setting those fields without a record, or inferring approval from anything short of an
+  explicit instruction naming what is approved, violates Principle 1.
+- **New ADRs need `Context`, `Decision`, `Alternatives considered`, `Consequences`, and `Risks`**
+  from ADR-009 onward. Enforced by the validator.
 - **PRDs** are `docs/prd/PRD-NNN-SHORT-TITLE.md`. **ADRs** are `docs/adr/ADR-NNN-SHORT-TITLE.md`.
   **ADS** are `docs/ads/ADS-NNN-SHORT-TITLE.yaml` on an *independent* sequence, linked to their
   origin by `source_prd`. Numbers are sequential within their type and never reused, even for

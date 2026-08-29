@@ -21,6 +21,17 @@ schema: gates/v1
 #   hook  - an AEP lifecycle hook enforces it deterministically
 # Gates start at `prose` and migrate rightward as the platform is built.
 
+# How a gate is closed, per ADR-013. A gate closure is valid only with an approval
+# record under .agentic/approvals/; front-matter approved_by/approved_on point at it.
+closure:
+  surfaces: [chat, github_review, ui]
+  requires_record: true
+  record_location: .agentic/approvals/
+  rules:
+    - An approval binds to the artifact version it names, by content hash of the body.
+    - Ambiguity is not approval; an agent must ask rather than infer a closure.
+    - An agent may never close a gate, only record a human's closure of one.
+
 gates:
   - id: product_spec
     title: Product specification approval
@@ -52,6 +63,10 @@ gates:
         condition: docs/adr/**
       - kind: artifact_status
         condition: ADR transitions to `accepted`
+      - kind: path
+        condition: docs/architecture/**
+      - kind: artifact_status
+        condition: a `design` artifact under docs/architecture/ transitions to `approved`
     sources: ["CLAUDE.md", "docs/agents/ARCHITECTURE_LOOP.md"]
     aliases: []
     enforcement: prose

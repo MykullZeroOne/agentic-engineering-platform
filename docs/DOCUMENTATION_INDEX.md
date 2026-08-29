@@ -58,6 +58,11 @@ Immutable once accepted. Reverse by superseding. Tier 1.
 | `ADR-006` | ADS Is the Machine-Oriented Specification Layer | `accepted` | [docs/adr/ADR-006-ADS-AS-MACHINE-SPEC.md](docs/adr/ADR-006-ADS-AS-MACHINE-SPEC.md) |
 | `ADR-007` | Hooks and Policies Enforce Lifecycle Behavior | `accepted` | [docs/adr/ADR-007-HOOKS-FOR-DETERMINISM.md](docs/adr/ADR-007-HOOKS-FOR-DETERMINISM.md) |
 | `ADR-008` | Subscription-First Runtime Adapters | `accepted` | [docs/adr/ADR-008-SUBSCRIPTION-FIRST-ADAPTERS.md](docs/adr/ADR-008-SUBSCRIPTION-FIRST-ADAPTERS.md) |
+| `ADR-009` | Trunk-Based Development with Squash Merge | `proposed` | [docs/adr/ADR-009-TRUNK-BASED-SQUASH-MERGE.md](docs/adr/ADR-009-TRUNK-BASED-SQUASH-MERGE.md) |
+| `ADR-010` | Seven-Plane Architecture | `proposed` | [docs/adr/ADR-010-SEVEN-PLANE-ARCHITECTURE.md](docs/adr/ADR-010-SEVEN-PLANE-ARCHITECTURE.md) |
+| `ADR-011` | Go and a Modular Monolith for the First Implementation | `proposed` | [docs/adr/ADR-011-GO-MODULAR-MONOLITH.md](docs/adr/ADR-011-GO-MODULAR-MONOLITH.md) |
+| `ADR-012` | GitHub Issues Are the Only Backlog | `proposed` | [docs/adr/ADR-012-GITHUB-SOLE-BACKLOG.md](docs/adr/ADR-012-GITHUB-SOLE-BACKLOG.md) |
+| `ADR-013` | Conversational Approval Closes Human Gates | `proposed` | [docs/adr/ADR-013-CONVERSATIONAL-APPROVAL.md](docs/adr/ADR-013-CONVERSATIONAL-APPROVAL.md) |
 
 ## Product requirements
 

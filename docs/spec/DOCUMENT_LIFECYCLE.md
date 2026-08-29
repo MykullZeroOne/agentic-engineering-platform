@@ -117,6 +117,32 @@ draft ──> proposed ──> approved ──> superseded
   decision.
 - `withdrawn` retires an artifact that never reached approval. Its number stays burned.
 
+## ADR structure
+
+`docs/agents/ARCHITECTURE_LOOP.md` requires a proposed ADR to carry alternatives, trade-offs, risk,
+and a recommendation. From **ADR-009 onward**, an ADR must contain these sections:
+
+| Section | Contents |
+| --- | --- |
+| `## Context` | What forces the decision now, and what breaks without it |
+| `## Decision` | The decision itself, stated so a violation is recognisable |
+| `## Alternatives considered` | Each rejected option and the specific reason it was rejected |
+| `## Consequences` | What follows, including costs accepted |
+| `## Risks` | What could make this wrong, and the mitigation |
+
+Enforced by `scripts/validate_docs.py`. ADR-001..008 predate the requirement and are `accepted` and
+therefore immutable, so they are grandfathered rather than rewritten.
+
+## Approval records
+
+An artifact reaching `approved` or `accepted` should be named by an approval record under
+`.agentic/approvals/`, per ADR-013. The record — not the front-matter fields — is the provenance:
+`approved_by` and `approved_on` point at it.
+
+The validator warns when an authoritative artifact has no record. It warns rather than fails
+because `PRINCIPLES` and ADR-001..008 were approved before the mechanism existed; that list is
+explicit in the validator so the gap stays visible.
+
 ## Versioning
 
 `version` increments on any material change to an `approved` artifact — a change that could alter
