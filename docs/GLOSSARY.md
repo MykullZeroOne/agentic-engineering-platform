@@ -88,6 +88,38 @@ own. Tier 3.
 
 **Enforcement stage** — `prose`, `check`, or `hook`. How a rule is currently enforced.
 
+## Delivery
+
+**Supervisory control** — the model in which one human oversees many autonomous agents,
+intervening by exception rather than performing the work. AEP's delivery model (ADR-014).
+*Preferred over the coined term "agentic agile".*
+
+**Cycle** — the unit of delivery, bounded by decisions rather than time: opens when a
+specification closes its gate, closes at the next human gate or completion. Not a sprint.
+
+**Appetite** — how much an outcome is worth, fixed before work starts. Scope flexes to fit the
+appetite, never the reverse.
+
+**Blast radius** — the maximum resource or irreversibility a cycle may reach before a human gate.
+
+**Attention budget** — the stated daily limit of human decision capacity, against which gates and
+escalations are ranked and batched.
+
+**Supervisory review** — a periodic review that makes no decisions. It exists to maintain
+situation awareness and to run the non-escalation audit.
+
+**Non-escalation audit** — sampling decisions agents resolved autonomously and asking whether they
+should have been escalated. The only mechanism that can see what agents chose not to surface.
+
+**Fan-out** — how many agents one human can effectively supervise: `NT / (IT + WT) + 1`.
+
+**Neglect time (NT)** — how long work proceeds unattended before quality decays.
+
+**Interaction time (IT)** — human time to service one gate or escalation.
+
+**Autonomous depth** — how far the work graph advances before requiring a human. A diagnostic
+signal only; never a target, never agent-facing.
+
 ## Communication
 
 **Question** — a structured request for information routed through the ownership hierarchy.

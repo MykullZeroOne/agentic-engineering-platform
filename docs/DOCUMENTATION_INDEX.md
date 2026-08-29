@@ -63,6 +63,7 @@ Immutable once accepted. Reverse by superseding. Tier 1.
 | `ADR-011` | Go and a Modular Monolith for the First Implementation | `accepted` | [docs/adr/ADR-011-GO-MODULAR-MONOLITH.md](docs/adr/ADR-011-GO-MODULAR-MONOLITH.md) |
 | `ADR-012` | One Authoritative Work Store, Configurable Per Project | `proposed` | [docs/adr/ADR-012-WORK-STORE-SINGLE-SOURCE.md](docs/adr/ADR-012-WORK-STORE-SINGLE-SOURCE.md) |
 | `ADR-013` | Conversational Approval Closes Human Gates | `accepted` | [docs/adr/ADR-013-CONVERSATIONAL-APPROVAL.md](docs/adr/ADR-013-CONVERSATIONAL-APPROVAL.md) |
+| `ADR-014` | Supervisory-Control Delivery Model | `proposed` | [docs/adr/ADR-014-SUPERVISORY-CONTROL-DELIVERY.md](docs/adr/ADR-014-SUPERVISORY-CONTROL-DELIVERY.md) |
 
 ## Product requirements
 
@@ -131,6 +132,7 @@ Normative platform design. Tier 2.
 | | **Security** | | |
 | `DES-GOVERNANCE` | Governance and Safety Boundaries | `draft` | [docs/security/GOVERNANCE.md](docs/security/GOVERNANCE.md) |
 | | **Workflows** | | |
+| `DES-DELIVERY-MODEL` | Delivery Model | `draft` | [docs/workflows/DELIVERY_MODEL.md](docs/workflows/DELIVERY_MODEL.md) |
 | `DES-END-TO-END-SDLC` | End-to-End Agentic SDLC | `draft` | [docs/workflows/END_TO_END_SDLC.md](docs/workflows/END_TO_END_SDLC.md) |
 | `DES-HOOKS` | Lifecycle Hooks | `draft` | [docs/workflows/HOOKS.md](docs/workflows/HOOKS.md) |
 | `DES-POLICY-MODEL` | Standards, Policies, Skills, and Hooks | `draft` | [docs/workflows/POLICY_MODEL.md](docs/workflows/POLICY_MODEL.md) |
