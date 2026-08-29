@@ -243,6 +243,11 @@ def check_approvals(gates, by_id, fms):
                 continue
             if not str(art.get("content_hash", "")).startswith("sha256:"):
                 err(rel, f"artifact {aid} missing a sha256 content_hash")
+            # The artifact must point back at the identity that actually approved it.
+            claimed = fms[aid].get("approved_by")
+            if claimed != rec.get("approver"):
+                err(by_id[aid], f"approved_by {claimed!r} does not match "
+                                f"{rec['id']} approver {rec.get('approver')!r}")
             approved_ids.add(aid)
 
     # An artifact carrying authority should be able to name the approval that granted it.

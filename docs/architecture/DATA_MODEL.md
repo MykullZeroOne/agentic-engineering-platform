@@ -6,7 +6,7 @@ status: approved
 version: 1
 owner: human.cto
 human_approved: true
-approved_by: human.cto
+approved_by: MykullZeroOne
 approved_on: 2026-08-29
 supersedes: null
 superseded_by: null

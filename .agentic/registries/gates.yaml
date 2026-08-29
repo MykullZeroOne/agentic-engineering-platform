@@ -31,6 +31,20 @@ closure:
     - An approval binds to the artifact version it names, by content hash of the body.
     - Ambiguity is not approval; an agent must ask rather than infer a closure.
     - An agent may never close a gate, only record a human's closure of one.
+    - Merging a pull request is NOT a gate closure. See `merge` below.
+
+  # Merging is deliberately excluded as a closure surface.
+  merge:
+    closes_gates: false
+    rationale: >
+      Squash merge (ADR-009) collapses a pull request into one commit, so a merge has no
+      granularity to approve with: a PR carrying five ADRs cannot express acceptance of
+      four of them. A merge also names no scope, which the scope rule above requires.
+      A pull request may therefore merge with `proposed` artifacts in it; they simply
+      carry no authority until a record closes their gate.
+    review_exception: >
+      A pull request REVIEW is a valid closure surface (`github_review`) when it names the
+      artifacts it approves. The review is the statement; a record is still required.
 
 gates:
   - id: product_spec

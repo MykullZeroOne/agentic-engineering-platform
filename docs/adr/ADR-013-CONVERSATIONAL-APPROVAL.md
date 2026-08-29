@@ -2,12 +2,12 @@
 id: ADR-013
 type: adr
 tier: 1
-status: proposed
+status: accepted
 version: 1
 owner: human.cto
-human_approved: false
-approved_by: null
-approved_on: null
+human_approved: true
+approved_by: MykullZeroOne
+approved_on: 2026-08-29
 supersedes: null
 superseded_by: null
 last_reviewed: 2026-08-29
@@ -66,6 +66,17 @@ Three rules give the record its force:
    enthusiasm, or an instruction about adjacent work. If the human's statement does not identify
    what is being approved, the agent asks. Recording `request` alongside `statement` makes an
    over-read visible to the human afterward rather than discoverable only in consequences.
+
+### Merging is not approval
+
+A merge does not close a gate. Squash merge (ADR-009) collapses a pull request into a single
+commit, so a merge carries no granularity — a pull request holding five ADRs cannot express
+acceptance of four of them — and it names no scope, which the scope rule requires. A pull request
+may merge with `proposed` artifacts in it; they carry no authority until a record closes their
+gate.
+
+A pull request *review* is different, and remains a valid surface: it can name what it approves,
+and a record is written from it.
 
 ## Alternatives considered
 

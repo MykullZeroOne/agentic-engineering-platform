@@ -31,6 +31,11 @@ registries:
   hook_points: .agentic/registries/hook-points.yaml
   states: .agentic/registries/states.yaml
 
+# The authoritative work store, per ADR-012. Exactly one, never two.
+# This repository starts on `local`: it has no issues, and GitHub ceremony is not
+# yet worth its cost at this scale. Migration to `github` is explicit and one-way.
+work_store: local
+
 organization_template: standard-agentic-engineering
 
 runtime_preferences:
