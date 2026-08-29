@@ -1,20 +1,73 @@
-before_agent_run:
-  hard:
-    - work.validate_state
-    - dependencies.validate
-    - context.build
-    - workspace.prepare
-  soft:
-    - context.find_similar_history
-after_agent_run:
-  hard:
-    - validation.required_checks
-    - evidence.capture
-  soft:
-    - telemetry.summarize
-after_merge:
-  soft:
-    - memory.consolidate
-    - graph.refresh
-    - evaluation.record
-    - work.recalculate_ready
+# Hook bindings for this repository.
+#
+# A binding attaches a hook ID to a hook point. Hook points are defined in
+# .agentic/registries/hook-points.yaml and that set is CLOSED -- a binding to an
+# undefined point is invalid. Hook IDs are `<domain>.<action>`; the domain
+# namespace is closed too.
+#
+# NOTHING EXECUTES THIS FILE YET. There is no hook engine; see the roadmap. These
+# bindings are declarative intent, and the set of them is a specification for what
+# the engine must support. The one exception is `validation.docs`, which is
+# implemented today by scripts/validate_docs.py and run in CI -- it is the first
+# binding to reach enforcement stage `hook`-adjacent, and the pattern the rest follow.
+#
+# class: hard blocks lifecycle progression on failure; soft logs and continues.
+
+version: 1
+schema: hooks/v1
+registry: .agentic/registries/hook-points.yaml
+
+bindings:
+  before_agent_run:
+    hard:
+      - id: work.validate_state
+        description: Reject a run whose work item is not in a dispatchable work_state.
+      - id: dependencies.validate
+        description: Reject a run whose prerequisite work units are incomplete.
+      - id: context.build
+        description: Assemble the context packet with provenance (PRD-006).
+      - id: workspace.prepare
+        description: Ensure an isolated worktree exists for the run.
+    soft:
+      - id: context.find_similar_history
+        description: Attach related prior work as L2 context.
+
+  after_agent_run:
+    hard:
+      - id: validation.required_checks
+        description: Execute the checks the work item's policies require.
+      - id: evidence.capture
+        description: Persist the evidence package mapping changes to requirements.
+    soft:
+      - id: telemetry.summarize
+        description: Record run metrics for the evaluation plane.
+
+  before_pr:
+    hard:
+      - id: validation.docs
+        description: >
+          Validate front matter, registry references, and index completeness.
+          Implemented by scripts/validate_docs.py.
+        implemented_by: scripts/validate_docs.py
+
+  after_merge:
+    soft:
+      - id: memory.consolidate
+        description: Promote run outcomes to memory candidates (CONSOLIDATION.md).
+      - id: graph.refresh
+        description: Update knowledge graph projections.
+      - id: evaluation.record
+        description: Record an evaluation datapoint (ADR-004).
+      - id: work.recalculate_ready
+        description: Recompute which DAG nodes became READY.
+
+# Hook points defined in the registry with no binding here. Listed so the gap is
+# visible rather than implied by absence:
+unbound:
+  - after_workspace_create
+  - before_workspace_remove
+  - pre_commit          # CLAUDE.md forbids committing secrets; no check enforces it
+  - pr_opened
+  - pr_updated
+  - review_requested
+  - changes_requested

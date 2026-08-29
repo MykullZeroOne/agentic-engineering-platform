@@ -1,0 +1,36 @@
+name: docs
+
+# Validates the canonical documentation corpus: front matter, authority tiers,
+# supersession symmetry, registry references, and index freshness.
+# This is the first required check in the repository -- CLAUDE.md's merge rule
+# "all required checks pass" was previously vacuous.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements-docs.txt
+
+      - name: Validate documentation
+        run: python3 scripts/validate_docs.py
+
+      - name: Verify index is current
+        run: |
+          python3 scripts/build_index.py
+          if ! git diff --quiet docs/DOCUMENTATION_INDEX.md; then
+            echo "::error::docs/DOCUMENTATION_INDEX.md is stale. Run scripts/build_index.py and commit."
+            git diff docs/DOCUMENTATION_INDEX.md
+            exit 1
+          fi

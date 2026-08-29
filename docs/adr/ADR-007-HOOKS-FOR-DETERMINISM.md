@@ -1,6 +1,19 @@
-# ADR-007 — Hooks and Policies Enforce Lifecycle Behavior
+---
+id: ADR-007
+type: adr
+tier: 1
+status: accepted
+version: 1
+owner: human.cto
+human_approved: true
+approved_by: human.cto
+approved_on: 2026-08-29
+supersedes: null
+superseded_by: null
+last_reviewed: 2026-08-29
+---
 
-**Status:** Accepted
+# ADR-007 — Hooks and Policies Enforce Lifecycle Behavior
 
 ## Decision
 Use hooks/policies/checks for mandatory lifecycle actions. Skills guide how agents perform work; hooks determine when required actions happen.

@@ -1,0 +1,174 @@
+# Canonical human-gate registry.
+#
+# A gate is a point at which a named human authority must give explicit approval
+# before work may proceed. Principle 1 (human at the top) and ADR-002 depend on an
+# agent being able to identify a gate reliably; that requires stable IDs, which this
+# file is the sole source of.
+#
+# Reconciles four previously divergent vocabularies:
+#   .agentic/project.yaml        -- 4 gate keys
+#   docs/security/GOVERNANCE.md  -- 8 approval domains
+#   CLAUDE.md                    -- 5 path-based change classes
+#   docs/schemas/agent-role.example.yaml -- `legal_approval`
+# `aliases` records every prior spelling so nothing silently loses its meaning.
+
+version: 1
+schema: gates/v1
+
+# Enforcement stage, per docs/spec/AUTHORITY_MODEL.md:
+#   prose - an agent must read the rule and honor it
+#   check - a CI check or validator enforces it
+#   hook  - an AEP lifecycle hook enforces it deterministically
+# Gates start at `prose` and migrate rightward as the platform is built.
+
+gates:
+  - id: product_spec
+    title: Product specification approval
+    description: >
+      Approval of a PRD/ADS pair as the authoritative statement of product intent.
+      Gates the transition from the BA loop into grooming and architecture.
+    approver: human.cto
+    blocking: true
+    triggers:
+      - kind: artifact_status
+        condition: PRD or ADS transitions to `approved`
+      - kind: path
+        condition: docs/prd/**
+      - kind: path
+        condition: docs/ads/**
+    sources: [".agentic/project.yaml", "docs/prd/PRD-002-PRODUCT-INTENT-BA.md", "docs/agents/BA_LOOP.md"]
+    aliases: []
+    enforcement: prose
+
+  - id: architecture_decision
+    title: Architecture decision approval
+    description: >
+      Approval of any new or superseding ADR. Distinct from architecture_high_risk:
+      this gate covers the act of recording a decision, at any risk level.
+    approver: human.cto
+    blocking: true
+    triggers:
+      - kind: path
+        condition: docs/adr/**
+      - kind: artifact_status
+        condition: ADR transitions to `accepted`
+    sources: ["CLAUDE.md", "docs/agents/ARCHITECTURE_LOOP.md"]
+    aliases: []
+    enforcement: prose
+
+  - id: architecture_high_risk
+    title: High-risk architecture approval
+    description: >
+      Approval of a consequential architectural change: a new external dependency,
+      a data-model or migration boundary, a security boundary, or a change that
+      invalidates an accepted ADR.
+    approver: human.cto
+    blocking: true
+    triggers:
+      - kind: classification
+        condition: architecture impact assessed as high by the Architecture Lead
+    sources: [".agentic/project.yaml", "docs/security/GOVERNANCE.md"]
+    aliases: ["architecture_high_risk", "consequential_architecture"]
+    enforcement: prose
+
+  - id: security_policy
+    title: Security policy change approval
+    description: Approval of any change to security governance, boundaries, or policy.
+    approver: human.cto
+    blocking: true
+    triggers:
+      - kind: path
+        condition: docs/security/**
+    sources: ["CLAUDE.md", "docs/security/GOVERNANCE.md"]
+    aliases: ["security_policy_changes"]
+    enforcement: prose
+
+  - id: legal
+    title: Legal approval
+    description: >
+      Human legal sign-off. Legal specialist agents perform issue spotting and
+      preflight analysis only; per GOVERNANCE.md they never constitute legal approval
+      and may not close this gate.
+    approver: human.cto
+    blocking: true
+    triggers:
+      - kind: finding
+        condition: a Legal Preflight Analyst raises a material finding
+    sources: [".agentic/project.yaml", "docs/security/GOVERNANCE.md", "docs/agents/BA_LOOP.md"]
+    aliases: ["legal_approval"]
+    enforcement: prose
+
+  - id: privacy_risk_acceptance
+    title: Privacy and risk acceptance
+    description: Explicit human acceptance of a material privacy or product risk.
+    approver: human.cto
+    blocking: true
+    triggers:
+      - kind: finding
+        condition: a Privacy Analyst raises a material finding
+    sources: ["docs/security/GOVERNANCE.md"]
+    aliases: ["material_privacy_risk_acceptance"]
+    enforcement: prose
+
+  - id: platform_config
+    title: Platform configuration change approval
+    description: >
+      Approval of changes to the project's own control surfaces: project config,
+      hook bindings, registries, and role definitions. These alter how every other
+      gate and rule behaves, so they gate on themselves.
+    approver: human.cto
+    blocking: true
+    triggers:
+      - kind: path
+        condition: .agentic/**
+    sources: ["CLAUDE.md"]
+    aliases: ["agentic_config", "role_definitions"]
+    enforcement: prose
+
+  - id: production_release
+    title: Production release approval
+    description: Approval to deploy or roll back a release in production.
+    approver: human.cto
+    blocking: true
+    triggers:
+      - kind: lifecycle
+        condition: release candidate reaches the human release gate (SDLC phase 8)
+    sources: [".agentic/project.yaml", "docs/security/GOVERNANCE.md", "docs/workflows/END_TO_END_SDLC.md"]
+    aliases: ["production_deployment", "production_rollback"]
+    enforcement: prose
+
+  - id: production_secrets
+    title: Production secret access or change
+    approver: human.cto
+    blocking: true
+    description: Any read, rotation, or modification of production secrets.
+    triggers:
+      - kind: capability
+        condition: an agent requests a production secret capability
+    sources: ["docs/security/GOVERNANCE.md"]
+    aliases: []
+    enforcement: prose
+
+  - id: destructive_data_change
+    title: Destructive data change approval
+    description: Irreversible data changes, including schema migrations that drop or rewrite data.
+    approver: human.cto
+    blocking: true
+    triggers:
+      - kind: path
+        condition: migrations/**
+    sources: ["docs/security/GOVERNANCE.md", "CLAUDE.md", "docs/workflows/POLICY_MODEL.md"]
+    aliases: ["destructive_data_changes"]
+    enforcement: prose
+
+  - id: billing_configuration
+    title: Billing and payment configuration
+    description: Changes to billing, payment, or spend configuration.
+    approver: human.cto
+    blocking: true
+    triggers:
+      - kind: capability
+        condition: an agent requests a billing or payment capability
+    sources: ["docs/security/GOVERNANCE.md"]
+    aliases: ["billing_payment_configuration"]
+    enforcement: prose

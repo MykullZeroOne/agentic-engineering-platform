@@ -1,6 +1,19 @@
-# ADR-004 — Preserve Immutable Agent/Event History
+---
+id: ADR-004
+type: adr
+tier: 1
+status: accepted
+version: 1
+owner: human.cto
+human_approved: true
+approved_by: human.cto
+approved_on: 2026-08-29
+supersedes: null
+superseded_by: null
+last_reviewed: 2026-08-29
+---
 
-**Status:** Accepted
+# ADR-004 — Preserve Immutable Agent/Event History
 
 ## Decision
 Capture important platform events immutably and derive memory, analytics, graph projections, and regression datasets from those events.

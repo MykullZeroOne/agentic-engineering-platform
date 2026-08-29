@@ -1,0 +1,104 @@
+# Canonical hook-point registry.
+#
+# A hook point is a named lifecycle boundary at which the platform may run hooks.
+# Per ADR-007, hooks decide WHEN a required action happens; skills decide HOW;
+# policies decide WHAT is required.
+#
+# Reconciles three previously divergent sets:
+#   .agentic/hooks/hooks.yaml   -- 3 points bound
+#   docs/workflows/HOOKS.md     -- 4 agent points + 7 git/PR points
+#   docs/adr/ADR-007            -- an informal 3-point framing
+#
+# This set is CLOSED. A hook may only bind to a point defined here; adding a point
+# is a platform_config change (see .agentic/registries/gates.yaml).
+
+version: 1
+schema: hook-points/v1
+
+# Hook IDs are `<domain>.<action>` in snake_case. The domain namespace is closed.
+hook_id_domains:
+  work:         Work-item state and dependency readiness
+  dependencies: Dependency graph validation
+  context:      Context packet construction and retrieval
+  workspace:    Worktree and environment lifecycle
+  validation:   Required checks and local verification
+  evidence:     Evidence capture and traceability
+  telemetry:    Run summarization and metrics
+  memory:       Memory consolidation and promotion
+  graph:        Knowledge graph projection refresh
+  evaluation:   Regression and evaluation records
+
+# Failure semantics, per docs/workflows/HOOKS.md.
+classes:
+  hard:
+    description: Blocks lifecycle progression when it fails.
+    on_failure: halt
+    retryable: false
+  soft:
+    description: >
+      Enriches memory or telemetry. Never blocks progression unless a policy
+      explicitly overrides this for a given binding.
+    on_failure: log_and_continue
+    retryable: true
+
+hook_points:
+  # --- Workspace lifecycle -------------------------------------------------
+  - id: after_workspace_create
+    phase: workspace
+    description: An isolated worktree has been created for a run.
+    aliases: []
+  - id: before_workspace_remove
+    phase: workspace
+    description: A worktree is about to be destroyed; last chance to preserve evidence.
+    aliases: []
+
+  # --- Agent run lifecycle -------------------------------------------------
+  - id: before_agent_run
+    phase: run
+    description: An agent run is about to start. Context hydration and gating happen here.
+    aliases: ["before_run"]
+  - id: after_agent_run
+    phase: run
+    description: An agent run has finished. Evidence capture and state transition happen here.
+    aliases: ["after_implementation"]
+
+  # --- Version control and review -----------------------------------------
+  - id: pre_commit
+    phase: vcs
+    description: A commit is about to be created. Formatting, lint, and secret scanning.
+    aliases: []
+  - id: before_pr
+    phase: vcs
+    description: >
+      A pull request is about to be opened. Traceability, required artifacts, and
+      policy checks run here. Referenced by the worked example in
+      docs/workflows/POLICY_MODEL.md.
+    aliases: []
+  - id: pr_opened
+    phase: vcs
+    description: A pull request was opened.
+    aliases: []
+  - id: pr_updated
+    phase: vcs
+    description: A pull request head was updated.
+    aliases: []
+  - id: review_requested
+    phase: review
+    description: Review was requested; dispatch an independent reviewer.
+    aliases: []
+  - id: changes_requested
+    phase: review
+    description: A reviewer requested changes; route repair work to the owning agent.
+    aliases: []
+  - id: after_merge
+    phase: vcs
+    description: >
+      A pull request merged. Memory consolidation, graph refresh, dependency
+      recalculation, and evaluation capture happen here.
+    aliases: ["pr_merged"]
+
+# Known gap, recorded rather than invented:
+# docs/workflows/QUESTION_ESCALATION.md describes escalation as a lifecycle process
+# but no document specifies a hook point for it. A `question_escalated` point is
+# likely needed; it is deliberately NOT defined here because no accepted document
+# specifies its contract. See docs/spec/REGISTRIES.md, "Known gaps".

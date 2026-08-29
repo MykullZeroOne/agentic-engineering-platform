@@ -23,6 +23,7 @@ GitHub is the default control plane. AEP owns the process model, knowledge model
 
 ## Repository map
 
+- `docs/spec/` — authority model, document lifecycle, registry contracts
 - `docs/vision/` — vision, principles, personas, success criteria
 - `docs/prd/` — human-readable product requirements
 - `docs/ads/` — machine-oriented Agent Development Specification design
@@ -37,8 +38,20 @@ GitHub is the default control plane. AEP owns the process model, knowledge model
 - `docs/operations/` — observability, agent workspaces, runtime adapters
 - `docs/roadmap/` — implementation phases and milestones
 - `docs/schemas/` — canonical YAML/JSON schemas
-- `.agentic/` — example portable project configuration
+- `.agentic/` — this repository's configuration, hook bindings, and vocabulary registries
+- `scripts/` — documentation validator and index generator
 - `examples/` — example product request and resulting artifacts
+
+Start at [`docs/DOCUMENTATION_INDEX.md`](docs/DOCUMENTATION_INDEX.md), which is generated from
+document front matter and gives the intended reading order.
+
+## Status
+
+Specification, plus the tooling that keeps it consistent. There is no application code or runtime
+yet. Every canonical document declares its authority tier and approval state
+([`docs/spec/AUTHORITY_MODEL.md`](docs/spec/AUTHORITY_MODEL.md)); `scripts/validate_docs.py`
+enforces that in CI. Most of the corpus is `draft` — the specification is being laid out, not
+finished.
 
 ## Recommended MVP
 

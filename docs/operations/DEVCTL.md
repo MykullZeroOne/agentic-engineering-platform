@@ -1,3 +1,18 @@
+---
+id: DES-DEVCTL
+type: design
+tier: 2
+status: draft
+version: 1
+owner: human.cto
+human_approved: false
+approved_by: null
+approved_on: null
+supersedes: null
+superseded_by: null
+last_reviewed: 2026-08-29
+---
+
 # `devctl` CLI
 
 A portable client/runtime abstraction shared by humans, hooks, agents, CI, and MCP tools.

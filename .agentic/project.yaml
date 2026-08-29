@@ -1,22 +1,68 @@
+# Configuration for THIS repository.
+#
+# The Agentic Engineering Platform is the system being built here, not a system this
+# repository runs on. Nothing consumes this file yet -- there is no runtime. It exists
+# because AEP should dogfood its own model in principle from the start: this is the
+# reference instance of the project-config schema, and the first consumer written must
+# be able to read it unchanged.
+#
+# The sample an adopting project would write lives at examples/project.yaml.
+
 version: 1
-project: example-project
+project: agentic-engineering-platform
+
 control_plane:
   provider: github
+  repository: MykullZeroOne/agentic-engineering-platform
+
 knowledge:
-  prds: docs/prds
+  principles: docs/vision
+  spec: docs/spec
+  prds: docs/prd
   ads: docs/ads
-  adrs: docs/adrs
+  adrs: docs/adr
   architecture: docs/architecture
+  # Tier 3 has no artifacts yet. See docs/spec/REGISTRIES.md, "Known gaps".
+  policies: docs/policies
   standards: docs/standards
+
+registries:
+  gates: .agentic/registries/gates.yaml
+  hook_points: .agentic/registries/hook-points.yaml
+  states: .agentic/registries/states.yaml
+
 organization_template: standard-agentic-engineering
+
 runtime_preferences:
   planning: claude-subscription
   architecture: claude-subscription
   implementation: codex-subscription
   qa: codex-subscription
   review: claude-subscription
+
+# Gate IDs resolve against .agentic/registries/gates.yaml. All gates in that registry
+# apply to this repository; this list records which are active during bootstrap.
 human_gates:
-  product_spec: required
-  architecture_high_risk: required
-  legal: required
-  production_release: required
+  - product_spec
+  - architecture_decision
+  - architecture_high_risk
+  - security_policy
+  - legal
+  - platform_config
+  - production_release
+
+# Self-assessment against the adoption ladder in docs/github/LEGACY_ADOPTION.md.
+# AEP is measured on its own scale. Raising a level is a deliberate, evidenced change.
+adoption:
+  level: 2
+  level_name: knowledge-aware
+  assessed_on: 2026-08-29
+  evidence:
+    - Structured, indexed canonical docs with machine-readable front matter
+    - Authority tiers and supersession defined (docs/spec/AUTHORITY_MODEL.md)
+    - Vocabulary registries for gates, hook points, and states
+  blocking_next_level:
+    # Level 3 -- process-aware -- requires hooks and policies that actually execute.
+    - No hook engine; every hook binding is declarative only
+    - Tier 3 (policies, standards) has no artifacts
+    - Most rules remain at enforcement stage `prose`

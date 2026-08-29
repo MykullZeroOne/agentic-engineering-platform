@@ -1,3 +1,18 @@
+---
+id: GUIDE-PRODUCT-VISION
+type: guide
+tier: null
+status: draft
+version: 1
+owner: human.cto
+human_approved: false
+approved_by: null
+approved_on: null
+supersedes: null
+superseded_by: null
+last_reviewed: 2026-08-29
+---
+
 # Product Vision
 
 ## Vision
