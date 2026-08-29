@@ -8,15 +8,21 @@ The **Agentic Engineering Platform (AEP)** — a vendor-neutral, subscription-fi
 models a real engineering organization around GitHub, agent skills, deterministic hooks, durable
 per-role memory, and interchangeable execution providers (Claude Code, Codex).
 
-**Current state: specification only.** There is no application code yet. Every file here is
-documentation, schema, or configuration. Phase 1 of `docs/roadmap/IMPLEMENTATION_ROADMAP.md` has
-not started. Do not assume a build system, test suite, or runtime exists — if you need one, it is
-new work that needs an issue and an ADR.
+**Current state: specification, plus the tooling that keeps it honest.** There is no application
+code and no runtime. Phase 1 of `docs/roadmap/IMPLEMENTATION_ROADMAP.md` has not started. The only
+executable code is `scripts/`, which validates the documentation corpus. Do not assume a build
+system or product test suite exists — if you need one, it is new work that needs an issue and an
+ADR.
+
+AEP is the system being built here, not a system this repository runs on. It still dogfoods its
+own model in principle: `.agentic/` is this repository's real configuration and the reference
+instance of the schema the first runtime must read unchanged.
 
 ## Repository map
 
 | Path | Contents |
 | --- | --- |
+| `docs/spec/` | Authority model, document lifecycle, registry contracts |
 | `docs/vision/` | Product vision and the ten core principles |
 | `docs/prd/` | PRD-001..008, human-readable requirements |
 | `docs/ads/` | Agent Development Specification — the machine-readable spec layer |
@@ -32,9 +38,11 @@ new work that needs an issue and an ADR.
 | `docs/schemas/` | Example YAML for ADS, roles, run records, memory, questions |
 | `docs/roadmap/` | Phased implementation roadmap |
 | `examples/` | Worked idea-to-delivery walkthrough |
-| `.agentic/` | Project config (`project.yaml`), lifecycle hooks, role and skill registries |
+| `.agentic/` | This repository's config, hook bindings, and vocabulary registries |
+| `scripts/` | Documentation validator and index generator |
 
-Start with `docs/DOCUMENTATION_INDEX.md`. It lists the intended reading order.
+Start with `docs/DOCUMENTATION_INDEX.md`. It is generated from document front matter and lists the
+intended reading order.
 
 ## Non-negotiable principles
 
@@ -54,19 +62,38 @@ These come from `docs/vision/PRINCIPLES.md` and constrain every change:
 
 - Markdown lives under `docs/` in an existing subdirectory, or `examples/`. `README.md` and this
   file are the only permitted root-level markdown documents.
+- **Every document carries front matter** declaring `id`, `type`, `tier`, `status`, `version`,
+  `owner`, and approval fields, per `docs/spec/DOCUMENT_LIFECYCLE.md`. `README.md`, this file,
+  `docs/schemas/*.yaml`, and `examples/project.yaml` are exempt.
+- **Only `approved` and `accepted` artifacts carry authority.** A `draft` document may guide your
+  work but must never be cited as binding, and a drafted requirement is not approved intent. See
+  `docs/spec/AUTHORITY_MODEL.md`.
+- **Never close a human gate.** You may *record* a human's approval by writing an approval record
+  under `.agentic/approvals/` and pointing `human_approved` / `approved_by` / `approved_on` at it
+  (ADR-013). Setting those fields without a record, or inferring approval from anything short of an
+  explicit instruction naming what is approved, violates Principle 1.
+- **New ADRs need `Context`, `Decision`, `Alternatives considered`, `Consequences`, and `Risks`**
+  from ADR-009 onward. Enforced by the validator.
 - **PRDs** are `docs/prd/PRD-NNN-SHORT-TITLE.md`. **ADRs** are `docs/adr/ADR-NNN-SHORT-TITLE.md`.
-  Numbers are sequential and never reused, even for withdrawn documents.
+  **ADS** are `docs/ads/ADS-NNN-SHORT-TITLE.yaml` on an *independent* sequence, linked to their
+  origin by `source_prd`. Numbers are sequential within their type and never reused, even for
+  withdrawn documents.
 - ADRs are immutable once merged. To reverse a decision, add a new ADR that supersedes it and add a
   "Superseded by ADR-NNN" line to the original — never edit the original's decision.
-- Any new document must be added to `docs/DOCUMENTATION_INDEX.md` in the same commit.
+- `docs/DOCUMENTATION_INDEX.md` is **generated**. Do not edit it by hand — run
+  `python3 scripts/build_index.py` and commit the result in the same commit as the new document.
+- **Gate IDs, hook points, and state tokens come from `.agentic/registries/`.** Those registries
+  are the sole source for that vocabulary; never coin a new gate name, hook point, or status in
+  prose. See `docs/spec/REGISTRIES.md`.
 - Keep the existing terse, heading-driven style. These documents are read by agents as context;
   favor short declarative statements over narrative prose.
 
-### Known inconsistency
+### Open gaps
 
-`.agentic/project.yaml` points at `docs/prds`, `docs/adrs`, and `docs/standards`. The real
-directories are `docs/prd/` and `docs/adr/`, and `docs/standards/` does not exist. Do not silently
-"fix" one side — decide deliberately which is canonical, and change it in a dedicated PR.
+Recorded in `docs/spec/REGISTRIES.md` under "Known gaps": tier 3 (`docs/policies/`,
+`docs/standards/`) has no artifacts, skills have no schema, the evidence package has no defined
+structure, and escalation has no hook point. Do not invent any of these in passing — each needs a
+decision.
 
 ## Branching strategy
 
@@ -135,11 +162,17 @@ A PR may merge only when all of these hold:
 
 ### Change classes that always require human approval
 
-- Any new or superseding ADR (`docs/adr/**`)
-- Any change to `.agentic/project.yaml`, `.agentic/hooks/**`, or role definitions
-- Anything under `docs/security/**`
-- Anything altering a human gate, policy, or required check
-- Future: `migrations/**`, per `docs/workflows/POLICY_MODEL.md`
+Gate IDs below resolve against `.agentic/registries/gates.yaml`, which holds the triggers,
+approvers, and prior aliases for each.
+
+| Change | Gate |
+| --- | --- |
+| Any new or superseding ADR (`docs/adr/**`) | `architecture_decision` |
+| Anything under `.agentic/**` — config, hooks, registries, roles | `platform_config` |
+| Anything under `docs/security/**` | `security_policy` |
+| Approving a PRD or ADS (`docs/prd/**`, `docs/ads/**`) | `product_spec` |
+| Anything altering a gate, policy, or required check | `platform_config` |
+| Future: `migrations/**`, per `docs/workflows/POLICY_MODEL.md` | `destructive_data_change` |
 
 ### Reverting
 
@@ -168,5 +201,13 @@ Never commit: secrets, tokens, `.env` files, `.DS_Store`, agent scratch output, 
   `docs/workflows/QUESTION_ESCALATION.md`. Do not invent product requirements.
 - **Stay in scope.** Fix what the issue asks. Unrelated problems you notice become new issues.
 - **Cite your sources.** When a change follows from a document, name it (`per ADR-002`).
-- No code exists yet, so there is nothing to build or test. When code lands, this section gets
-  build, test, and lint commands — add them in the same PR that introduces them.
+- **Validate before you push.** Both commands must be clean; `docs` is a required check.
+
+  ```
+  pip install -r requirements-docs.txt
+  python3 scripts/build_index.py     # regenerate the index
+  python3 scripts/validate_docs.py   # front matter, tiers, registries, index freshness
+  ```
+
+- No product code exists yet. When it lands, this section gets its build, test, and lint commands
+  — add them in the same PR that introduces them.

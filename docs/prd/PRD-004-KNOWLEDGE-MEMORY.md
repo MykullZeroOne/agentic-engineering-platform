@@ -1,3 +1,18 @@
+---
+id: PRD-004
+type: prd
+tier: 2
+status: draft
+version: 1
+owner: human.cto
+human_approved: false
+approved_by: null
+approved_on: null
+supersedes: null
+superseded_by: null
+last_reviewed: 2026-08-29
+---
+
 # PRD-004 — Knowledge, Memory, and Institutional Learning
 
 ## Objective

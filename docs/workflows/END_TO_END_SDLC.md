@@ -1,3 +1,18 @@
+---
+id: DES-END-TO-END-SDLC
+type: design
+tier: 2
+status: draft
+version: 1
+owner: human.cto
+human_approved: false
+approved_by: null
+approved_on: null
+supersedes: null
+superseded_by: null
+last_reviewed: 2026-08-29
+---
+
 # End-to-End Agentic SDLC
 
 ## Phase 0 — Human Intent

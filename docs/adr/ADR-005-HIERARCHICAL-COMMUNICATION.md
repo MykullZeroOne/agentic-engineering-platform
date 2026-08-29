@@ -1,6 +1,19 @@
-# ADR-005 — Hierarchical Agent Communication
+---
+id: ADR-005
+type: adr
+tier: 1
+status: accepted
+version: 1
+owner: human.cto
+human_approved: true
+approved_by: MykullZeroOne
+approved_on: 2026-08-29
+supersedes: null
+superseded_by: null
+last_reviewed: 2026-08-29
+---
 
-**Status:** Accepted
+# ADR-005 — Hierarchical Agent Communication
 
 ## Decision
 Default agent communication follows ownership hierarchy: child asks parent; parent resolves or escalates. Cross-functional communication occurs through explicit handoff/escalation routes.

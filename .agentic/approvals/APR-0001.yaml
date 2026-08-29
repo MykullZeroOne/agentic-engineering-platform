@@ -1,0 +1,45 @@
+# Approval record, per ADR-013.
+#
+# First record in the repository. It documents an approval that had already been given
+# conversationally, so it is also the retroactive fix for the provenance gap recorded in
+# docs/spec/REGISTRIES.md.
+
+id: APR-0001
+gate: architecture_decision
+surface: chat
+session: session_015ipWtR28BoQtwZYCBh6BfM
+
+approver: MykullZeroOne
+approved_on: 2026-08-29
+recorded_on: 2026-08-29T19:41:00+00:00
+# Sub-day precision was not captured at the time: no mechanism existed to capture it.
+# recorded_on is the commit that applied the approval and is a verifiable upper bound.
+
+artifacts:
+  - id: DES-COMPONENTS
+    path: docs/architecture/COMPONENTS.md
+    content_hash: sha256:ff9287c38d479fb8d9bd1798357eb233
+  - id: DES-DATA-MODEL
+    path: docs/architecture/DATA_MODEL.md
+    content_hash: sha256:9204d729de06346f8158be49d97f7fcd
+  - id: DES-DEPLOYMENT
+    path: docs/architecture/DEPLOYMENT.md
+    content_hash: sha256:bb3ad49c04653469cb9d731e3efac27e
+  - id: DES-SYSTEM-ARCHITECTURE
+    path: docs/architecture/SYSTEM_ARCHITECTURE.md
+    content_hash: sha256:77b14f31f74c40ca068d325be757ace9
+  - id: DES-TECHNOLOGY-STACK
+    path: docs/architecture/TECHNOLOGY_STACK.md
+    content_hash: sha256:d37e3855032df41bfd7f253dcfc5f197
+
+request: >
+  Asked whether the architecture and agent-loop documents should be promoted out of draft,
+  and whether `design` was correctly placed at tier 2.
+
+statement: >
+  keep design at tier 2, promote the architecture docs
+
+scope_note: >
+  Covers the five documents under docs/architecture/ only. The agent-loop documents under
+  docs/agents/ were offered in the same question and were not included in the response;
+  they remain draft. No change to tier assignment was requested or made.

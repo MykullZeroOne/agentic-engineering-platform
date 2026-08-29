@@ -1,0 +1,49 @@
+# Sample .agentic/project.yaml for a project adopting AEP.
+#
+# This is the file `devctl init` generates and `devctl adopt` proposes. It is an
+# illustrative example, not live configuration -- the configuration for this
+# repository is .agentic/project.yaml.
+
+version: 1
+project: example-project
+
+control_plane:
+  provider: github
+  repository: acme/example-project
+
+# Legacy repositories map their existing directories here rather than moving files.
+# See docs/github/LEGACY_ADOPTION.md.
+knowledge:
+  prds: docs/prd
+  ads: docs/ads
+  adrs: docs/adr
+  architecture: docs/architecture
+  policies: docs/policies
+  standards: docs/standards
+
+registries:
+  gates: .agentic/registries/gates.yaml
+  hook_points: .agentic/registries/hook-points.yaml
+  states: .agentic/registries/states.yaml
+
+organization_template: standard-agentic-engineering
+
+runtime_preferences:
+  planning: claude-subscription
+  architecture: claude-subscription
+  implementation: codex-subscription
+  qa: codex-subscription
+  review: claude-subscription
+
+# Gate IDs resolve against the gate registry. A project enables the subset it needs;
+# it may not invent gate IDs.
+human_gates:
+  - product_spec
+  - architecture_high_risk
+  - legal
+  - production_release
+
+adoption:
+  level: 1
+  level_name: agent-aware
+  assessed_on: 2026-08-29

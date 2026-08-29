@@ -1,3 +1,18 @@
+---
+id: DES-PROJECT-BOOTSTRAP
+type: design
+tier: 2
+status: draft
+version: 1
+owner: human.cto
+human_approved: false
+approved_by: null
+approved_on: null
+supersedes: null
+superseded_by: null
+last_reviewed: 2026-08-29
+---
+
 # New Project Bootstrap
 
 ## Minimal project footprint
@@ -5,10 +20,11 @@
 - `CLAUDE.md` or provider compatibility pointer if desired
 - `.agentic/project.yaml`
 - `.agentic/skills/` for project-specific skills only
-- `docs/prds/`
+- `docs/prd/`
 - `docs/ads/`
-- `docs/adrs/`
+- `docs/adr/`
 - `docs/architecture/`
+- `docs/policies/`
 - `docs/standards/`
 - thin `.github/workflows/` callers to centrally versioned workflows
 

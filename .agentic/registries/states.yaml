@@ -1,0 +1,106 @@
+# Canonical state vocabularies.
+#
+# Six independent axes. They were previously spread across five documents with
+# overlapping tokens -- `Blocked` appears on three axes and `Awaiting Human` on two --
+# and nothing declared them separate. Conflating them is a modelling error: a work
+# item can be `in_progress` while its agent is `blocked`.
+#
+# Canonical tokens are snake_case. `label` is the human display form; documents and
+# UI may use the label, but machine artifacts must use the token.
+
+version: 1
+schema: states/v1
+
+axes:
+
+  # --- What a unit of work is doing -------------------------------------
+  work_state:
+    description: Lifecycle of a work item. GitHub is authoritative for this axis (ADR-001).
+    source: docs/github/GITHUB_CONTROL_PLANE.md
+    applies_to: [work_item]
+    terminal: [done, cancelled]
+    normal_flow: [intake, refinement, ready, in_progress, review, validation, integration, ready_to_merge, done]
+    values:
+      - {token: intake,         label: Intake,          description: Received, not yet refined.}
+      - {token: refinement,     label: Refinement,      description: Being groomed into implementable requirements.}
+      - {token: ready,          label: Ready,           description: All dependencies satisfied; eligible for dispatch.}
+      - {token: in_progress,    label: In Progress,     description: An agent run is implementing it.}
+      - {token: review,         label: Review,          description: Under independent review.}
+      - {token: validation,     label: Validation,      description: Under QA verification against acceptance criteria.}
+      - {token: integration,    label: Integration,     description: Being validated in combination with parallel work.}
+      - {token: ready_to_merge, label: Ready to Merge,  description: All checks and gates satisfied.}
+      - {token: done,           label: Done,            description: Merged and consolidated.}
+      - {token: blocked,        label: Blocked,         description: A dependency or unresolved decision prevents progress.}
+      - {token: awaiting_human, label: Awaiting Human,  description: A human gate or escalation is open.}
+      - {token: failed,         label: Failed,          description: Terminated without satisfying its requirements.}
+      - {token: cancelled,      label: Cancelled,       description: Withdrawn before completion.}
+
+  # --- What an agent runtime is doing -----------------------------------
+  agent_state:
+    description: >
+      Runtime state of a durable agent identity's current session. Independent of
+      work_state: an agent may be `blocked` while its work item is `in_progress`.
+    source: docs/operations/AGENT_WORKSPACE_UI.md
+    applies_to: [agent_identity, runtime_session]
+    terminal: [failed]
+    values:
+      - {token: working,       label: Working,        description: Actively executing.}
+      - {token: waiting,       label: Waiting,        description: Awaiting a specialist, tool, or check.}
+      - {token: blocked,       label: Blocked,        description: Cannot proceed without an unresolved answer.}
+      - {token: awaiting_human, label: Awaiting Human, description: Escalated; waiting on a human response.}
+      - {token: idle,          label: Idle,           description: No assigned work.}
+      - {token: failed,        label: Failed,         description: Run terminated abnormally.}
+
+  # --- Outcome of a readiness gate --------------------------------------
+  readiness_outcome:
+    description: >
+      Result of evaluating a role's readiness gate. Produced by grooming, and by the
+      BA, architecture, and planning gates by extension.
+    source: docs/agents/GROOMING_LOOP.md
+    applies_to: [readiness_evaluation]
+    values:
+      - {token: ready,                        label: READY,                        description: May proceed to the next role.}
+      - {token: needs_product_clarification,  label: NEEDS_PRODUCT_CLARIFICATION,  description: Structured questions return to the BA.}
+      - {token: needs_specialist,             label: NEEDS_SPECIALIST,             description: Requires specialist delegation.}
+      - {token: blocked,                      label: BLOCKED,                      description: A dependency or decision prevents readiness.}
+
+  # --- How urgent a question is -----------------------------------------
+  question_severity:
+    description: Severity of a question or notification in the communication plane.
+    source: docs/prd/PRD-003-COMMUNICATION-ESCALATION.md
+    applies_to: [question, notification, finding]
+    values:
+      - {token: info,     label: INFO,     blocking: false, description: No response required.}
+      - {token: question, label: QUESTION, blocking: false, description: Response required but non-blocking.}
+      - {token: blocking, label: BLOCKING, blocking: true,  description: Work cannot proceed.}
+      - {token: approval, label: APPROVAL, blocking: true,  description: An explicit gate must be closed. See gates.yaml.}
+      - {token: critical, label: CRITICAL, blocking: true,  description: Immediate human attention.}
+
+  # --- Whether a memory may still be trusted ----------------------------
+  memory_status:
+    description: Validity of a consolidated memory. Canonical knowledge always outranks memory.
+    source: docs/memory/MEMORY_ARCHITECTURE.md
+    applies_to: [memory]
+    values:
+      - {token: active,     label: Active,     description: In use and unchallenged.}
+      - {token: challenged, label: Challenged, description: Contradicted by evidence or canonical knowledge; not retrievable as authoritative.}
+      - {token: superseded, label: Superseded, description: Replaced by a later memory. See `supersedes`.}
+      - {token: expired,    label: Expired,    description: Outside its validity window.}
+      - {token: promoted,   label: Promoted,   description: Promoted to a standard, policy, or skill. Authority now lives at that tier.}
+
+  # --- Whether a document may be treated as authoritative ---------------
+  document_status:
+    description: >
+      Lifecycle of a canonical document. Only `approved` and `accepted` carry the
+      authority of their tier; see docs/spec/AUTHORITY_MODEL.md.
+    source: docs/spec/DOCUMENT_LIFECYCLE.md
+    applies_to: [principle, adr, prd, ads, policy, standard, spec, guide]
+    authoritative: [approved, accepted]
+    values:
+      - {token: draft,      label: Draft,      description: Being written. Carries no authority.}
+      - {token: proposed,   label: Proposed,   description: Complete and awaiting its gate. Carries no authority.}
+      - {token: approved,   label: Approved,   description: Human-approved. Authoritative. Used by all types except ADR.}
+      - {token: accepted,   label: Accepted,   description: Human-approved ADR. Immutable; reverse by superseding.}
+      - {token: superseded, label: Superseded, description: Replaced. See `superseded_by`. Retained for provenance.}
+      - {token: withdrawn,  label: Withdrawn,  description: Abandoned before approval. Its number is never reused.}
+      - {token: deprecated, label: Deprecated, description: Still true but no longer applied to new work.}

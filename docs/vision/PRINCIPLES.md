@@ -1,3 +1,18 @@
+---
+id: PRINCIPLES
+type: principle
+tier: 0
+status: approved
+version: 1
+owner: human.cto
+human_approved: true
+approved_by: MykullZeroOne
+approved_on: 2026-08-29
+supersedes: null
+superseded_by: null
+last_reviewed: 2026-08-29
+---
+
 # Product and Engineering Principles
 
 ## Human authority

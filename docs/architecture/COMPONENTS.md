@@ -1,3 +1,18 @@
+---
+id: DES-COMPONENTS
+type: design
+tier: 2
+status: approved
+version: 1
+owner: human.cto
+human_approved: true
+approved_by: MykullZeroOne
+approved_on: 2026-08-29
+supersedes: null
+superseded_by: null
+last_reviewed: 2026-08-29
+---
+
 # Component Architecture
 
 ## Control service

@@ -1,0 +1,40 @@
+# Approval record, per ADR-013.
+
+id: APR-0003
+gate: architecture_decision
+surface: chat
+session: session_015ipWtR28BoQtwZYCBh6BfM
+
+approver: MykullZeroOne
+approved_on: 2026-08-29
+recorded_on: 2026-08-29
+
+artifacts:
+  - id: ADR-012
+    path: docs/adr/ADR-012-WORK-STORE-SINGLE-SOURCE.md
+    title: ADR-012 — One Authoritative Work Store, Configurable Per Project
+    content_hash: sha256:3ac6161acdad4bff4257c3647ed519ac
+  - id: ADR-014
+    path: docs/adr/ADR-014-SUPERVISORY-CONTROL-DELIVERY.md
+    title: ADR-014 — Supervisory-Control Delivery Model
+    content_hash: sha256:3a6221f7b4ccbc97e96676ff1d02d8b7
+
+request: >
+  Presented ADR-012 (one authoritative work store, configurable per project) and ADR-014
+  (supervisory-control delivery model) as the two remaining proposed decisions, together
+  with docs/workflows/DELIVERY_MODEL.md elaborating ADR-014, and asked for a decision on
+  each before merging pull request #1.
+
+statement: >
+  Accept all and merge
+
+scope_note: >
+  Accepts ADR-012 and ADR-014. With APR-0002 this leaves no proposed ADR outstanding.
+
+  Accepting ADR-014 authorises gate tiering, which was described but deliberately not
+  applied while the ADR was proposed. Applying tiers to .agentic/registries/gates.yaml is
+  a platform_config change and is deliberately NOT included here: it is follow-up work,
+  not part of this approval.
+
+  docs/workflows/DELIVERY_MODEL.md is a tier-2 design document and remains `draft`. It was
+  not named in the instruction and its promotion is not covered by this record.

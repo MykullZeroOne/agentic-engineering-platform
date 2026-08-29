@@ -1,6 +1,19 @@
-# ADR-002 — Durable Role Identity Is Separate From Runtime Model
+---
+id: ADR-002
+type: adr
+tier: 1
+status: accepted
+version: 1
+owner: human.cto
+human_approved: true
+approved_by: MykullZeroOne
+approved_on: 2026-08-29
+supersedes: null
+superseded_by: null
+last_reviewed: 2026-08-29
+---
 
-**Status:** Accepted
+# ADR-002 — Durable Role Identity Is Separate From Runtime Model
 
 ## Decision
 Model an agent as a durable organizational identity with role, memory, permissions, history, and responsibility. Model sessions are ephemeral executions of that identity.

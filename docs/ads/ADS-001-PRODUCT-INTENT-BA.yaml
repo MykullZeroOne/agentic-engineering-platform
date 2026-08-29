@@ -1,0 +1,250 @@
+# Agent Development Specification -- machine projection of PRD-002.
+#
+# Reference instance. ADR-006 asserts that a PRD and an ADS are two projections of one
+# underlying specification rather than one being derived from the other. That claim was
+# untested until this file existed. Every requirement below traces to a sentence in
+# PRD-002; nothing here is new intent.
+#
+# Lifecycle fields are top-level keys, per docs/spec/DOCUMENT_LIFECYCLE.md.
+
+id: ADS-001
+type: ads
+tier: 2
+status: draft
+version: 1
+owner: human.cto
+human_approved: false
+approved_by: null
+approved_on: null
+supersedes: null
+superseded_by: null
+last_reviewed: 2026-08-29
+
+title: Product Intent and BA Loop
+source_prd: PRD-002
+
+intent:
+  objective: >
+    Turn a human's product idea into a high-quality, approved product specification
+    through an interactive analyst loop rather than one-shot generation.
+  value: >
+    Specification quality determines every downstream role's output. A one-shot
+    generator produces plausible requirements; a loop produces answered ones.
+
+actors:
+  - id: human_owner
+    description: The human acting as CTO / Product Owner. Sole closer of the product_spec gate.
+  - id: ba_agent
+    description: The BA / Product Analyst Lead agent identity. Owns this loop.
+  - id: specialist_agent
+    description: Compliance, Legal Preflight, Privacy, Domain, or UX analyst reporting to the BA.
+
+capabilities:
+  - id: CAP-001-001
+    name: intent-elicitation
+  - id: CAP-001-002
+    name: specialist-preflight
+  - id: CAP-001-003
+    name: readiness-evaluation
+  - id: CAP-001-004
+    name: specification-projection
+
+requirements:
+
+  - id: REQ-001-001
+    capability: CAP-001-001
+    actor: ba_agent
+    statement: >
+      The BA agent extracts goals, actors, outcomes, assumptions, constraints, and
+      known unknowns from an initial human idea into a structured intent model.
+    invariants:
+      - every-extracted-element-traces-to-human-input
+      - unknowns-are-enumerated-not-silently-resolved
+    acceptance_criteria:
+      - id: AC-001-001
+        given: a free-text product idea from the human owner
+        when: the BA agent completes initial parsing
+        then: a structured intent model exists containing goals, actors, outcomes, assumptions, constraints, and an explicit unknowns list
+    verification: [integration-test]
+    risks: []
+    constraints: []
+
+  - id: REQ-001-002
+    capability: CAP-001-001
+    actor: ba_agent
+    statement: The BA agent asks the smallest set of high-value clarifying questions rather than exhaustively interrogating the human.
+    invariants:
+      - questions-are-ranked-by-materiality
+    acceptance_criteria:
+      - id: AC-001-002
+        given: an intent model with unresolved unknowns
+        when: the BA agent produces a question set
+        then: each question is linked to the unknown it resolves and to the decision it would unblock
+    verification: [integration-test, human-review]
+    risks:
+      - id: RISK-001-001
+        statement: An over-eager loop degrades into interrogation and the human disengages.
+        mitigation: Question sets are bounded and ranked; unresolved non-material unknowns become recorded assumptions.
+    constraints: []
+
+  - id: REQ-001-003
+    capability: CAP-001-001
+    actor: ba_agent
+    statement: The BA agent does not ask the human a question already answered by approved canonical knowledge or a durable decision.
+    invariants:
+      - canonical-knowledge-is-consulted-before-escalation
+    acceptance_criteria:
+      - id: AC-001-003
+        given: an unknown whose answer exists in an approved artifact or recorded decision
+        when: the BA agent assembles its question set
+        then: the question is absent from the set and the resolving artifact is cited in the intent model
+    verification: [integration-test]
+    risks: []
+    constraints:
+      - governed_by: PRINCIPLES
+        rule: Escalate only when necessary.
+      - governed_by: SPEC-AUTHORITY
+        rule: Resolution consults tiers 0-3 before tier 6, and never treats a draft as authoritative.
+
+  - id: REQ-001-004
+    capability: CAP-001-002
+    actor: ba_agent
+    statement: >
+      The BA agent delegates to Compliance, Legal Preflight, Privacy, Domain, and UX
+      specialists when the intent model touches their domain.
+    invariants:
+      - delegation-is-triggered-by-detected-domain-not-by-default
+      - specialist-findings-return-to-the-delegating-parent
+    acceptance_criteria:
+      - id: AC-001-004
+        given: an intent model containing personal or regulated data handling
+        when: the BA agent evaluates specialist need
+        then: Compliance and Privacy specialists are delegated and their findings attach to the intent model
+    verification: [integration-test]
+    risks: []
+    constraints:
+      - governed_by: ADR-005
+        rule: Specialists report to their owning parent; no unmediated cross-agent chatter.
+
+  - id: REQ-001-005
+    capability: CAP-001-002
+    actor: ba_agent
+    statement: The BA agent answers a specialist's question itself when authoritative context supports an answer, escalating only what it cannot resolve.
+    invariants:
+      - escalation-requires-a-failed-resolution-attempt
+    acceptance_criteria:
+      - id: AC-001-005
+        given: a BLOCKING question from a Compliance specialist whose answer exists in approved product knowledge
+        when: the BA agent processes the question
+        then: the BA agent answers it directly and no human escalation is created
+      - id: AC-001-006
+        given: the same question with no authoritative answer available
+        when: the BA agent processes the question
+        then: an escalation to the human owner is created and the resulting answer is recorded as a durable decision
+    verification: [integration-test]
+    risks: []
+    constraints:
+      - governed_by: DES-QUESTION-ESCALATION
+        rule: Resolution order is canonical context, then durable memory, then parent, then human.
+
+  - id: REQ-001-006
+    capability: CAP-001-003
+    actor: ba_agent
+    statement: >
+      The BA agent evaluates a readiness gate and repeats the loop until it passes.
+    invariants:
+      - critical-unknowns-equals-zero
+      - actors-and-personas-identified
+      - primary-workflows-defined
+      - success-criteria-measurable
+      - out-of-scope-boundaries-recorded
+      - assumptions-explicitly-recorded
+      - specialist-preflight-complete-where-applicable
+      - material-legal-and-compliance-questions-resolved-or-gated
+      - requirements-are-decomposable-and-testable
+    acceptance_criteria:
+      - id: AC-001-007
+        given: an intent model failing one or more readiness invariants
+        when: the readiness gate is evaluated
+        then: the outcome is a non-ready readiness_outcome naming each failed invariant, and the loop continues
+      - id: AC-001-008
+        given: an intent model satisfying every readiness invariant
+        when: the readiness gate is evaluated
+        then: the outcome is `ready` and the specification becomes eligible for the product_spec gate
+    verification: [unit-test, integration-test]
+    risks:
+      - id: RISK-001-002
+        statement: A gate evaluated by the same agent that produced the work is self-marking.
+        mitigation: Readiness invariants are mechanically checkable; the human gate remains independent.
+    constraints:
+      - governed_by: STATES
+        rule: Outcomes use the readiness_outcome axis in .agentic/registries/states.yaml.
+
+  - id: REQ-001-007
+    capability: CAP-001-004
+    actor: ba_agent
+    statement: >
+      The BA agent generates the PRD and the ADS as two projections of one underlying
+      specification model, not as independently maintained documents.
+    invariants:
+      - both-projections-derive-from-one-model
+      - no-requirement-exists-in-one-projection-only
+    acceptance_criteria:
+      - id: AC-001-009
+        given: an approved specification model
+        when: both projections are generated
+        then: every requirement in the ADS has a corresponding statement in the PRD and vice versa
+      - id: AC-001-010
+        given: a change to the underlying specification model
+        when: projections are regenerated
+        then: both projections reflect the change and neither is edited independently
+    verification: [integration-test]
+    risks:
+      - id: RISK-001-003
+        statement: >
+          Hand-authored projections drift. This file is currently hand-authored, so the
+          invariant is asserted but unenforced until a generator exists.
+        mitigation: Tracked as a known gap; see docs/spec/REGISTRIES.md.
+    constraints:
+      - governed_by: ADR-006
+        rule: PRDs and ADS are projections of a shared specification, not independent sources of truth.
+
+  - id: REQ-001-008
+    capability: CAP-001-003
+    actor: human_owner
+    statement: >
+      The human owner approves the product specification before grooming or
+      architecture execution begins. No agent may close this gate.
+    invariants:
+      - agent-must-never-self-approve-a-human-gate
+    acceptance_criteria:
+      - id: AC-001-011
+        given: a specification whose readiness gate returned `ready`
+        when: grooming is requested before the product_spec gate is closed
+        then: the request is rejected and the work item enters `awaiting_human`
+      - id: AC-001-012
+        given: the human owner approves the specification
+        when: the gate closes
+        then: the PRD and ADS transition to `approved` with approved_by and approved_on recorded, and grooming becomes eligible
+    verification: [integration-test, policy-check]
+    risks: []
+    constraints:
+      - governed_by: PRINCIPLES
+        rule: Human at the top. Never self-approve a human gate.
+      - gate: product_spec
+
+architecture:
+  decisions: [ADR-002, ADR-005, ADR-006]
+  rules:
+    - The BA agent identity is durable; the runtime executing it is interchangeable (ADR-002).
+    - Specialist communication follows the ownership hierarchy (ADR-005).
+
+human_gates:
+  - product_spec
+
+out_of_scope:
+  - Grooming and requirement decomposition -- owned by the Requirements Lead.
+  - Architectural feasibility assessment -- owned by the Architecture Lead.
+  - The generic question and escalation transport -- specified by PRD-003.
+
+evidence: []
