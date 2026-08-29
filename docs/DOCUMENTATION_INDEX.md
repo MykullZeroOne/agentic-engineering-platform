@@ -101,11 +101,11 @@ Normative platform design. Tier 2.
 | `DES-ROLE-RUNTIME-CONTRACT` | Role / Agent / Runtime Contract | `draft` | [docs/agents/ROLE_RUNTIME_CONTRACT.md](docs/agents/ROLE_RUNTIME_CONTRACT.md) |
 | `DES-UNIVERSAL-AGENT-LOOP` | Universal Agent Loop | `draft` | [docs/agents/UNIVERSAL_AGENT_LOOP.md](docs/agents/UNIVERSAL_AGENT_LOOP.md) |
 | | **Architecture** | | |
-| `DES-COMPONENTS` | Component Architecture | `draft` | [docs/architecture/COMPONENTS.md](docs/architecture/COMPONENTS.md) |
-| `DES-DATA-MODEL` | Core Data Model | `draft` | [docs/architecture/DATA_MODEL.md](docs/architecture/DATA_MODEL.md) |
-| `DES-DEPLOYMENT` | Deployment Architecture | `draft` | [docs/architecture/DEPLOYMENT.md](docs/architecture/DEPLOYMENT.md) |
-| `DES-SYSTEM-ARCHITECTURE` | System Architecture | `draft` | [docs/architecture/SYSTEM_ARCHITECTURE.md](docs/architecture/SYSTEM_ARCHITECTURE.md) |
-| `DES-TECHNOLOGY-STACK` | Recommended Technology Stack | `draft` | [docs/architecture/TECHNOLOGY_STACK.md](docs/architecture/TECHNOLOGY_STACK.md) |
+| `DES-COMPONENTS` | Component Architecture | `approved` | [docs/architecture/COMPONENTS.md](docs/architecture/COMPONENTS.md) |
+| `DES-DATA-MODEL` | Core Data Model | `approved` | [docs/architecture/DATA_MODEL.md](docs/architecture/DATA_MODEL.md) |
+| `DES-DEPLOYMENT` | Deployment Architecture | `approved` | [docs/architecture/DEPLOYMENT.md](docs/architecture/DEPLOYMENT.md) |
+| `DES-SYSTEM-ARCHITECTURE` | System Architecture | `approved` | [docs/architecture/SYSTEM_ARCHITECTURE.md](docs/architecture/SYSTEM_ARCHITECTURE.md) |
+| `DES-TECHNOLOGY-STACK` | Recommended Technology Stack | `approved` | [docs/architecture/TECHNOLOGY_STACK.md](docs/architecture/TECHNOLOGY_STACK.md) |
 | | **Context** | | |
 | `DES-CONTEXT-PACKET` | Context Packet Contract | `draft` | [docs/context/CONTEXT_PACKET.md](docs/context/CONTEXT_PACKET.md) |
 | `DES-CONTEXT-PROVENANCE` | Context Provenance | `draft` | [docs/context/CONTEXT_PROVENANCE.md](docs/context/CONTEXT_PROVENANCE.md) |

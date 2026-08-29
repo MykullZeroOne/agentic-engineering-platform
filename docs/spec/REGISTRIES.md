@@ -58,5 +58,10 @@ Recorded rather than invented. Each needs a decision before it can be added:
 - **Evidence package schema.** Required for merge by `CLAUDE.md`, produced by
   `docs/agents/ENGINEERING_LOOP.md`, consumed by QA and review — and undefined. It should become
   the pull request template.
+- **Approval provenance.** `docs/security/GOVERNANCE.md` requires material decisions and human
+  interventions to be durable events with provenance. Front matter records `approved_by` and
+  `approved_on`, but nothing links an approval to the evidence that produced it — the PR, review,
+  or conversation in which the human actually closed the gate. Until an event store exists, an
+  approval is an assertion rather than a record.
 - **Capability namespace.** `agent-role.example.yaml` grants `github.read`, `repository.write`,
   `deployment.*`. The namespace, wildcard semantics, and deny-precedence rules are unspecified.

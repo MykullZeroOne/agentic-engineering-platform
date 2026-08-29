@@ -2,12 +2,12 @@
 id: DES-DATA-MODEL
 type: design
 tier: 2
-status: draft
+status: approved
 version: 1
 owner: human.cto
-human_approved: false
-approved_by: null
-approved_on: null
+human_approved: true
+approved_by: human.cto
+approved_on: 2026-08-29
 supersedes: null
 superseded_by: null
 last_reviewed: 2026-08-29
