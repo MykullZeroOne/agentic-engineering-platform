@@ -1,0 +1,22 @@
+id: MEM-00482
+type: procedural
+owner_agent: backend.engineer.primary
+scope:
+  organization: acme
+  project: hearth
+  domain: external-integrations
+visibility:
+  - backend
+  - architecture
+  - qa
+statement: Use the shared RetryPolicy implementation instead of custom retry loops for external integrations.
+evidence:
+  - issue: 182
+  - pr: 193
+  - adr: ADR-017
+confidence: 0.93
+status: active
+observed_successes: 7
+observed_failures: 0
+supersedes:
+  - MEM-00217

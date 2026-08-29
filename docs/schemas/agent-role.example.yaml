@@ -1,0 +1,36 @@
+id: compliance.primary
+role: compliance-analyst
+role_version: 1
+parent: ba.primary
+specialists: []
+runtime:
+  preferred: claude-subscription
+  fallback:
+    - codex-subscription
+capabilities:
+  - compliance-preflight
+  - privacy-screening
+skills:
+  - compliance-review@1
+  - ask-escalate@1
+tools:
+  allow:
+    - github.read
+    - knowledge.context
+    - knowledge.search
+    - communication.ask_parent
+    - communication.record_finding
+  deny:
+    - repository.write
+    - deployment.*
+memory:
+  namespace: agent/compliance.primary
+  inherit:
+    - function/product
+    - project
+completion:
+  - findings_classified
+  - blocking_questions_resolved_or_escalated
+  - risk_summary_complete
+human_gates:
+  - legal_approval

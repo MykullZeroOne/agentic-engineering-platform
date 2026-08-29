@@ -1,0 +1,20 @@
+before_agent_run:
+  hard:
+    - work.validate_state
+    - dependencies.validate
+    - context.build
+    - workspace.prepare
+  soft:
+    - context.find_similar_history
+after_agent_run:
+  hard:
+    - validation.required_checks
+    - evidence.capture
+  soft:
+    - telemetry.summarize
+after_merge:
+  soft:
+    - memory.consolidate
+    - graph.refresh
+    - evaluation.record
+    - work.recalculate_ready

@@ -1,0 +1,28 @@
+run_id: RUN-2026-004821
+agent_identity: ios.engineer.primary
+role_version: ios-engineer@3.2
+runtime:
+  provider: codex-subscription
+  model: provider-current
+work:
+  issue: 418
+  ads: ADS-014
+  requirements:
+    - REQ-014-003
+context_manifest: CTX-99182
+skills:
+  - implement-story@4
+  - swiftui-feature@7
+execution:
+  attempt: 1
+  worktree: wt/RUN-2026-004821
+results:
+  tests_passed: true
+  ci_passed: true
+  review_status: changes_requested
+  review_findings: 2
+human_interventions:
+  - HI-188
+outcome:
+  merged: true
+  rework_cycles: 1

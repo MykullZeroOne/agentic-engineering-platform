@@ -1,0 +1,35 @@
+id: ADS-014
+version: 1
+status: approved
+title: Family Chores
+source_prd: PRD-014
+intent:
+  objective: Allow parents to assign recurring chores and approve completion.
+actors:
+  - id: parent
+  - id: child
+capabilities:
+  - id: CAP-014-001
+    name: create-chore
+requirements:
+  - id: REQ-014-001
+    capability: CAP-014-001
+    actor: parent
+    statement: Parents can create a chore for their household.
+    invariants:
+      - chore-belongs-to-household
+      - chore-requires-title
+    acceptance_criteria:
+      - id: AC-014-001
+        given: authenticated parent in a household
+        when: valid chore details are submitted
+        then: chore is persisted for that household
+    verification:
+      - integration-test
+    risks: []
+    constraints: []
+architecture:
+  decisions:
+    - ADR-021
+out_of_scope:
+  - external chore marketplace

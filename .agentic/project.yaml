@@ -1,0 +1,22 @@
+version: 1
+project: example-project
+control_plane:
+  provider: github
+knowledge:
+  prds: docs/prds
+  ads: docs/ads
+  adrs: docs/adrs
+  architecture: docs/architecture
+  standards: docs/standards
+organization_template: standard-agentic-engineering
+runtime_preferences:
+  planning: claude-subscription
+  architecture: claude-subscription
+  implementation: codex-subscription
+  qa: codex-subscription
+  review: claude-subscription
+human_gates:
+  product_spec: required
+  architecture_high_risk: required
+  legal: required
+  production_release: required

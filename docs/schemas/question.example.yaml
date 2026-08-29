@@ -1,0 +1,16 @@
+id: Q-00482
+source_agent: compliance.primary
+target_agent: ba.primary
+work_item: REQ-018
+type: clarification
+severity: BLOCKING
+question: Will uploaded health documents be used to generate personalized recommendations?
+reason: This materially affects compliance and privacy classification.
+context_refs:
+  - PRD-014
+  - REQ-018
+suggested_answers:
+  - storage-and-summary-only
+  - personalized-recommendations
+  - defer-capability
+status: open
