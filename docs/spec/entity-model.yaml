@@ -1,0 +1,3170 @@
+# Base-data entity model. Implements ADR-017.
+#
+# This file is DATA, not prose, because ADR-017 makes structured data the canonical
+# artifact. docs/spec/ENTITY_MODEL.md explains how to read it and what is unsettled;
+# it does not restate the entities, so there is nothing here to drift against.
+#
+# Produced by reconciling six partial views that disagreed -- DOCUMENT_LIFECYCLE front
+# matter, ADS_OVERVIEW, ads.schema.example.yaml, KNOWLEDGE_GRAPH's ~30 node types,
+# DATA_MODEL's ~50 tables, states.yaml, and the role/memory/question/run-record
+# examples -- then adversarially critiqued on completeness, the fields-versus-prose
+# boundary, and traceability. 75 raw entities and 67 conflicts went in.
+#
+# STATUS: draft. It carries no authority and several entries are contested. Read
+# open_questions before relying on any part of it.
+
+id: SPEC-ENTITY-MODEL
+type: spec
+tier: 0
+status: draft
+version: 1
+owner: human.cto
+human_approved: false
+approved_by: null
+approved_on: null
+supersedes: null
+superseded_by: null
+last_reviewed: '2026-08-30'
+title: Entity Model
+entities:
+- name: Organization
+  plane: Control
+  purpose: Tenancy root. Every durable identity, role, memory namespace, event and project belongs to
+    one. Restores the approved DES-DATA-MODEL `organizations` table and supplies the tenancy key AgentIdentity
+    and Role previously lacked.
+  identity_rule: '`ORG-<slug>`. Never a path. All other identities are unique only within their organization.'
+  structured_fields:
+  - name: id
+    type: ORG-<slug>
+    required: true
+    notes: Tenancy root id.
+  - name: name
+    type: string
+    required: true
+    notes: Display name.
+  - name: projects
+    type: derived list of Project id
+    required: false
+    notes: Inverse of Project.organization.
+  - name: organization_template
+    type: string
+    required: false
+    notes: Role set instantiated for new projects (standard-agentic-engineering).
+  - name: content_hash / source_hash / hash_scheme
+    type: string
+    required: false
+    notes: Hash root; gated under platform_config so it must be hashable.
+  prose_fields: []
+  state_axis: none
+  supersedes_existing:
+  - organizations table (given an entity)
+- name: Project
+  plane: Control
+  purpose: One project's binding of stores, vocabularies, runtime preferences, active gates and adoption
+    state. Absorbs ProjectConfig; .agentic/project.yaml is this repository's instance. Makes ADR-012 and
+    ADR-015 operational by naming the authoritative store for work items and for each artifact type, and
+    now for every other plane.
+  identity_rule: '`PRJ-<org-slug>/<project-slug>`, organization-qualified. The file location is a local-provider
+    detail.'
+  structured_fields:
+  - name: id / organization / slug
+    type: string
+    required: true
+    notes: Organization-qualified identity.
+  - name: version
+    type: integer
+    required: true
+    notes: Config schema version.
+  - name: control_plane
+    type: object {provider, repository}
+    required: true
+    notes: SCM control provider (ADR-001, ADR-018).
+  - name: repositories
+    type: list of {id, url, default_branch}
+    required: false
+    notes: REPO-<slug>. Identified so PullRequest and Workspace reference an id, not a name. No lifecycle
+      of its own, so not an entity.
+  - name: knowledge
+    type: map of artifact_type token to store provider config
+    required: true
+    notes: Keyed by VOCAB-ARTIFACT-TYPE token, not by category. The instance's `architecture:` key is
+      non-conformant; `design` has nine homes against ADR-015 clause 2 (open question).
+  - name: stores
+    type: map of entity name to store provider config
+    required: true
+    notes: Covers Communication, Execution, Evaluation and Control entities. Fifteen entities say 'store-minted'
+      and had no configured minter.
+  - name: work_store
+    type: provider config
+    required: true
+    notes: Exactly one, never two (ADR-012).
+  - name: vocabularies
+    type: list of ControlledVocabulary id
+    required: true
+    notes: Replaces the three registry file paths.
+  - name: active_gates
+    type: list of Gate id
+    required: true
+    notes: Which gates are live.
+  - name: hook_bindings
+    type: list of HookBinding hook_id
+    required: false
+    notes: Project-scoped bindings only; central bindings live on Organization.
+  - name: runtime_preferences
+    type: map of phase to provider
+    required: false
+    notes: Default; AgentIdentity narrows it.
+  - name: adoption
+    type: object
+    required: false
+    notes: level, level_name, assessed_on, evidence_refs, blocking_work_items. blocking_next_level bullets
+      become WorkItem refs.
+  - name: content_hash / source_hash / hash_scheme
+    type: string
+    required: false
+    notes: Hash root; gated under platform_config.
+  prose_fields:
+  - name: adoption.assessment_note
+    rationale: Why the project sits at this level rather than the next. A level number cannot be argued
+      with; the evidence judgement can.
+  state_axis: none
+  supersedes_existing:
+  - ProjectConfig
+  - projects table
+  - project_mappings (as config, not a table)
+  - registries block as file paths
+- name: CanonicalArtifact
+  plane: Knowledge
+  purpose: 'The governed unit of canonical knowledge: the lifecycle, authority and approval envelope every
+    tier 0-4 artifact carries, plus an ordered prose payload so no artifact is an empty shell. Subtypes
+    (ArchitectureDecision, Specification, Skill, Rule) replace `sections` with named prose leaves. Under
+    ADR-017 the markdown file is a projection of this record.'
+  identity_rule: '`id`, globally unique within its Organization, stable, never reused including for withdrawn
+    artifacts. Minted by the authoritative store for its type (never by scanning a directory), by a type-specific
+    scheme: ADR-NNN, PRD-NNN, ADS-NNN (independent sequence), SPEC-<NAME>, DES-<NAME>, POL-NNN, STD-NNN,
+    GUIDE-<NAME>, EX-<NAME>, `skill:<name>@<version>`. Path is never identity; DOCUMENT_LIFECYCLE line
+    68 (''non-numbered types derive their id from the filename'') is the path coupling to remove, and
+    DES-/SPEC-/GUIDE-/EX- ids must be store-allocated once files stop being the source.'
+  structured_fields:
+  - name: id / artifact_type / tier / title
+    type: string / VocabularyTerm ref / integer|null / string
+    required: true
+    notes: artifact_type from VOCAB-ARTIFACT-TYPE; tier must agree with it.
+  - name: organization
+    type: Organization id
+    required: true
+    notes: Tenancy key.
+  - name: status
+    type: VocabularyTerm ref (VOCAB-DOCUMENT-STATUS)
+    required: true
+    notes: Only approved and accepted carry tier authority. Absent on a projection.
+  - name: version
+    type: integer
+    required: true
+    notes: Increments on material change; a content_hash change is the mechanical test (ADR-016 clause
+      5).
+  - name: sections
+    type: ordered list of {id, heading, prose}
+    required: true
+    notes: Default payload for principle, spec, design, guide. Gives citable anchors (SPEC-AUTHORITY#precedence-4)
+      and puts tier-0 and tier-3 content inside the hash. Replaced, not supplemented, by a subtype's named
+      prose leaves.
+  - name: owner
+    type: AgentIdentity id
+    required: true
+    notes: Durable identity, never a model or session. Excluded from the hash.
+  - name: human_approved
+    type: boolean
+    required: true
+    notes: True only when a gate has been closed by a record.
+  - name: approvals
+    type: list of ApprovalRecord id
+    required: false
+    notes: 'A list, not a scalar: an artifact may be covered by several records, and an approval may be
+      superseded. The binding approval is the latest non-revoked gate_approval whose artifact entry, after
+      applying any attestation chain, matches the current content_hash.'
+  - name: approved_on
+    type: date
+    required: false
+    notes: Denormalised from the binding record.
+  - name: supersedes / superseded_by
+    type: CanonicalArtifact id or null
+    required: true
+    notes: Reciprocal, validator-enforced. Excluded from the hash so recording a supersession does not
+      un-accept the superseded ADR.
+  - name: refines / depends_on
+    type: list of CanonicalArtifact id
+    required: false
+    notes: Refinement and ordering are distinct from supersession (ADR-016 refines ADR-013, depends on
+      ADR-017).
+  - name: last_reviewed
+    type: date
+    required: true
+    notes: No staleness policy consumes it yet.
+  - name: enforcement
+    type: VocabularyTerm ref
+    required: false
+    notes: prose | check | hook. Rule-bearing artifacts only.
+  - name: content_hash / source_hash
+    type: algorithm-qualified string
+    required: false
+    notes: 'canonical/v2:sha256:<64 hex> and legacy/truncated-32:sha256:<32 hex>. The prefix carries the
+      scheme; a bare sha256: prefix is ambiguous between three computations and is retired.'
+  - name: hash_unit
+    type: enum root | child
+    required: true
+    notes: Declares whether this record is hashed independently or inside a parent's canonical tree.
+  - name: store
+    type: store provider ref
+    required: true
+    notes: Resolution hint, not identity. Excluded from the hash.
+  - name: projection
+    type: object {is_projection, generated_from, generated_from_version, generated_from_content_hash,
+      generator, generated_on}
+    required: false
+    notes: 'ADR-015 clause 5 and ADR-017 clause 3: a rendering is stamped, never edited in place. A projection
+      carries no status, no approvals and no content_hash, is never named in an ApprovalRecord, and never
+      triggers a gate. An unstamped rendering is a validation error.'
+  prose_fields:
+  - name: change_note
+    rationale: What changed at this version and why. Under ADR-016 clause 5 a hash change re-opens the
+      gate, so the human is asked to re-approve with nothing telling them what moved — the rubber-stamping
+      ADR-014 names. This is the highest-value argued field in the model and was the one place it was
+      omitted; Skill.change_note and Role.change_note inherit it.
+  - name: sections[].prose
+    rationale: The argument itself, for artifact types with no structured payload — PRINCIPLES' ten sections,
+      AUTHORITY_MODEL's five precedence rules, the 34 design documents. Decomposing them into fields is
+      exactly what ADR-017 rejected; leaving them outside the record is what makes ADR-016's false-stability
+      risk real for the constitutional layer.
+  state_axis: document_status
+  supersedes_existing:
+  - CanonicalDocument
+  - DocumentType / DocumentStatus / AuthorityTier / EnforcementStage / ContentHash as entities
+  - DocumentationIndex
+  - PRD node type
+- name: ArchitectureDecision
+  plane: Knowledge
+  purpose: 'A tier-1 decision and the reasoning that makes it reversible by a future reader. The exemplar
+    of ADR-017 clause 2: the skeleton is data, the argument in each section is prose. Immutable once accepted;
+    reversed only by supersession.'
+  identity_rule: '`ADR-NNN`, sequential within the adr type, never reused. Subtype of CanonicalArtifact;
+    hash_unit: root. Immutability is a property of status, not storage.'
+  structured_fields:
+  - name: id
+    type: ADR-NNN
+    required: true
+    notes: Inherits all CanonicalArtifact lifecycle fields.
+  - name: alternatives
+    type: list of {id, option, verdict, rationale}
+    required: true
+    notes: Required from ADR-009 onward. option is queryable ('which decisions rejected a Postgres-first
+      store').
+  - name: alternatives[].verdict
+    type: VocabularyTerm ref
+    required: true
+    notes: rejected | partially_adopted | deferred. Three disjoint tokens replacing four rhetorical sentence-openings
+      lifted from two ADRs; partially_adopted is what ADR-016's 'rejected as the anchor, adopted for leaves'
+      actually is.
+  - name: consequences
+    type: list of {id, statement, kind, ref}
+    required: true
+    notes: 'kind is implication | obligation | dependency; ref points at a WorkItem for an obligation
+      or an ADR for a dependency. ADR-016''s ''APR-0001..0003 must be re-anchored'' and ADR-017''s ''a
+      base-data schema is now the blocking deliverable'' are untracked work items in prose — the backlog
+      Principle 3 forbids. refines and depends_on derive from kind: dependency rather than being hand-mirrored.'
+  - name: risks
+    type: list of {id, statement, mitigation, status}
+    required: true
+    notes: RISK-<adr>-NNN, the identical shape Requirement.risks already uses. ADR-017's 'the interim
+      must be short or it becomes the architecture' is a standing condition someone must monitor and had
+      no id to point at.
+  - name: governs
+    type: derived list of Requirement id
+    required: false
+    notes: Inverse of Requirement.constraints[].governed_by. Never stored.
+  prose_fields:
+  - name: context
+    rationale: What forces the decision now and what breaks without it. ADR-017 clause 2 names it a prose
+      field; decomposing the forces leaves a checklist that cannot explain urgency.
+  - name: decision
+    rationale: Stated so a violation is recognisable. Numbered clauses give it shape, but the clause text
+      is a rule a reasoning agent interprets — ADR-016 clause 2's canonical prose leaf.
+  - name: alternatives[].rationale
+    rationale: '''Why we rejected TypeScript is three paragraphs of reasoning, not an enum'' (ADR-017).
+      The qualification a verdict token cannot carry lives here.'
+  - name: consequences[].statement
+    rationale: What follows, including costs accepted. kind and ref carry the queryable half; the sentence
+      carries the weighing.
+  - name: risks[].statement / risks[].mitigation
+    rationale: What could make this wrong and why the mitigation is sufficient. The sufficiency judgement
+      is the content and cannot be enumerated.
+  state_axis: document_status (accepted, then superseded)
+  supersedes_existing:
+  - ADR
+  - ADRAlternative
+  - ADR node type
+  - Decision node type (architectural sense)
+- name: Specification
+  plane: Knowledge
+  purpose: The single canonical statement of approved product intent that ADR-006 and ADR-017 assert the
+    PRD, the ADS, issues and the evidence matrix are all projections of. Replaces PRD and ADS as independently
+    maintained artifacts. Now carries assumptions and unknowns, without which two of the nine readiness
+    invariants are unevaluable and AC-001-001/002 unsatisfiable.
+  identity_rule: '`ADS-NNN`, an independent sequence, linked to its narrative projections by prd_projection_ids
+    (a list, since one PRD may yield several specifications and one specification may span several PRDs).
+    hash_unit: root, and the canonical tree includes its capabilities, requirements, acceptance criteria
+    and verification requirements.'
+  structured_fields:
+  - name: id / prd_projection_ids
+    type: ADS-NNN / list of PRD-NNN
+    required: true
+    notes: A list, matching the stated N:M relation the previous 0..1 scalar contradicted.
+  - name: conformance
+    type: enum narrative | structured
+    required: true
+    notes: narrative means capabilities and requirements are absent and the only projection is a prose
+      PRD. PRD-001 and PRD-003..008 are narrative today; without this level they have no canonical identity
+      and product_spec binds to nothing hashable.
+  - name: intent
+    type: object {objective, value, success_criteria, workflows}
+    required: true
+    notes: A named block whose id is the Specification id, so Intent -> Capability is containment. success_criteria
+      and workflows are required by BA_LOOP and AC-001-001.
+  - name: actors
+    type: list of {id, role_ref, description}
+    required: true
+    notes: role_ref binds to a Role when the actor is an AEP role; human_owner and human.cto are one person
+      in two namespaces today.
+  - name: assumptions
+    type: list of {id, statement, status, resolving_artifact}
+    required: false
+    notes: ASM-NNN-NNN. Invariant `assumptions-explicitly-recorded` ranges over data that did not exist.
+  - name: unknowns
+    type: list of {id, statement, criticality, status, resolved_by}
+    required: false
+    notes: UNK-NNN-NNN. Invariant `critical-unknowns-equals-zero` needs this, and Question.resolves_unknown
+      targets it (AC-001-002).
+  - name: out_of_scope
+    type: list of {id, statement, owned_by, deferred_to}
+    required: false
+    notes: All three ADS-001 exclusions name an owner or a PRD inside a sentence; a dangling referral
+      is the seam where scope falls between two specs.
+  - name: architecture_rules
+    type: list of {id, statement, source_adr}
+    required: false
+    notes: source_adr is resolvable, replacing a parenthetical citation.
+  - name: human_gates
+    type: derived list of Gate id
+    required: false
+    notes: Union of its requirements' gate constraints. Cached projection only.
+  - name: content_hash / source_hash
+    type: string
+    required: false
+    notes: Over the full canonical tree, resolving toward invalidation per SPEC-CONTENT-HASHING.
+  prose_fields:
+  - name: intent.objective
+    rationale: What the specification is for, delivered verbatim to agents. The same kind of leaf ADR-016
+      names for a requirement statement, one level up.
+  - name: intent.value
+    rationale: The product argument the human approves at product_spec. Reducing it to a metric approves
+      the metric instead of the intent.
+  - name: actors[].description
+    rationale: What makes this actor distinct from an adjacent one; a slug leaves two actors indistinguishable
+      to an agent.
+  - name: assumptions[].statement / unknowns[].statement
+    rationale: An assumption is a claim held without evidence and an unknown is a question not yet asked;
+      both are argued, and the readiness gate reads them.
+  - name: out_of_scope[].statement
+    rationale: An exclusion records a deliberate decision not to build something; the reasoning is what
+      stops it being re-added.
+  - name: architecture_rules[].statement
+    rationale: A constraint stated so a violation is recognisable; source_adr carries the queryable part.
+  state_axis: document_status
+  supersedes_existing:
+  - SpecificationModel
+  - ADS
+  - PRD
+  - Intent
+  - Actor
+  - ArchitectureRule
+  - ProductIntent/PRD/ADS node types
+  - document-level architecture.decisions list
+- name: Capability
+  plane: Knowledge
+  purpose: A unit of product functionality grouping the requirements that deliver one user-facing ability;
+    the layer between Intent and Requirement. Named Capability in the specification sense only — the agent-competency
+    and tool-permission senses are AgentCapability tokens and ToolGrant.
+  identity_rule: '`CAP-<specification-number>-NNN`, sequential within its Specification, never reused.
+    Globally unique because the specification number is embedded. hash_unit: child of its Specification.'
+  structured_fields:
+  - name: id / specification / name
+    type: CAP-NNN-NNN / ADS-NNN / kebab slug
+    required: true
+    notes: Specification-scoped sequence; name is stable within it.
+  - name: requirements
+    type: derived list of Requirement id
+    required: false
+    notes: Inverse of Requirement.capability.
+  prose_fields:
+  - name: description
+    rationale: What the ability means to the actor. Requirements are grouped under a capability by judgement,
+      and without the description the grouping is unreviewable; its absence is an inconsistency, since
+      actors carry one.
+  state_axis: none; inherits its Specification's document_status
+  supersedes_existing:
+  - Capability (ADS)
+  - Capability node type
+- name: Requirement
+  plane: Knowledge
+  purpose: 'The unit of testable intent and the join point of the model: what work implements, what evidence
+    verifies, what architecture governs and what a gate protects.'
+  identity_rule: '`REQ-<specification-number>-NNN`, sequential within its Specification, never reused,
+    stable across projections. hash_unit: child, but it also carries its own content_hash so an ApprovalRecord
+    can bind at requirement granularity and an editorial change to one requirement can be attested without
+    re-opening the whole specification.'
+  structured_fields:
+  - name: id / specification / capability / actor
+    type: ids
+    required: true
+    notes: capability and actor are single-valued in both instances.
+  - name: invariants
+    type: list of {id, token, statement, predicate, evaluated_by}
+    required: false
+    notes: Given ids so AC-001-007's 'name each failed invariant' is satisfiable. predicate and evaluated_by
+      (agent | check | human) are optional pending the predicate-language decision.
+  - name: risks
+    type: list of {id, statement, mitigation, status}
+    required: false
+    notes: RISK-NNN-NNN, scoped to the requirement.
+  - name: constraints
+    type: list of {kind, target_id, rule, note}
+    required: false
+    notes: kind is governed_by (CanonicalArtifact or ControlledVocabulary id) or gate (Gate id). `rule`
+      is required and normative — it is the field ADS-001 actually writes and the architecture loop's
+      readiness gate calls machine-readable; `note` is an optional reviewer gloss. This is the single
+      authoritative architecture linkage.
+  - name: priority
+    type: VocabularyTerm ref
+    required: false
+    notes: Optional ranking token.
+  - name: content_hash
+    type: string
+    required: false
+    notes: Requirement-granular anchor for approvals, attestations and Evidence.verified_content_hash.
+  - name: work_units
+    type: derived list of WorkUnit id
+    required: false
+    notes: Inverse of WorkUnit.requirements.
+  prose_fields:
+  - name: statement
+    rationale: The requirement in language a human approves and an agent decomposes — ADR-016's canonical
+      prose leaf. Structuring it into subject/verb/object produces a sentence nobody wrote and nobody
+      can approve.
+  - name: risks[].statement / risks[].mitigation
+    rationale: A claim about a future and a judgement that the mitigation suffices; neither is enumerable.
+  - name: constraints[].rule
+    rationale: How the governing artifact binds this requirement — 'Resolution consults tiers 0-3 before
+      tier 6, and never treats a draft as authoritative.' target_id carries the edge; the rule is what
+      is actually constrained.
+  state_axis: none; inherits its Specification's document_status
+  supersedes_existing:
+  - Requirement node type
+  - Invariant
+  - Risk
+  - Constraint
+- name: AcceptanceCriterion
+  plane: Knowledge
+  purpose: A given/when/then statement making a requirement decidable, and the anchor verification and
+    evidence attach to. Absorbs Precondition and Effect, declared ADS core entities that no artifact ever
+    instantiates — `given` is the precondition, `then` is the effect.
+  identity_rule: '`AC-<specification-number>-NNN`, sequential across the whole Specification rather than
+    per requirement (REQ-001-005 holds AC-001-005 and AC-001-006). hash_unit: child, with its own content_hash
+    so Evidence can pin what it verified.'
+  structured_fields:
+  - name: id / requirement
+    type: AC-NNN-NNN / REQ id
+    required: true
+    notes: Specification-wide sequence.
+  - name: content_hash
+    type: string
+    required: false
+    notes: Pinned by Evidence.verified_content_hash so stale evidence shows as stale.
+  - name: verification_requirements
+    type: derived list of VerificationRequirement id
+    required: false
+    notes: Verification attaches here, one level below Requirement.
+  - name: evidence
+    type: derived list of Evidence id
+    required: false
+    notes: The evidence matrix is a query over this inverse.
+  prose_fields:
+  - name: given
+    rationale: The precondition in domain language ('authenticated parent in a household'). A prose leaf
+      by ADR-016's definition; the corpus has no predicate language, so declaring it structured would
+      produce a schema nothing can populate.
+  - name: when
+    rationale: The triggering act; same argument.
+  - name: then
+    rationale: The required effect — the sentence a QA agent verifies against and a human approves. Its
+      precision is the whole value of the criterion.
+  state_axis: none; inherits its Specification's document_status
+  supersedes_existing:
+  - AcceptanceCriterion node type
+  - Precondition
+  - Effect
+- name: VerificationRequirement
+  plane: Knowledge
+  purpose: What must be proven for one acceptance criterion, by which method, and by which producer. Tier
+    2 — a statement of what is required, separate from the tier-5 fact of a test having run, because AUTHORITY_MODEL
+    precedence rule 4 turns on that separation.
+  identity_rule: '`VER-<specification-number>-NNN`, sequential within its Specification, independent of
+    the criterion number. hash_unit: child.'
+  structured_fields:
+  - name: id / acceptance_criterion
+    type: VER-NNN-NNN / AC id
+    required: true
+    notes: Attaches to the criterion, not the requirement — only there can AC-001-005 be integration-tested
+      while AC-001-006 needs human review.
+  - name: method
+    type: VocabularyTerm ref (VOCAB-VERIFICATION-METHOD)
+    required: true
+    notes: unit_test | integration_test | policy_check | human_review | architecture_check. snake_case;
+      ADS-001's kebab spellings become aliases. Each token declares which evidence_type tokens can discharge
+      it, and the pair is validated on write.
+  - name: required
+    type: boolean
+    required: true
+    notes: A gate can only block on required verifications.
+  - name: producer
+    type: object {kind, key}
+    required: true
+    notes: kind is check | suite | review | policy; key is the store-neutral producer key. Replaces an
+      optional free-text target_ref matched against a CI check name — a required Evidence foreign key
+      with no derivation rule would be filled by guesswork.
+  - name: evidence
+    type: derived list of Evidence id
+    required: false
+    notes: Satisfied when the latest non-superseded passing Evidence exists for every required verification
+      and its verified_content_hash matches the criterion's current hash.
+  prose_fields: []
+  state_axis: none; inherits its Specification's document_status
+  supersedes_existing:
+  - VerificationRequirement (token sense, now a VocabularyTerm)
+  - Test node type (specification sense)
+- name: Evidence
+  plane: Knowledge
+  purpose: 'A tier-5 artifact proving something: a test result, required check, review, diff, run record
+    or human review. The evidence package required for merge and the evidence matrix are queries over
+    this entity; the pull request body is one projection of it.'
+  identity_rule: '`EV-<store-minted>` plus an immutable {uri, content_hash} for the payload. Never the
+    storage path — a transcript that moves buckets is the same evidence.'
+  structured_fields:
+  - name: id / evidence_type / outcome
+    type: EV-<minted> / VocabularyTerm ref / enum pass|fail|inconclusive
+    required: true
+    notes: 'evidence_type: test_result | check | review | diff | run_record | human_review | release.'
+  - name: verification_requirement
+    type: VerificationRequirement id
+    required: false
+    notes: Optional. A required check (the `docs` check, secret scanning, lint) discharges no tier-2 verification
+      but is load-bearing for merge, so forcing a fabricated VerificationRequirement for every CI job
+      would recreate the duplication this model exists to end.
+  - name: evidence_class
+    type: enum bound | unbound
+    required: true
+    notes: bound discharges a verification; unbound is a required check or telemetry with no tier-2 obligation.
+      Keeps precedence rule 4 honest without orphaning check results.
+  - name: acceptance_criterion / verified_content_hash
+    type: AC id / string
+    required: false
+    notes: The hash of the criterion as it stood when the evidence was produced. Without it a rewritten
+      requirement keeps its green matrix cell — precedence rule 4 defeated one layer down.
+  - name: producer_key
+    type: string
+    required: false
+    notes: The producer key actually matched, so the join is recorded rather than inferred.
+  - name: supersedes
+    type: Evidence id
+    required: false
+    notes: 'Currency rule: after a passing run and a failing rework, the latest non-superseded record
+      for a verification is the one in force.'
+  - name: agent_run / pull_request / work_item
+    type: ids
+    required: false
+    notes: What produced it, which change it accompanies, denormalised for the package query.
+  - name: uri / content_hash / produced_on
+    type: URI / string / timestamp
+    required: true
+    notes: Object storage; the record retains metadata and provenance (DES-DATA-MODEL).
+  prose_fields:
+  - name: summary
+    rationale: What was verified and why the reader should believe it — read by the reviewer at SDLC phase
+      6 and the human at phase 8. The outcome says pass; the summary says what passing meant here.
+  state_axis: none; tier 5, a fact once recorded
+  supersedes_existing:
+  - Evidence (ADS)
+  - evidence matrix
+  - artifacts table
+  - Test node type (result sense)
+  - Check node type
+- name: Skill
+  plane: Knowledge
+  purpose: 'A reusable procedure describing how work is performed. Tier 4 and the terminal rung of the
+    memory promotion ladder. ADR-007''s split: skills say how, policies say what, hooks say when. Referenced
+    by name@version throughout the corpus and defined by nothing.'
+  identity_rule: '`skill:<name>@<version>`, version a monotonic integer. The `skill:` qualifier disambiguates
+    from Role, which shares the `<name>@<version>` grammar and would otherwise make `compliance-analyst@1`
+    ambiguous as a graph endpoint. A published version is immutable; changing the procedure mints the
+    next. hash_unit: root.'
+  structured_fields:
+  - name: id / name / version
+    type: skill:<name>@<n> / kebab slug / integer
+    required: true
+    notes: skill:compliance-review@1, skill:implement-story@4.
+  - name: scope
+    type: enum organization | project
+    required: true
+    notes: PRD-008 versions central skills outside project repos; .agentic/skills/ holds project-specific
+      skills only.
+  - name: role_independent / applicable_roles
+    type: boolean / list of Role slug
+    required: true
+    notes: COMPONENTS.md's distinction.
+  - name: required_tool_grants
+    type: list of ToolGrant token
+    required: false
+    notes: Makes the skill/permission dependency checkable before dispatch.
+  - name: referenced_scripts
+    type: list of artifact ref
+    required: false
+    notes: Scripts the procedure invokes; a reference, not a path.
+  - name: promoted_from
+    type: Memory id
+    required: false
+    notes: Set when the skill came off the consolidation ladder.
+  - name: content_hash / source_hash
+    type: string
+    required: false
+    notes: Hash root. Required for RegressionCase to reproduce a comparison across skill versions.
+  prose_fields:
+  - name: procedure
+    rationale: The steps as instruction to a reasoning agent. Decomposing them into an executable step
+      list makes the skill a workflow engine, which ADR-007 assigns to hooks — a skill is interpreted,
+      a hook is executed.
+  - name: when_to_use
+    rationale: The applicability judgement an agent makes when selecting among several skills; applicable_roles
+      narrows the candidate set but does not decide.
+  - name: change_note
+    rationale: Why this version differs. PRD-007 compares outcomes across skill versions and a text diff
+      cannot say what the author was trying to fix.
+  state_axis: document_status
+  supersedes_existing:
+  - Procedure node type (tier-4 sense)
+  - skills / skill_versions tables
+- name: Rule
+  plane: Knowledge
+  purpose: 'A tier-3 normative rule: a Policy (mandatory, blocks when violated) or a Standard (informs
+    review, does not block). One payload with one discriminator, because the fields are identical and
+    the only difference is whether violation blocks. Gives `validation.required_checks` — a HARD hook
+    binding in this repository''s reference configuration — the data it reads, and gives the promotion
+    ladder its terminus.'
+  identity_rule: '`POL-NNN` when kind is policy, `STD-NNN` when kind is standard; independent sequences,
+    never reused. hash_unit: root.'
+  structured_fields:
+  - name: id / kind
+    type: POL-NNN|STD-NNN / enum policy|standard
+    required: true
+    notes: 'Blocking is derived from kind, per GLOSSARY: a policy blocks, a standard informs.'
+  - name: scope
+    type: enum organization | project
+    required: true
+    notes: Central rules version outside project repos (PRD-008).
+  - name: applies_to
+    type: structured selector
+    required: true
+    notes: artifact_type, tier, component, work item type or capability token — never a path, for the
+      same reason gate triggers are not paths.
+  - name: required_checks
+    type: list of {producer_kind, key, blocking}
+    required: false
+    notes: What validation.required_checks executes and what sources PullRequest.checks[].required, which
+      was asserted and never derived.
+  - name: enforcement
+    type: VocabularyTerm ref
+    required: true
+    notes: prose | check | hook.
+  - name: hook_points
+    type: list of VocabularyTerm ref
+    required: false
+    notes: 'Where the rule is invoked (POLICY_MODEL: ''Hook: before_pr -> run authorization policy checks'').'
+  - name: promoted_from
+    type: Memory id
+    required: false
+    notes: Terminal rung of the consolidation ladder.
+  - name: content_hash / source_hash
+    type: string
+    required: false
+    notes: Hash root.
+  prose_fields:
+  - name: rule
+    rationale: The rule stated so a violation is recognisable — 'all external API calls require bounded
+      timeout behavior'. The selector says where it applies; only the sentence says what it requires.
+  - name: rationale
+    rationale: Why the rule exists. A standard that cannot say why is one a reviewer cannot apply to a
+      case its author did not foresee.
+  state_axis: document_status
+  supersedes_existing:
+  - Policy
+  - Standard
+  - Policy/Standard node types
+  - policies / policy_versions tables
+- name: Component
+  plane: Knowledge
+  purpose: 'An addressable unit of the system under construction — a service, module, API or data entity.
+    Referenced by WorkUnit.affected_components, Decision.scope.components, Rule.applies_to and CONTEXT_RETRIEVAL
+    priority 4 (''direct graph neighbors: components, dependencies, tests, prior PRs''). Added because
+    deleting KnowledgeNode without it orphans four references and dead-ends the traceability walk.'
+  identity_rule: '`CMP-<project-slug>-<slug>`, project-scoped. Absorbs the API and DataEntity node types
+    as component_kind rather than three node types over one idea.'
+  structured_fields:
+  - name: id / project / name
+    type: CMP-<proj>-<slug> / Project id / string
+    required: true
+    notes: Project-scoped identity.
+  - name: component_kind
+    type: VocabularyTerm ref
+    required: true
+    notes: service | module | api | data_entity | interface.
+  - name: depends_on
+    type: list of Component id
+    required: false
+    notes: The dependency edges retrieval walks.
+  - name: owning_role
+    type: Role slug
+    required: false
+    notes: Routing and conflict detection.
+  - name: repository
+    type: Repository id
+    required: false
+    notes: Where it lives, when it is code.
+  prose_fields:
+  - name: description
+    rationale: What the component is responsible for and where its boundary falls. The boundary is the
+      thing a scope statement like 'the retry logic in external integrations, not the HTTP client' turns
+      on.
+  state_axis: none
+  supersedes_existing:
+  - Component / API / DataEntity node types
+- name: Memory
+  plane: Knowledge
+  purpose: 'A consolidated, evidence-backed observation at tier 6. Derived, never authoritative: a memory
+    contradicting canonical knowledge is set to challenged and excluded from authoritative retrieval,
+    and gains authority only by promotion. Absorbs the consolidation ladder — candidate, validated pattern,
+    procedure and anti-pattern were four node types for four positions of one thing.'
+  identity_rule: '`MEM-NNNNN`, store-minted, never reused. Immutable once written; revision means a new
+    id ordered by supersedes. hash_unit: root, so ContextItem.source_content_hash is populatable for the
+    source class most likely to go stale.'
+  structured_fields:
+  - name: id / memory_type
+    type: MEM-NNNNN / enum semantic|episodic|procedural|performance
+    required: true
+    notes: MEMORY_ARCHITECTURE's four types, unchanged. A routing observation is a performance memory,
+      not a fifth entity.
+  - name: form
+    type: VocabularyTerm ref (ordered)
+    required: true
+    notes: 'observation -> candidate_lesson -> validated_pattern -> procedure -> candidate_rule. Ordered
+      with declared allowed_transitions, so nothing can skip a rung (AUTHORITY_MODEL). anti_pattern is
+      a polarity flag, not a rung. Splitting form from status was not enough: ''validated pattern -> procedure''
+      is a form change at constant status, and an unordered enum rejects nothing.'
+  - name: polarity
+    type: enum positive | anti_pattern
+    required: true
+    notes: Carries what the AntiPattern node type was, without a rung of its own.
+  - name: status
+    type: VocabularyTerm ref (VOCAB-MEMORY-STATUS)
+    required: true
+    notes: active | challenged | superseded | expired | promoted, plus candidate and validated added through
+      platform_config.
+  - name: status_changed_by / status_changed_on
+    type: AgentIdentity id / timestamp
+    required: false
+    notes: The learning inbox is where a human curates tier 6; without an actor and timestamp that curation
+      leaves no evidence.
+  - name: owner_agent / scope / visibility
+    type: AgentIdentity id / object / list
+    required: true
+    notes: scope carries all seven MEMORY_ARCHITECTURE dimensions — organization, project, function, role,
+      agent_identity, domain, work_item. The example carries three, so the inheritance walk cannot be
+      evaluated.
+  - name: evidence
+    type: list of {ref_kind, ref_id}
+    required: true
+    notes: 'ref_kind: work_item | pull_request | evidence | check | canonical_artifact | finding | event
+      | agent_run. Bare {issue: 182} cannot point at the findings and events CONSOLIDATION names as its
+      own inputs.'
+  - name: confidence / observed_successes / observed_failures
+    type: number / integer / integer
+    required: true
+    notes: Retrieval weighting and the inputs CONSOLIDATION's promotion criteria would use; the threshold
+      binding them is undecided.
+  - name: valid_from / valid_until
+    type: timestamp
+    required: false
+    notes: Nothing can currently expire a memory despite expired being a token.
+  - name: supersedes / promoted_to / challenged_by
+    type: ids
+    required: false
+    notes: 'promoted_to targets a Skill or a Rule and is set with status: promoted; challenged_by names
+      the Decision or artifact that contradicted it.'
+  - name: content_hash
+    type: string
+    required: false
+    notes: Hash root, so a context item can record which memory version it delivered.
+  prose_fields:
+  - name: statement
+    rationale: The lesson itself, delivered verbatim into a context packet for an agent to apply. There
+      is nothing to structure without discarding it.
+  - name: applicability
+    rationale: When this applies and when it does not. Skill gets when_to_use on the argument that selection
+      is a judgement the schema cannot enumerate; memory retrieval is the same judgement over the same
+      ladder and had nothing.
+  - name: correction
+    rationale: 'For an anti-pattern or lesson: what failed and what to do instead. CONSOLIDATION''s post-merge
+      compare harvests ''failures and corrections'' as a pair, and one statement field cannot hold both
+      halves.'
+  state_axis: memory_status
+  supersedes_existing:
+  - MemoryCandidate
+  - Pattern
+  - Procedure (tier-6 sense)
+  - AntiPattern
+  - MemoryScope
+  - routing_observations (as performance memory)
+- name: ContextPacket
+  plane: Knowledge
+  purpose: The assembled, provenance-tagged context supplied to one runtime session — the smallest sufficient
+    context with explicit provenance. The mechanism that rehydrates a durable identity into a fresh stateless
+    session, which is what makes ADR-002's provider portability work in practice.
+  identity_rule: '`CTX-NNNNN`, keyed to (agent_run, runtime_session). One packet per session, not per
+    run: after a handoff the second session receives different context, and pinning the packet to the
+    run leaves no record of what it received — destroying failure attribution for exactly the case ADR-002
+    exists to support.'
+  structured_fields:
+  - name: id / agent_run / runtime_session / built_at
+    type: CTX-NNNNN / ids / timestamp
+    required: true
+    notes: Session-keyed.
+  - name: identity_block
+    type: object
+    required: true
+    notes: agent_identity, role, parent, specialists, tool_grants, completion_criteria. A projection of
+      AgentIdentity and Role; each element is also recorded as a ContextItem so its provenance is on the
+      same terms as everything else.
+  - name: task_block
+    type: object
+    required: true
+    notes: work_item, work_unit, requirement_refs, current state.
+  - name: specification_refs / execution_refs / memory_refs
+    type: lists of id / object
+    required: false
+    notes: Requirements, criteria and constraints in force; components, dependencies, verifications, workspace;
+      high-confidence memories and known pitfalls.
+  - name: allowed_scope
+    type: object {components, artifacts, requirements, work_items}
+    required: true
+    notes: Store-neutral refs, never path globs (ADR-015). Scope containment is a security boundary, and
+      prose-only means it can never leave enforcement stage prose — which Principle 5 forbids for behaviour
+      that must always happen.
+  - name: items
+    type: list of ContextItem id
+    required: true
+    notes: The provenance manifest. Every delivered item appears here or it was not delivered.
+  - name: level_composition
+    type: object
+    required: false
+    notes: L0-L3 counts.
+  - name: content_hash
+    type: string
+    required: false
+    notes: Lets a RegressionCase freeze a reproducible snapshot.
+  prose_fields:
+  - name: objective
+    rationale: What this session is for, in one statement the agent acts on — a compression of a requirement
+      for a particular run, and the compression is a judgement.
+  - name: scope_note
+    rationale: 'The boundary the structured refs cannot express: ''the retry logic in external integrations,
+      not the HTTP client''. Same split as Decision.scope plus scope_note and ApprovalRecord.artifacts
+      plus scope_note.'
+  state_axis: none
+  supersedes_existing:
+  - context_manifest
+  - work packet
+- name: ContextItem
+  plane: Knowledge
+  purpose: 'One retrieved item with the full record of where it came from and why it was included. Its
+    purpose is failure attribution: separating model failure despite correct context from missing context,
+    stale context, bad ranking and conflicting authoritative sources.'
+  identity_rule: '`CTI-<store-minted>`, stable so an evaluation can cite one item across runs. Its subject
+    is referenced by (source_kind, source_id, source_version, source_content_hash) — never by path, so
+    the same PRD from Confluence and from the local provider is the same subject.'
+  structured_fields:
+  - name: id / context_packet / runtime_session / agent_run
+    type: ids
+    required: true
+    notes: Session-level, denormalised to the run for the attribution query.
+  - name: source_kind
+    type: VocabularyTerm ref
+    required: true
+    notes: canonical_artifact | requirement | acceptance_criterion | memory | evidence | decision | finding
+      | role | skill | external_reference. role and skill are added because the identity block reaches
+      the model and PRD-007 must separate 'the role prompt was wrong' from 'the model failed'.
+  - name: source_id / source_version / source_content_hash
+    type: string
+    required: true
+    notes: Populatable now that Memory, Decision, Finding, Role and Skill are hash roots. For external_reference,
+      a retrieval-time snapshot hash.
+  - name: authority_level
+    type: VocabularyTerm ref (VOCAB-AUTHORITY-TIER)
+    required: true
+    notes: External reference has no tier today; see open questions.
+  - name: retrieval_method
+    type: VocabularyTerm ref
+    required: true
+    notes: Which step of the six-step priority ladder produced it.
+  - name: retrieval_score / role_relevance_score / graph_distance
+    type: number
+    required: false
+    notes: The three ranking factors CONTEXT_RETRIEVAL names.
+  - name: context_level
+    type: enum L0|L1|L2|L3
+    required: true
+    notes: Composition level.
+  - name: accessed / expanded
+    type: boolean
+    required: false
+    notes: The only measure of whether delivered context was used.
+  prose_fields:
+  - name: reason_for_inclusion
+    rationale: The auditor-facing justification. Three scores can say an item ranked highly and cannot
+      say why it belonged; when a packet is diagnosed as the cause of a failure, this is the field read.
+  state_axis: none
+  supersedes_existing:
+  - ContextItem as an example-fields list
+- name: KnowledgeEdge
+  plane: Knowledge
+  purpose: 'A typed, directed relation between two canonical entities — the specification chain plus the
+    learning overlay (LEARNED_FROM, USES_PATTERN, VIOLATES). KnowledgeNode is not an entity: every entity
+    here is addressable by its own canonical id and is its own node, so the graph mints no second identity
+    space.'
+  identity_rule: '`(from_kind, from_id, edge_type, to_kind, to_id, valid_from)`. from_kind and to_kind
+    are inside the identity because VocabularyTerm is `(vocabulary, token)` and PullRequest is store-neutral-id-plus-external-key,
+    so a bare id is not always unique across kinds. The edge has no id of its own because it has no existence
+    apart from its endpoints.'
+  structured_fields:
+  - name: from_id / from_kind / to_id / to_kind
+    type: canonical id plus entity name
+    required: true
+    notes: Kind-qualified references everywhere an id crosses an entity boundary.
+  - name: edge_type
+    type: VocabularyTerm ref (VOCAB-EDGE-TYPE)
+    required: true
+    notes: The 19 tokens become a vocabulary with declared endpoint kinds and cardinality. RELATED_TO
+      and AFFECTS constrain nothing as written and need endpoint types or removal.
+  - name: derived_from_event
+    type: Event id
+    required: false
+    notes: The replay anchor ADR-017 clause 6 requires and the graph currently lacks.
+  - name: valid_from / valid_to
+    type: timestamp
+    required: true
+    notes: Edges are versioned in time rather than mutated, so a RegressionCase can reconstruct the graph
+      as it stood.
+  - name: confidence
+    type: number 0..1
+    required: false
+    notes: For inferred rather than asserted edges.
+  prose_fields: []
+  state_axis: none
+  supersedes_existing:
+  - KnowledgeNode
+  - the ~30 node type list
+  - AgentRelevanceProjection (weights move to AgentIdentity)
+- name: ControlledVocabulary
+  plane: Control
+  purpose: A named, versioned vocabulary that is the sole source for its terms. One vocabulary is one
+    axis; states.yaml is a file holding six, and under ADR-015 the file is a local-provider detail. Also
+    holds the gate closure policy, so the four absolutes in gates.yaml stay global.
+  identity_rule: '`VOCAB-<NAME>`. Gives registries a document id for the first time, so a Requirement
+    constraint can legally cite one; ADS-001''s `governed_by: STATES` resolves to VOCAB-READINESS-OUTCOME
+    (its rule is about the readiness axis) or is a dangling-reference error.'
+  structured_fields:
+  - name: id / name / schema_version
+    type: VOCAB-<NAME> / snake_case / string
+    required: true
+    notes: work_state, agent_state, readiness_outcome, question_severity, finding_severity, finding_disposition,
+      question_state, memory_status, document_status, artifact_type, authority_tier, enforcement_stage,
+      gates, hook_points, hook_domains, hook_classes, verification_method, evidence_type, edge_type, dispatch_state,
+      agent_capability, tool_grant, event_type, memory_form, decision_status, pr_state, evidence_outcome,
+      session_end_reason, identity_status.
+  - name: closed
+    type: boolean
+    required: true
+    notes: Hook points are closed; the event catalogue is open, which a replayable derived plane cannot
+      tolerate.
+  - name: applies_to
+    type: list of entity name
+    required: true
+    notes: 'Entity names, not artifact-type tokens. This is what fixes document_status omitting `design`
+      and the 34 documents using it, and what makes readiness_outcome.applies_to: [readiness_evaluation]
+      resolve.'
+  - name: initial / terminal / normal_flow / authoritative
+    type: lists of token
+    required: false
+    notes: Where the axis has them.
+  - name: allowed_transitions
+    type: list of {from, to}
+    required: false
+    notes: Closes the gap that nothing can mechanically reject draft -> superseded. DOCUMENT_LIFECYCLE
+      draws it as ASCII prose.
+  - name: closure_policy
+    type: object
+    required: false
+    notes: 'VOCAB-GATES only: surfaces, requires_record, and the four global rules (binds to the version
+      named; ambiguity is not approval; an agent may never close a gate; merging is not a closure). Held
+      once, not eleven times.'
+  - name: source_refs / gate
+    type: list of CanonicalArtifact id / Gate id
+    required: true
+    notes: What it reconciles; platform_config. Vocabularies gate on themselves, so they must be hashable.
+  - name: content_hash / source_hash
+    type: string
+    required: false
+    notes: Hash root. Editing allowed_transitions or an alias set changes behaviour and must invalidate
+      the approval.
+  prose_fields:
+  - name: rationale
+    rationale: Why this axis exists separately from an adjacent one. The states.yaml header's argument
+      — that `blocked` appeared on three axes and conflating them is a modelling error — is what stops
+      a future editor re-merging them, and survives nowhere else.
+  state_axis: none
+  supersedes_existing:
+  - Registry
+  - StateAxis
+  - ClosurePolicy (as a per-gate block)
+- name: VocabularyTerm
+  plane: Control
+  purpose: One canonical token in one vocabulary. Machine artifacts use the token; the label is display-only.
+    Absorbs the vocabulary entities scattered across a YAML registry, a prose table and a Python constant
+    — state values, hook points, hook domains, hook classes, enforcement stages, authority tiers, artifact
+    types, verification methods and their aliases.
+  identity_rule: '`<vocabulary_id>:<token>` — VOCAB-GATES:product_spec. Globally qualified, because `blocked`
+    is legitimate on three axes and `superseded` on two, and because a bare snake_case token cannot be
+    a graph endpoint under the model''s own ''every entity is addressable by its canonical id'' rule.'
+  structured_fields:
+  - name: vocabulary / token / label
+    type: VOCAB id / snake_case / string
+    required: true
+    notes: Verification methods are kebab-case in the corpus and are normalised with aliases.
+  - name: aliases
+    type: list of string
+    required: true
+    notes: Prior spellings, so reconciliation is recorded (REGISTRIES rule 3). A term must never alias
+      itself — architecture_high_risk currently does.
+  - name: attributes
+    type: map with a per-vocabulary declared shape
+    required: false
+    notes: blocking for severity; on_failure and retryable for hook class; phase for hook point; tier
+      and numbering for artifact type; discharged_by for verification method; direction for a metric.
+  - name: ordinal
+    type: integer
+    required: false
+    notes: For ordered axes (memory form, authority tier).
+  - name: deprecated
+    type: boolean
+    required: true
+    notes: Retired terms stay resolvable.
+  - name: source_refs
+    type: list of CanonicalArtifact id
+    required: true
+    notes: The documents the term reconciles.
+  prose_fields:
+  - name: description
+    rationale: 'The meaning that keeps two adjacent tokens apart. ''Blocked: a dependency or unresolved
+      decision prevents progress'' versus ''Awaiting human: a human gate or escalation is open'' is the
+      entire content of the distinction, and a label carries none of it.'
+  state_axis: none
+  supersedes_existing:
+  - StateValue
+  - HookPoint
+  - HookIdDomain
+  - HookClass
+  - EnforcementStage
+  - AuthorityTier
+  - DocumentType
+  - DocumentStatus
+  - Alias
+- name: Gate
+  plane: Control
+  purpose: A point at which a named human authority must approve before work proceeds. Gates decide who
+    may change an artifact; tiers decide which artifact wins. A specialization of VocabularyTerm in VOCAB-GATES
+    carrying approval semantics no other term needs.
+  identity_rule: '`VOCAB-GATES:<id>`, snake_case, with every prior spelling in aliases. Never derived
+    from a path — a gate firing on docs/adr/** cannot fire for an ADR held in a non-local store, which
+    ADR-015 explicitly permits.'
+  structured_fields:
+  - name: id / title / approver
+    type: snake_case / string / AgentIdentity id with kind human
+    required: true
+    notes: Every gate names human.cto today.
+  - name: risk_tier
+    type: VocabularyTerm ref
+    required: true
+    notes: reversible | consequential | irreversible, per ADR-014 clause 7 and DELIVERY_MODEL. Unapplied
+      in the registry, so the model declares the field and leaves the per-gate assignment to the human
+      (open question).
+  - name: blocking
+    type: boolean
+    required: true
+    notes: 'Derived from risk_tier: reversible gates proceed with sampled audit.'
+  - name: triggers
+    type: list of {kind, selector, condition_note}
+    required: true
+    notes: 'kind is artifact_status | tier | classification | finding | lifecycle | capability. `path`
+      is removed as a trigger kind — a path glob survives only as a local_projection attribute on a type/tier
+      selector, otherwise the resolution that justified the change is contradicted by the field. Selecting
+      on {tier: [0,1,2,3]} makes AUTHORITY_MODEL''s ''every artifact in tiers 0-3 is gated'' true, which
+      no path glob achieves.'
+  - name: closure_overrides
+    type: object {surfaces, record_kind}
+    required: false
+    notes: Per-gate narrowing only. The four closure absolutes live once on VOCAB-GATES; merge_closes_gates
+      is not a field at all, because a field whose only legal value is false is a schema that can express
+      a Principle 1 violation.
+  - name: aliases / enforcement
+    type: list / VocabularyTerm ref
+    required: true
+    notes: legal_approval aliases legal, and agent-role.example.yaml still cites the alias. All gates
+      are at prose; that set is the hook engine's acceptance criteria.
+  - name: content_hash / source_hash
+    type: string
+    required: false
+    notes: Hash root. Flipping blocking or repointing approver is a Principle 1 change with nothing to
+      detect it otherwise.
+  prose_fields:
+  - name: description
+    rationale: What the gate protects and its carve-outs. 'Legal specialist agents perform issue spotting
+      and preflight analysis only; they never constitute legal approval and may not close this gate' is
+      a rule stated as an argument — a flag records that a restriction exists and loses what it restricts.
+  - name: triggers[].condition_note
+    rationale: Present only where the selector cannot express the condition. 'Architecture impact assessed
+      as high by the Architecture Lead' has no evaluable form; marking it prose makes the un-automatable
+      triggers visible rather than disguised as rules.
+  state_axis: none
+  supersedes_existing:
+  - GateTrigger
+  - ClosurePolicy
+  - path as a trigger kind
+- name: HookBinding
+  plane: Control
+  purpose: Attaches a hook to a lifecycle boundary at a given failure class. Behaviour that must always
+    happen belongs here, not in prose asking an agent to remember (ADR-007, Principle 5). Nothing executes
+    these yet; the set is a specification for the engine, with validation.docs the single implemented
+    binding.
+  identity_rule: '`hook_id` as `<domain>.<action>`, snake_case, domain from the closed domain vocabulary.
+    Unique within its owning scope. The hook point is a token, never a file path.'
+  structured_fields:
+  - name: hook_id / domain / hook_point / class
+    type: string / VocabularyTerm refs
+    required: true
+    notes: Eleven closed points; hard halts, soft logs and continues. No `governance` domain exists, so
+      a hook enforcing a gate could not be legally named.
+  - name: scope / organization / project
+    type: enum organization|project / ids
+    required: true
+    notes: project is optional. A required per-project key makes a centrally versioned binding illegal,
+      contradicting PRD-008's split between central workflows and local configuration.
+  - name: on_failure_override
+    type: enum halt | log_and_continue
+    required: false
+    notes: A Rule may override soft-never-blocks for a binding.
+  - name: implemented_by
+    type: artifact ref
+    required: false
+    notes: A script reference, not a path. validate_docs.py for validation.docs.
+  - name: enabled / order
+    type: boolean / integer
+    required: true
+    notes: Execution order among bindings on one point is currently undefined.
+  - name: content_hash / source_hash
+    type: string
+    required: false
+    notes: Hash root; bindings live under .agentic/** and gate on platform_config.
+  prose_fields:
+  - name: description
+    rationale: The invariant the hook defends at that boundary — what a reviewer checks it against when
+      deciding whether it is still needed. The id names it and the class says what happens on failure;
+      neither states what is being protected.
+  state_axis: none
+  supersedes_existing:
+  - hooks.yaml unbound list (an unbound point is an absence plus a WorkItem)
+- name: Cycle
+  plane: Control
+  purpose: 'The unit of delivery under ADR-014 clause 3: a bounded interval opened by a product_spec closure
+    and ended at the next human gate or at completion, carrying an appetite and a blast-radius bound so
+    a mis-specified DAG hits a wall rather than a budget. Also holds the current plan version over its
+    work units. Without it an accepted tier-1 delivery model is unimplementable.'
+  identity_rule: '`CYC-<project-slug>-NNNN`, sequential within its Project. Opened by an ApprovalRecord,
+    not by a date.'
+  structured_fields:
+  - name: id / project / specification
+    type: ids
+    required: true
+    notes: A cycle is scoped to the specification whose gate opened it.
+  - name: opened_by / closed_by
+    type: ApprovalRecord id / ApprovalRecord id or null
+    required: true
+    notes: Bounded by decisions, not by time.
+  - name: appetite
+    type: object {unit, amount}
+    required: true
+    notes: How much the outcome is worth. Scope flexes to fit; the appetite does not.
+  - name: blast_radius
+    type: object {max_components, max_runs, irreversibility_ceiling, spend_ceiling}
+    required: true
+    notes: The maximum resource, surface area or irreversibility reachable before a human gate. A bound
+      that is not stored cannot stop anything.
+  - name: current_plan_version
+    type: integer
+    required: true
+    notes: Which WorkUnit plan version is in force; a replan increments it and mints new work unit ids
+      rather than mutating the DAG.
+  - name: consumed
+    type: object
+    required: false
+    notes: Measured against the bounds; the instrumentation ADR-014 makes a precondition for any limit.
+  - name: status
+    type: enum open | closed | abandoned
+    required: true
+    notes: Cycle lifecycle.
+  prose_fields:
+  - name: appetite_rationale
+    rationale: Why this outcome is worth this much. The appetite is a product judgement fixed before work
+      starts, and the number alone cannot be defended at the gate that closes the cycle.
+  state_axis: own status
+  supersedes_existing: []
+- name: WorkUnit
+  plane: Control
+  purpose: 'A node in the planner-produced dependency DAG — the plan element, derived from approved requirements
+    and architecture, not execution state. It has no persistence anywhere in the corpus: DES-DATA-MODEL
+    has work_items and work_dependencies and no work_units.'
+  identity_rule: '`WU-<specification-number>-<plan-version>-NNN`. The plan version is inside the id because
+    a replan produces a new DAG rather than mutating one, and without it WU-001-003 exists twice with
+    one id, making prerequisites unresolvable and acyclicity uncheckable. Never a GitHub issue number
+    and never a path.'
+  structured_fields:
+  - name: id / specification / cycle / plan_version
+    type: ids / integer
+    required: true
+    notes: Plan version inside the id; Cycle.current_plan_version says which is in force.
+  - name: requirements
+    type: list of Requirement id
+    required: true
+    notes: A work unit with none is not derived from approved intent.
+  - name: prerequisites
+    type: list of WorkUnit id
+    required: true
+    notes: DAG edges within one plan version; must be acyclic.
+  - name: affected_components
+    type: list of Component id
+    required: false
+    notes: Routing and conflict detection.
+  - name: required_capabilities
+    type: list of AgentCapability token
+    required: false
+    notes: What the orchestrator filters workers on; the matching rule is unspecified.
+  - name: verification_requirements / expected_outputs / required_gates
+    type: lists
+    required: false
+    notes: What proof is owed and which gates will be crossed, known before dispatch.
+  - name: risk / context_refs
+    type: VocabularyTerm ref / list of canonical id
+    required: false
+    notes: Planner assessment and packet seeds.
+  - name: dispatch_state
+    type: VocabularyTerm ref
+    required: true
+    notes: planned | ready | dispatched | superseded. Not work_state, which belongs to the item.
+  - name: dispatched_as
+    type: WorkItem id
+    required: false
+    notes: The moment a plan element acquires execution state.
+  prose_fields:
+  - name: objective
+    rationale: What this unit is to achieve, written for the agent that receives it. The requirement ids
+      carry the traceable part; the objective carries the planner's reasoning for this particular cut.
+  state_axis: dispatch_state
+  supersedes_existing:
+  - WorkUnit node type
+  - DAG node
+- name: WorkItem
+  plane: Control
+  purpose: A unit of tracked work — the execution element, tier 5. Carries status, assignee and progress;
+    never phases, sequencing or exit criteria (ADR-012 clause 5). One canonical schema, exactly one authoritative
+    store per project, never synced. Also the home for recorded gaps, which are work rather than prose
+    bullets.
+  identity_rule: A store-issued, store-neutral id from the single authoritative store named in Project.work_store.
+    Under `github` the issue number is external_key; under `local` the store mints both. Agents address
+    the id and never branch on the configured store.
+  structured_fields:
+  - name: id / store / external_key
+    type: string / provider ref / string
+    required: true
+    notes: 'run-record''s work.issue: 418 is superseded.'
+  - name: project / cycle
+    type: ids
+    required: true
+    notes: Tenancy and delivery bounds.
+  - name: work_unit / requirement_refs / specification_ref / origin_finding
+    type: ids
+    required: false
+    notes: 'At least one of work_unit, requirement_refs or origin_finding is required: every work item
+      must be traceable to approved intent or to a Finding that is. Otherwise rework — the largest category
+      of real work after the first pass — escapes the traceability walk silently.'
+  - name: type / work_state / priority / risk / architecture_impact / iteration
+    type: VocabularyTerm refs
+    required: true
+    notes: work_state governs the lifecycle in every store (ADR-012 clause 1); its description's GitHub
+      authority claim must go.
+  - name: assignee / agent_role / runtime_preference
+    type: AgentIdentity id / Role slug / provider token
+    required: false
+    notes: A preference is never a binding.
+  - name: required_gates / parent / dependencies
+    type: lists of id
+    required: false
+    notes: Store-neutral work_dependencies and sub-issue linkage.
+  - name: branch / pull_request / workspace
+    type: string / ids
+    required: false
+    notes: One issue, one branch, one PR.
+  prose_fields:
+  - name: description
+    rationale: What is wanted and why, for whoever picks it up. The requirement refs carry the contract;
+      the description carries the framing. A recorded gap is exactly this — 'skills have no schema, four
+      documents depend on it' is an argument for doing the work.
+  state_axis: work_state
+  supersedes_existing:
+  - Issue node type
+  - GitHub issue as an entity
+  - KnownGap
+  - adoption.blocking_next_level bullets
+- name: PullRequest
+  plane: Control
+  purpose: 'The tier-5 change unit: one issue, one branch, one squash commit. GitHub remains authoritative
+    for its state (ADR-001). It is an evidence artifact, and it carries the argued half of the evidence
+    package that no other entity holds.'
+  identity_rule: 'A store-neutral id plus {store, external_key: (repository_id, number)}. The provider
+    composite is an external key, not identity: the same abstraction WorkItem gets, for the same reason
+    — a repository rename or a move off GitHub would otherwise break every tier-5 evidence reference in
+    the audit trail. Branch names, worktree paths and commit shas are never identity; a rebase changes
+    every sha and the PR persists.'
+  structured_fields:
+  - name: id / store / external_key
+    type: string / provider ref / object
+    required: true
+    notes: external_key holds (repository, number).
+  - name: work_item / branch / base_revision / head_sha
+    type: ids / strings
+    required: true
+    notes: Rebased, never merged into.
+  - name: state
+    type: VocabularyTerm ref (VOCAB-PR-STATE)
+    required: true
+    notes: open | merged | closed. A registry axis, not an inline enum.
+  - name: checks
+    type: derived list of {name, conclusion, required}
+    required: false
+    notes: Derived from the Evidence records of class unbound; `required` sources from Rule.required_checks.
+      Not stored twice.
+  - name: reviews
+    type: list of {reviewer, verdict, body, named_artifacts, at}
+    required: false
+    notes: The author never approves their own change. `body` is verbatim because github_review is a gate-closure
+      surface and gates.yaml requires the review to name what it approves — storing an enum reintroduces
+      the fabrication risk ADR-013 closed on the chat surface.
+  - name: traceability
+    type: list of {change_ref, satisfies_id, verified_by_evidence}
+    required: true
+    notes: The template's Change | Satisfies | Verified by table. No other entity holds the mapping at
+      change granularity — Evidence links a verification to an outcome, not a diff hunk to what it satisfies.
+  - name: evidence_refs / gates_crossed
+    type: lists of id
+    required: true
+    notes: An agent must never merge a PR crossing a gate, and merging never closes one.
+  - name: merge_commit_sha / merged_by / merged_on / squash_commit_subject
+    type: string / AgentIdentity / timestamp / string
+    required: false
+    notes: The PR title is the message that lands; Commit and Branch are fields here rather than node
+      types.
+  prose_fields:
+  - name: what_changed
+    rationale: 'The change in a few sentences. Required by the evidence package and derivable from nothing:
+      Evidence.summary is per-evidence and WorkItem.description was written before the work.'
+  - name: why
+    rationale: What forced this now and what breaks without it. The claim that the PR body is a pure projection
+      was false without this field.
+  - name: risks
+    rationale: What the author is least sure of. 'A PR with no stated risk is usually an unexamined one'
+      — a judgement, and the reviewer's first read.
+  state_axis: VOCAB-PR-STATE, mirrored into work_state
+  supersedes_existing:
+  - Branch node type
+  - Commit node type
+  - Check node type
+  - evidence package as a separate artifact
+- name: Workspace
+  plane: Control
+  purpose: 'An isolated worktree in which runs execute. Kept as an entity rather than folded into AgentRun:
+    hook-points.yaml gives workspace its own closed phase with after_workspace_create and before_workspace_remove
+    distinct from the run boundaries, DES-DATA-MODEL lists it as a peer table, and repair runs routinely
+    share one branch and worktree — under a 1:1 run-keyed block, before_workspace_remove (''last chance
+    to preserve evidence'') would bind to a record that dies with its parent.'
+  identity_rule: '`WS-<store-minted>`, with (repository, branch, worktree_name) as its natural key. The
+    on-disk path is an execution detail and never identity; both the run-derived name (wt/RUN-...) and
+    CLAUDE.md''s ../aep-<issue> are local conveniences.'
+  structured_fields:
+  - name: id / repository / branch / base_revision
+    type: ids / strings
+    required: true
+    notes: One worktree per branch.
+  - name: worktree_name
+    type: string
+    required: true
+    notes: Naming convention only; not identity.
+  - name: work_item
+    type: WorkItem id
+    required: false
+    notes: The item the branch serves.
+  - name: created_on / removed_on / created_by_run
+    type: timestamps / AgentRun id
+    required: true
+    notes: Lifecycle the two workspace hook points bind to.
+  - name: runs
+    type: derived list of AgentRun id
+    required: false
+    notes: N:1 — an initial run and its repair runs share one workspace.
+  prose_fields: []
+  state_axis: none
+  supersedes_existing:
+  - run-record execution.worktree as identity
+- name: ReadinessEvaluation
+  plane: Control
+  purpose: 'One evaluation of a role''s readiness gate, with the outcome and each failed invariant. The
+    entity states.yaml already declares (readiness_outcome.applies_to: [readiness_evaluation]) and the
+    model previously flattened into a field. Readiness is iterated by construction (''repeats the loop
+    until it passes'') and is produced by grooming, BA, architecture and planning gates — four roles cannot
+    share one field on the Specification.'
+  identity_rule: '`RDY-NNNNN`, store-minted. Subject is a typed ref, since architecture and planning gates
+    evaluate readiness of things other than a Specification.'
+  structured_fields:
+  - name: id / subject
+    type: RDY-NNNNN / {kind, id}
+    required: true
+    notes: 'kind: specification | work_unit | plan.'
+  - name: evaluating_role / evaluated_by / evaluated_on / iteration
+    type: Role id / AgentIdentity id / timestamp / integer
+    required: true
+    notes: Which gate, which identity, which pass of the loop.
+  - name: outcome
+    type: VocabularyTerm ref (VOCAB-READINESS-OUTCOME)
+    required: true
+    notes: ready | needs_product_clarification | needs_specialist | blocked.
+  - name: failed_invariants
+    type: list of invariant id
+    required: false
+    notes: AC-001-007 requires the outcome to name each failed invariant; a single enum had nowhere to
+      put them.
+  - name: questions_raised / unknowns_outstanding
+    type: lists of id
+    required: false
+    notes: What the non-ready outcome returned to the BA.
+  prose_fields:
+  - name: assessment
+    rationale: 'The judgement behind the outcome: on what reading an invariant failed and what would satisfy
+      it. This is what the BA agent hands back, and the token alone cannot be acted on.'
+  state_axis: readiness_outcome
+  supersedes_existing:
+  - Specification.readiness_state as the only record (retained as a cached projection of the latest evaluation)
+- name: Role
+  plane: Organization
+  purpose: An organizational responsibility, versioned and immutable — what a position is accountable
+    for, independent of who or what executes it. ADR-002's durable unit. Role and RoleVersion merge because
+    the corpus has neither artifact and two incompatible version formats, which is the join failure blocking
+    PRD-007's core question.
+  identity_rule: '`role:<slug>@<version>`, version a monotonic integer, organization-qualified for uniqueness.
+    The `role:` prefix disambiguates from Skill, which shares the grammar. run-record''s `ios-engineer@3.2`
+    is corrected to an integer version. Immutable once published; changing the definition mints the next
+    version. hash_unit: root.'
+  structured_fields:
+  - name: id / organization / slug / version
+    type: role:<slug>@<n> / ids
+    required: true
+    notes: 'Resolves role_version: 1 versus ios-engineer@3.2.'
+  - name: layer / kind
+    type: VocabularyTerm ref / enum lead|specialist|orchestrator
+    required: true
+    notes: executive | product | technical | delivery | quality | release; implicit in ORGANIZATION.md
+      headings and 'Specialists:' sublists today.
+  - name: default_parent_role / default_specialist_roles
+    type: Role slug / list
+    required: false
+    notes: The ownership hierarchy (ADR-005).
+  - name: default_capabilities / default_skills / default_tool_grants
+    type: lists / object with allow and deny
+    required: false
+    notes: Skills are version-pinned. Grant namespace, wildcard and deny-precedence semantics are unspecified.
+  - name: completion_criteria
+    type: list of {id, token, statement, predicate, evaluated_by}
+    required: true
+    notes: The role's definition of done, given the same shape as Requirement.invariants — bare slugs
+      like risk_summary_complete reproduce on the instance the disagreement moving them to Role was meant
+      to end, and this is the field an agent uses to declare its own run finished.
+  - name: applicable_gates / loop_ref
+    type: list of Gate id / CanonicalArtifact id
+    required: false
+    notes: Gates the role must respect; DES-ENGINEERING-LOOP and siblings.
+  - name: content_hash / source_hash
+    type: string
+    required: false
+    notes: Hash root. Role definitions are gated under platform_config and are a RegressionCase variable,
+      so an in-place edit must be detectable.
+  prose_fields:
+  - name: responsibility
+    rationale: What the role is accountable for. 'Owns verification against requirements, not merely test
+      execution' is the whole content of the QA role — a distinction, not a list, and neither capabilities
+      nor grants can express it.
+  - name: operating_instruction
+    rationale: The role's system prompt. PRD-007 versions role definitions, skills and prompts together,
+      and a prompt is irreducibly instruction to a reasoner. It has no field anywhere in the corpus.
+  - name: change_note
+    rationale: What changed at this version and why. Evaluation compares outcomes across role versions;
+      a diff shows what changed, not what it was for.
+  state_axis: document_status
+  supersedes_existing:
+  - Role
+  - RoleVersion
+  - roles / role_versions tables
+  - agent-role.example.yaml's role fields
+- name: AgentIdentity
+  plane: Organization
+  purpose: 'The durable organizational actor — a named, persistent instance of a role owning memory, permissions,
+    hierarchy and history, surviving provider migration. Extended to cover humans (kind: human), reconciling
+    the two identity namespaces: human.cto as owner and gate approver, MykullZeroOne as the account that
+    authenticated.'
+  identity_rule: '`<organization>/<domain>.<instance>` — acme/compliance.primary, acme/human.cto. Organization-qualified
+    because two projects instantiating the standard template both mint compliance.primary, which would
+    collide across memory namespaces, approvals and run records. Never a model, never a session, never
+    a path.'
+  structured_fields:
+  - name: id / organization / kind
+    type: string / ORG id / enum human|agent
+    required: true
+    notes: kind reconciles role identities and account handles into one namespace.
+  - name: role
+    type: Role id, version-pinned
+    required: false
+    notes: Required when kind is agent.
+  - name: external_accounts
+    type: list of {system, handle}
+    required: false
+    notes: github:MykullZeroOne. Makes 'the gate's named approver actually closed it' mechanically checkable.
+  - name: parent / specialists
+    type: AgentIdentity ids
+    required: false
+    notes: The ownership tree (ADR-005) and the escalation route.
+  - name: capability_overrides / skill_overrides / tool_grants / completion_criteria_overrides / gate_overrides
+    type: objects with add and remove lists
+    required: false
+    notes: Explicit narrowing of the Role defaults, never silent divergence. The last two are added because
+      agent-role.example.yaml carries `completion:` and `human_gates:` on the instance and they otherwise
+      have no destination.
+  - name: runtime_preferences
+    type: object {preferred, fallback}
+    required: false
+    notes: A preference, never a binding; narrows the project default.
+  - name: memory
+    type: object {namespace, inherit}
+    required: true
+    notes: agent/compliance.primary inheriting function/product and project. Namespace grammar and conflict
+      resolution undefined.
+  - name: relevance_weights
+    type: list of {subject_kind or domain, weight}
+    required: false
+    notes: The per-identity projection over the shared graph, described only by two examples.
+  - name: status / created_on / retired_on
+    type: VocabularyTerm ref (VOCAB-IDENTITY-STATUS) / timestamps
+    required: true
+    notes: active | retired. agent_state is NOT stored here — a terminal `failed` on a durable actor is
+      incoherent; it is projected from the current RuntimeSession.
+  - name: content_hash / source_hash
+    type: string
+    required: false
+    notes: Hash root. Widening tool_grants.allow is the surface production_secrets and billing_configuration
+      fire on and must not be silent.
+  prose_fields:
+  - name: charter
+    rationale: Why this identity exists distinct from its role — a second compliance identity scoped to
+      a subsidiary, an iOS identity owning one app. The role carries the responsibility; the charter carries
+      the instance's scope, and it has nowhere else to live.
+  state_axis: VOCAB-IDENTITY-STATUS; agent_state belongs to RuntimeSession and is projected here
+  supersedes_existing:
+  - Permission
+  - AgentCapability (holder side)
+  - AgentRelevanceProjection
+  - account handles as a second namespace
+  - agent_capabilities / agent_permissions / agent_runtime_preferences tables
+- name: ApprovalRecord
+  plane: Communication
+  purpose: 'The immutable record of a human act binding, re-anchoring or exempting authority over named
+    artifact versions at named hashes. Three kinds under one schema with distinct id spaces: gate approval
+    (ADR-013), migration attestation (ADR-016 clause 6), editorial declaration. The record, not the front-matter
+    fields, is the provenance.'
+  identity_rule: '`APR-NNNN` (gate_approval), `ATT-NNNN` (migration_attestation), `EDL-NNNN` (editorial_declaration)
+    — separate id spaces so re-anchoring stays distinguishable from re-approval. One store location for
+    the entity; the validator''s `^APR-\d{4}$` pattern widens to all three with per-kind required-field
+    sets. hash_unit: root, with a chain.'
+  structured_fields:
+  - name: id / record_kind
+    type: string / enum
+    required: true
+    notes: gate_approval | migration_attestation | editorial_declaration.
+  - name: gate / surface / session
+    type: Gate id / VocabularyTerm ref / RuntimeSession id
+    required: false
+    notes: Required for gate_approval only. An attestation has no gate and no approving statement, so
+      a blanket required-field set was unsatisfiable for the kind that motivated the merge. Must resolve
+      to a canonical gate id, not an alias.
+  - name: approver / approver_account
+    type: AgentIdentity id with kind human / {system, handle}
+    required: true
+    notes: An agent may never be the approver. approver_account joins to external_accounts. For an attestation
+      these are the attester.
+  - name: approved_on / recorded_on
+    type: date / timestamp
+    required: true
+    notes: recorded_on is used by all four existing records and appears in neither ADR-013's table nor
+      the validator.
+  - name: artifacts
+    type: list of {artifact_id, artifact_version, content_hash, source_hash, prior_content_hash, reanchors,
+      title}
+    required: true
+    notes: An approval binds to a version, not a name. `reanchors` names the ApprovalRecord each new hash
+      re-anchors — without it ATT-0001 cannot say which of APR-0001..0003 each artifact belongs to, and
+      the mechanism's first and only required use is unrepresentable. Each hash carries its own scheme
+      in its prefix, because an attestation holds legacy and canonical hashes in one record.
+  - name: migration
+    type: object with from and to {store, algorithm}
+    required: false
+    notes: migration_attestation only; descriptive, since the per-hash prefix is authoritative.
+  - name: method_kind
+    type: VocabularyTerm ref
+    required: false
+    notes: normalized_text_equivalence | field_diff | rederivation | human_read_through. Attestations
+      only. Without a token, 'which approvals rest on a weak method' — the only operational use of ADR-016's
+      visibility requirement — cannot be asked across the set.
+  - name: supersedes / revoked_by
+    type: ApprovalRecord id
+    required: false
+    notes: The corpus has no revocation, expiry or supersession model for an approval.
+  - name: content_hash / source_hash / prev_record_hash
+    type: string
+    required: true
+    notes: The record is declared immutable and had nothing anchoring it. Chained like Event.integrity,
+      so an edit to a verbatim statement, a deleted carve-out or a removed revocation is detectable.
+  prose_fields:
+  - name: request
+    rationale: What the agent presented — the exact text the human was responding to. Recording it makes
+      an over-read visible to the human afterward rather than discoverable only in consequences.
+  - name: statement
+    rationale: The verbatim approving words. Paraphrase destroys the entire evidentiary value; ADR-013
+      mitigates the fabrication risk by capturing the quote in the record.
+  - name: scope_note
+    rationale: What the approval explicitly did not cover — a boundary stated in argument, as APR-0004's
+      note about hand-authored markdown shows.
+  - name: method_note
+    rationale: 'Attestations only: how equivalence was established here. method_kind makes the audit queryable;
+      the note is where a thin method becomes visible, which is what ADR-016 requires and ''trust me''
+      fails.'
+  state_axis: none; an immutable, chained event
+  supersedes_existing:
+  - ApprovedArtifactRef
+  - MigrationAttestation
+  - EditorialDeclaration
+  - approvals table
+- name: Question
+  plane: Communication
+  purpose: 'A structured request for information routed through the ownership hierarchy and resolved in
+    order: canonical approved context, validated memory, parent agent, then a human by authority. Absorbs
+    Answer as a list, because a question answered by the parent, disputed, then answered by the human
+    keeps both — which AC-001-005/006 are precisely the two cases of.'
+  identity_rule: '`Q-NNNNN`, store-minted, never reused. Subject is a typed reference; question.example.yaml
+    currently puts REQ-018 in a field named work_item.'
+  structured_fields:
+  - name: id / source_agent / target_agent
+    type: Q-NNNNN / AgentIdentity ids
+    required: true
+    notes: Asker and addressee.
+  - name: subject
+    type: object {kind, id}
+    required: true
+    notes: work_item | requirement | acceptance_criterion | canonical_artifact | pull_request.
+  - name: resolves_unknown
+    type: Unknown id
+    required: false
+    notes: AC-001-002 requires each question to be linked to the unknown it resolves; there was no field.
+  - name: type / severity / state
+    type: VocabularyTerm refs
+    required: true
+    notes: 'severity from VOCAB-QUESTION-SEVERITY; state from a new VOCAB-QUESTION-STATE (open | answered
+      | escalated | resolved | withdrawn) — question.example.yaml''s `status: open` is uncoined today.'
+  - name: answers
+    type: list of {id, answered_by, answered_on, answer, answer_basis, resolution_source, accepted}
+    required: false
+    notes: A list with one accepted marker. resolution_source is canonical_knowledge | memory | human_decision.
+      A single-valued block kept only the last answer and discarded the superseded one the non-escalation
+      audit and the learning triple both need.
+  - name: suggested_answers
+    type: list of {token, statement, implication, recommended}
+    required: false
+    notes: storage-and-summary-only, personalized-recommendations and defer-capability are three product
+      options with different compliance consequences. QUESTION_ESCALATION requires an escalation to state
+      trade-offs; slugs are the labels of arguments thrown away.
+  - name: context_refs / escalation_path
+    type: lists
+    required: false
+    notes: What the asker had read, and the ownership chain actually walked — the only durable trace,
+      since escalation has no hook point.
+  - name: decision
+    type: Decision id
+    required: false
+    notes: Set when the answer was consequential enough to become durable authority.
+  - name: asked_on / resolved_on
+    type: timestamps
+    required: true
+    notes: Latency is a supervisory-control metric.
+  prose_fields:
+  - name: question
+    rationale: The question addressed to a reasoner. 'Will uploaded health documents be used to generate
+      personalized recommendations?' cannot be a field selection without pre-supposing the answer space.
+  - name: reason
+    rationale: Why it matters — the argument justifying the severity and the spend of human attention.
+      PRD-003's notification-quality requirements are entirely about this field being good.
+  - name: answers[].answer
+    rationale: The response. An answer chosen from a suggested token still needs its reasoning recorded,
+      and free answers are the common case.
+  - name: answers[].answer_basis
+    rationale: What the answer rests on. resolution_source names the rung; the basis names the artifact
+      or memory and reads it, and is what is audited when an answer proves wrong.
+  state_axis: question_state (new); severity remains an independent axis
+  supersedes_existing:
+  - Answer
+  - Answer node type
+  - answers table
+- name: Notification
+  plane: Communication
+  purpose: 'An outbound delivery to a human, and the item ranked and batched against ADR-014''s attention
+    budget. Restored rather than folded into Question: states.yaml declares question_severity applies_to
+    notification, DES-DATA-MODEL and DES-SYSTEM-ARCHITECTURE both list it, and most notifications have
+    no question behind them — a finding raised, a release ready, a gate open, a digest. Folding it in
+    would mean the only way to notify a human is to ask them something, inverting management by exception.'
+  identity_rule: '`NTF-NNNNN`, store-minted. One notification per (subject, recipient, batch).'
+  structured_fields:
+  - name: id / recipient / subject
+    type: NTF-NNNNN / AgentIdentity id / {kind, id}
+    required: true
+    notes: 'subject kind: question | finding | gate | approval_pending | work_item | release | digest.'
+  - name: severity
+    type: VocabularyTerm ref (VOCAB-QUESTION-SEVERITY)
+    required: true
+    notes: The axis whose applies_to already names notification.
+  - name: cost_of_delay
+    type: object {rank, blocked_count, irreversibility}
+    required: false
+    notes: Ranking is by what is blocked, how much, and how irreversibly. The formula is undecided (open
+      question); the fields are what DELIVERY_MODEL names.
+  - name: batch / channel
+    type: string / VocabularyTerm ref
+    required: false
+    notes: 'Batching is deliberate: interrupts drive the supervisor past the utilization ceiling.'
+  - name: delivered_on / acknowledged_on / serviced_on
+    type: timestamps
+    required: false
+    notes: Yields time-to-notice and queue wait — two of the three terms in the fan-out denominator, which
+      ADR-014 makes a precondition for any WIP limit.
+  - name: interaction_seconds
+    type: number
+    required: false
+    notes: IT, the third term. Instrumentation precedes limits.
+  prose_fields:
+  - name: summary
+    rationale: What the human needs to know to decide whether to act now. Shrinking time-to-notice raises
+      supervisory capacity more than adding agents does, and that reduction is entirely a matter of how
+      well this field is written.
+  state_axis: none
+  supersedes_existing:
+  - notifications table (given an entity)
+  - attention budget queue as an unmodelled concept
+- name: Decision
+  plane: Communication
+  purpose: A durable, authoritative answer, typically from a human. Outranks memory. It carries no authority
+    tier of its own — a decision with architectural scope acquires tier-1 authority only by promotion
+    to an ADR, and until then binds only the work it names. That boundary is stated nowhere in the corpus
+    and is what separates it from an ADR and from an approval record.
+  identity_rule: '`DEC-NNNNN`, store-minted, never reused. A distinct id space from ADR-NNN (a tier-1
+    artifact) and APR-NNNN (a gate closure). hash_unit: root, so a context item can pin the version it
+    delivered.'
+  structured_fields:
+  - name: id / question / decider / decided_on
+    type: DEC-NNNNN / Q id / AgentIdentity id / timestamp
+    required: true
+    notes: A decision may be recorded without a preceding question.
+  - name: scope
+    type: object {work_items, requirements, artifacts, components}
+    required: true
+    notes: What the decision binds. An unscoped decision is neither enforceable nor propagatable.
+  - name: promoted_to
+    type: ADR id
+    required: false
+    notes: The only way a decision acquires tier-1 authority; promotion crosses architecture_decision.
+  - name: challenges
+    type: list of Memory id
+    required: false
+    notes: Memories set to challenged. AUTHORITY_MODEL rule 5 requires the transition and names no trigger.
+  - name: supersedes / superseded_by / status
+    type: ids / VocabularyTerm ref (VOCAB-DECISION-STATUS)
+    required: true
+    notes: active | superseded | withdrawn, as a registry axis rather than an inline enum.
+  - name: originating_event
+    type: Event id
+    required: false
+    notes: A DecisionRecorded or HumanIntervened event.
+  - name: content_hash
+    type: string
+    required: false
+    notes: Hash root.
+  prose_fields:
+  - name: statement
+    rationale: The decision stated so a violation is recognisable — the same standard an ADR's decision
+      is held to, because a promoted decision must survive promotion unchanged.
+  - name: rationale
+    rationale: Why. What makes it reversible by a future reader and what distinguishes a decision from
+      an instruction; promotion requires it to already exist.
+  - name: scope_note
+    rationale: What a reader might wrongly assume it binds. The structured scope lists what it covers;
+      the note states the boundary.
+  state_axis: VOCAB-DECISION-STATUS
+  supersedes_existing:
+  - Decision node type
+  - HumanIntervention (the act is an Event; a direction change produces a Decision)
+- name: Finding
+  plane: Communication
+  purpose: An observation from QA, review, a specialist, a check or a human that requires disposition
+    — explicitly not a decision. Produced at SDLC phase 6 and routed back as repair work. Findings are
+    first-class in DES-DATA-MODEL, the graph and the event catalogue, yet run-record.example.yaml degrades
+    them to a count.
+  identity_rule: '`FND-NNNNN`, store-minted, never reused. Referenced by id, never as a count. hash_unit:
+    root.'
+  structured_fields:
+  - name: id / raised_by / source_kind / raised_on
+    type: FND-NNNNN / AgentIdentity id / enum / timestamp
+    required: true
+    notes: 'source_kind: qa | review | specialist | check | human | supervisory_audit.'
+  - name: target
+    type: object {agent_run, pull_request, work_item, artifact}
+    required: true
+    notes: What the finding is against.
+  - name: requirement_ref / acceptance_criterion_ref / evidence_refs
+    type: ids
+    required: false
+    notes: QA verifies against acceptance criteria, so a QA finding without one is unanchored.
+  - name: severity
+    type: VocabularyTerm ref (VOCAB-FINDING-SEVERITY)
+    required: true
+    notes: A dedicated axis rather than borrowing question_severity, two of whose five tokens are not
+      finding severities. It must define `material`, since the legal and privacy_risk_acceptance gates
+      both fire on a material finding and nothing defines materiality today.
+  - name: disposition
+    type: VocabularyTerm ref (VOCAB-FINDING-DISPOSITION)
+    required: true
+    notes: open | accepted | rejected | deferred | fixed | duplicate. A finding 'requires disposition'
+      and nothing defined the values.
+  - name: owning_role / resulting_work_item / gate_triggered
+    type: Role slug / WorkItem id / Gate id
+    required: false
+    notes: changes_requested routes on the owning role; an accepted finding becomes repair work carrying
+      the finding's requirement refs.
+  - name: disposed_on / disposed_by
+    type: timestamp / AgentIdentity id
+    required: false
+    notes: Disposition provenance.
+  - name: content_hash
+    type: string
+    required: false
+    notes: Hash root; findings reach context packets.
+  prose_fields:
+  - name: observation
+    rationale: What was actually seen. The evidence refs point at the artifact; this states what in it
+      is the problem.
+  - name: expectation
+    rationale: What should have happened and on what authority — usually a reading of an acceptance criterion
+      rather than a quotation, and the reading is what is disputed or accepted.
+  - name: recommendation
+    rationale: 'What to do about it: a judgement the owning agent may reject with reason, which is why
+      disposition is separate and the recommendation is not binding.'
+  state_axis: finding_disposition
+  supersedes_existing:
+  - Finding node type
+  - results.review_findings count
+- name: AgentRun
+  plane: Execution
+  purpose: One execution of a durable agent identity against one work item, and the unit to which evidence
+    and evaluation attach. A run may span several runtime sessions across a handoff, which is why the
+    run and not the session is the durable execution record.
+  identity_rule: '`RUN-<year>-<sequence>`, store-minted and immutable. Everything derived from a run hangs
+    off this id.'
+  structured_fields:
+  - name: run_id / agent_identity / role / attempt
+    type: RUN-YYYY-NNNNNN / ids / integer
+    required: true
+    notes: role is version-pinned so evaluation joins to the definition in force.
+  - name: work_item / work_unit / cycle
+    type: ids
+    required: true
+    notes: 'Store-neutral work item id; work.issue: 418 is superseded.'
+  - name: delegated_from / delegations
+    type: AgentRun id / list of AgentRun id
+    required: false
+    notes: Specialist delegation is the ADR-005 default mechanism, a UNIVERSAL_AGENT_LOOP step, a SpecialistDelegated
+      event and an ADS-001 invariant ('specialist-findings-return-to-the-delegating-parent'), and had
+      no edge anywhere. A delegation is dispatch of work, not a question.
+  - name: specification / requirement_refs / skills
+    type: ids
+    required: false
+    notes: Skills version-pinned, so an outcome change can be attributed to a skill version.
+  - name: sessions / context_packets
+    type: ordered lists of id
+    required: true
+    notes: One packet per session. A run handing off from claude-subscription to codex-subscription is
+      unrecordable under a flat runtime block.
+  - name: workspace
+    type: Workspace id
+    required: false
+    notes: N:1 — repair runs reuse the worktree.
+  - name: results / outcome
+    type: objects
+    required: false
+    notes: tests_passed, ci_passed, review_status; merged, rework_cycles. Detail lives in Evidence.
+  - name: finding_refs / evidence_refs / intervention_events
+    type: lists of id
+    required: false
+    notes: References, not counts. Replaces HI-NNN, which had an id form and no schema.
+  - name: state / started_on / ended_on
+    type: VocabularyTerm ref / timestamps
+    required: true
+    notes: agent_state aggregated from the current session.
+  prose_fields:
+  - name: summary
+    rationale: What happened, what was tried, what remains. The compression a human reads in the workspace
+      UI and the next runtime receives on handoff; the structured results say tests passed, the summary
+      says what the run learned.
+  state_axis: agent_state (aggregated from its current RuntimeSession)
+  supersedes_existing:
+  - run record runtime block
+  - HumanIntervention id space
+  - AgentRun node type
+- name: RuntimeSession
+  plane: Execution
+  purpose: The transient process executing an agent identity through a provider CLI. Never the unit of
+    memory and never part of a role definition. Replaceable mid-run by handoff, which is what makes role
+    != model operational. It has a table, a node type and an adapter interface in the corpus and no field
+    list anywhere.
+  identity_rule: '`SES-<store-minted>`. Transient in lifetime, durably identified: approval records cite
+    a session, handoffs chain sessions, and evaluation attributes portions of a run to providers. The
+    provider''s own handle is an external key.'
+  structured_fields:
+  - name: session_id / agent_run / agent_identity
+    type: ids
+    required: true
+    notes: Many sessions to one run.
+  - name: provider / model / external_session_key
+    type: VocabularyTerm ref / string / string
+    required: true
+    notes: Per session, so a handoff attributes each portion to its provider — which ADR-004's runtime
+      comparison requires.
+  - name: agent_state
+    type: VocabularyTerm ref (VOCAB-AGENT-STATE)
+    required: true
+    notes: working | waiting | blocked | awaiting_human | idle | failed. This is where the axis belongs;
+      states.yaml's applies_to must drop agent_identity.
+  - name: context_packet
+    type: ContextPacket id
+    required: true
+    notes: One per session; a handed-off session receives its own.
+  - name: started_on / ended_on / ended_reason
+    type: timestamps / VocabularyTerm ref (VOCAB-SESSION-END-REASON)
+    required: true
+    notes: completed | handoff | cancelled | failed | timeout, as a registry axis.
+  - name: handoff_from / handoff_to
+    type: RuntimeSession id
+    required: false
+    notes: One to one within a run.
+  - name: transcript_uri / transcript_hash
+    type: URI / string
+    required: false
+    notes: Object storage by immutable hash; evidence, never blindly injected.
+  prose_fields:
+  - name: handoff_summary
+    rationale: The concise summary a handoff carries alongside identity, work, memory, worktree state,
+      failed attempts and test state — written for another reasoner about what was tried and what to avoid.
+      The transcript exists and is deliberately not the thing passed.
+  state_axis: agent_state
+  supersedes_existing:
+  - run record runtime block
+  - Session node type
+- name: Event
+  plane: Evaluation
+  purpose: 'An immutable domain event. ADR-004 makes the log the replayable base from which memory, graph
+    projections, analytics and regression datasets are derived — everything derived is rebuildable and
+    nothing derived is authoritative in reverse. Absorbs HumanIntervention: an intervention is an event
+    and, if it changes direction, also produces a Decision.'
+  identity_rule: '`EVT-<ulid>` — monotonic, store-minted, immutable, with an integrity chain. Ordering
+    is a property of the id, since replay depends on it.'
+  structured_fields:
+  - name: event_id / event_type / event_version
+    type: EVT-<ulid> / VocabularyTerm ref / integer
+    required: true
+    notes: The 26-event catalogue is explicitly representative and open; a derived-from-events knowledge
+      plane cannot be replayed against an open set, so VOCAB-EVENT-TYPE must be closed.
+  - name: occurred_on / recorded_on
+    type: timestamps
+    required: true
+    notes: Separated so out-of-order ingestion is visible.
+  - name: organization / project
+    type: ids
+    required: true
+    notes: Partitioning keys, now resolvable to real entities.
+  - name: agent_identity / runtime_session / agent_run / work_item
+    type: ids
+    required: false
+    notes: Peer correlation fields.
+  - name: source_system / payload
+    type: string / typed per event_type
+    required: true
+    notes: Payloads are unspecified per type; a payload may contain prose leaves (a human intervention's
+      message text), normalised as prose leaves for hashing.
+  - name: integrity
+    type: object {prev_hash, hash}
+    required: true
+    notes: The provenance and integrity metadata the envelope names without defining.
+  prose_fields: []
+  state_axis: none; immutable
+  supersedes_existing:
+  - HumanIntervention
+  - human_interventions table
+  - HI-NNN id space
+- name: RegressionCase
+  plane: Evaluation
+  purpose: A historical benchmark frozen from real work, used to test whether a new model, prompt, skill,
+    retrieval algorithm, role version or orchestrator improves outcomes. The mechanism making the Context
+    and Organization planes testable rather than merely observable.
+  identity_rule: '`REG-NNNNN`, store-minted. Inputs are frozen by reference plus content hash — the packet
+    snapshot, the specification version, the role and skill versions — so the case reproduces after every
+    underlying artifact has moved on.'
+  structured_fields:
+  - name: id / frozen_from_run / frozen_on / frozen_by
+    type: REG-NNNNN / ids / timestamp
+    required: true
+    notes: Cases come from real work, not synthetic tasks.
+  - name: specification / requirement_refs / acceptance_criterion_refs
+    type: ids
+    required: true
+    notes: What the original work was judged against.
+  - name: context_snapshot
+    type: object {context_packet_id, content_hash}
+    required: true
+    notes: Requires ContextPacket to be hashable, which requires the base-data schema.
+  - name: role_version / role_content_hash / skill_versions / skill_content_hashes
+    type: ids / strings
+    required: true
+    notes: The variables being compared. Version ids alone do not reproduce if a role prompt or skill
+      procedure was edited in place, which is exactly the comparison PRD-007 exists to make.
+  - name: required_verifications
+    type: list of VerificationRequirement id
+    required: true
+    notes: Required tests, checks, architecture and policy criteria — now all four expressible in VOCAB-VERIFICATION-METHOD.
+  - name: metrics_captured
+    type: list of {metric, direction, threshold, weight}
+    required: true
+    notes: Direction is what makes a comparison mechanical; a bare metric name collapses every comparison
+      into a human reading the rubric, which is what the entity exists to avoid.
+  - name: baseline / suite_refs
+    type: object / list of RegressionSuite id
+    required: false
+    notes: Historical baseline result and suite membership.
+  prose_fields:
+  - name: expected_behaviour
+    rationale: What a good outcome looks like beyond the pass/fail of the required verifications. If it
+      were fully expressible as verifications it would be one, and the case would add nothing over the
+      original criteria.
+  - name: scoring_rubric
+    rationale: How a run is judged better or worse where thresholds cannot say. A rubric that can be fully
+      thresholded belongs in metrics_captured, which now has the fields to hold it.
+  state_axis: none
+  supersedes_existing:
+  - RegressionCase node type
+- name: RegressionSuite
+  plane: Evaluation
+  purpose: A named, versioned set of regression cases — the unit `devctl eval run <suite>` addresses and
+    the thing PRD-007's single acceptance criterion names ('evaluated against an existing role regression
+    suite before becoming the default worker').
+  identity_rule: '`SUITE-<slug>@<version>`, organization-scoped. A version pins the case set, so two evaluation
+    runs compare like with like.'
+  structured_fields:
+  - name: id / organization / name / version
+    type: ids / string / integer
+    required: true
+    notes: Version-pinned membership.
+  - name: cases
+    type: list of RegressionCase id
+    required: true
+    notes: Frozen at this version.
+  - name: role / purpose_kind
+    type: Role slug / enum role|retrieval|routing|planner|model
+    required: false
+    notes: What variable the suite is built to regress.
+  - name: content_hash
+    type: string
+    required: false
+    notes: Hash root, so a comparison names the exact suite version.
+  prose_fields: []
+  state_axis: none
+  supersedes_existing:
+  - regression_suites table (given an entity)
+- name: EvaluationRun
+  plane: Evaluation
+  purpose: One replay of a suite against one configuration under test, with its scores. Without it there
+    is nowhere to put the result of evaluating a candidate model, prompt, skill or role version, `devctl
+    eval compare <baseline> <candidate>` has no baseline object, and PRD-007's acceptance criterion cannot
+    be met.
+  identity_rule: '`EVL-NNNNN`, store-minted, immutable once complete.'
+  structured_fields:
+  - name: id / suite / started_on / completed_on
+    type: EVL-NNNNN / SUITE id / timestamps
+    required: true
+    notes: One suite version per run.
+  - name: configuration
+    type: object {provider, model, role_version, skill_versions, retrieval_version, planner_version}
+    required: true
+    notes: The configuration under test — the thing being compared.
+  - name: scores
+    type: list of {case, metric, value, outcome}
+    required: true
+    notes: Absorbs evaluation_scores; per case and metric.
+  - name: compared_to
+    type: EvaluationRun id
+    required: false
+    notes: The baseline. `eval compare` is a query over two runs.
+  - name: verdict
+    type: enum improved | regressed | inconclusive
+    required: false
+    notes: Computed from metric direction and thresholds.
+  prose_fields:
+  - name: interpretation
+    rationale: What the comparison means, including where a metric moved for a reason the metric cannot
+      see. The decision to promote a configuration to default worker is made on this, and a score table
+      alone has produced the wrong call in every field that has tried it.
+  state_axis: none
+  supersedes_existing:
+  - evaluation_runs / evaluation_scores tables (given entities)
+- name: SupervisoryReview
+  plane: Evaluation
+  purpose: A periodic review that makes no decisions and exists to maintain situation awareness and to
+    run the non-escalation audit — sampling decisions agents resolved autonomously and asking whether
+    they should have been escalated. ADR-014 clause 4 and DELIVERY_MODEL state it has no automated equivalent
+    and is explicitly not memory.consolidate, so it needed a home of its own.
+  identity_rule: '`SUP-<project-slug>-NNNN`, sequential within its Project. Periodic, cross-cycle.'
+  structured_fields:
+  - name: id / project / reviewed_on / reviewer
+    type: ids / timestamp / AgentIdentity id with kind human
+    required: true
+    notes: A human act; an agent cannot perform it.
+  - name: period_start / period_end
+    type: timestamps
+    required: true
+    notes: What the review covers.
+  - name: audit_sample
+    type: list of {kind, id}
+    required: true
+    notes: The decisions and answers resolved autonomously that were read. Sampling is the only mechanism
+      that can see what agents chose not to surface.
+  - name: findings
+    type: list of Finding id
+    required: false
+    notes: 'source_kind: supervisory_audit. A should-have-escalated finding is a finding like any other.'
+  - name: metrics
+    type: object
+    required: false
+    notes: 'Autonomous depth plus its shadow metrics: escape-defect rate, rollback rate, human-override
+      rate, escalation rate. Depth is a diagnostic only and never agent-facing.'
+  - name: escalation_rate_trend
+    type: enum rising | flat | falling
+    required: false
+    notes: A falling rate without a quality improvement to explain it is treated as an alarm, not an achievement.
+  prose_fields:
+  - name: situation_note
+    rationale: What is actually going on — the awareness the review exists to build. It makes no decisions,
+      so it has no structured output; the whole value is a human's read of where the graph is and what
+      is drifting.
+  state_axis: none
+  supersedes_existing: []
+relationships:
+- from: Organization
+  kind: contains
+  to: Project
+  cardinality: 1:N
+  rationale: Tenancy root. Restores the approved DES-DATA-MODEL organizations/projects tables and gives
+    Event.organization, Event.project, Memory.scope and every identity a real referent.
+- from: Project
+  kind: declares_authoritative_store_for
+  to: CanonicalArtifact type, WorkItem, and every other entity
+  cardinality: 1:N types, exactly 1 work store, 1 store per entity
+  rationale: ADR-015 clause 2 (one store per document type) and ADR-012 clause 2 (one work store, never
+    two). Project.stores extends the binding to the Communication, Execution and Evaluation planes, where
+    fifteen entities said 'store-minted' with no configured minter.
+- from: Specification
+  kind: contains
+  to: Capability
+  cardinality: 1:N
+  rationale: First hop of the traceability walk. Intent is a block on the Specification, so Intent ->
+    Capability is containment rather than an edge from an id-less singleton (ADS_OVERVIEW line 40).
+- from: Capability
+  kind: groups
+  to: Requirement
+  cardinality: 1:N
+  rationale: Second hop. Requirement.capability is single-valued in both instances (ADS-001 line 55, ads.schema.example.yaml
+    line 16).
+- from: Requirement
+  kind: accepted_by
+  to: AcceptanceCriterion
+  cardinality: 1:N
+  rationale: Third hop. Usually one, up to two in ADS-001 (REQ-001-005..008).
+- from: AcceptanceCriterion
+  kind: verified_by
+  to: VerificationRequirement
+  cardinality: 1:N
+  rationale: Fourth hop, at the criterion not the requirement — only there can AC-001-005 be integration-tested
+    while AC-001-006 needs human review.
+- from: VerificationRequirement
+  kind: satisfied_by
+  to: Evidence
+  cardinality: 1:N, latest non-superseded in force
+  rationale: Fifth hop and terminus. The join runs through VerificationRequirement.producer and Evidence.producer_key,
+    and satisfaction additionally requires Evidence.verified_content_hash to equal the criterion's current
+    hash — otherwise a rewritten requirement keeps a green cell.
+- from: Specification
+  kind: declares
+  to: Assumption and Unknown (identified sub-objects)
+  cardinality: 1:N each
+  rationale: Two of the nine readiness invariants range over them, AC-001-001 requires them, and AC-001-002
+    requires a Question to link to the unknown it resolves.
+- from: ReadinessEvaluation
+  kind: evaluates
+  to: Specification | WorkUnit | Plan
+  cardinality: N:1
+  rationale: 'states.yaml readiness_outcome.applies_to: [readiness_evaluation]. The loop iterates, so
+    readiness is a series of evidenced judgements with failed-invariant lists, not a current-value field.'
+- from: Requirement
+  kind: implemented_by
+  to: WorkUnit
+  cardinality: N:M
+  rationale: First hop of the execution walk (ADS_OVERVIEW line 48). A work unit names its owning requirements;
+    a requirement may need several units.
+- from: WorkUnit
+  kind: depends_on
+  to: WorkUnit
+  cardinality: N:M, acyclic within one plan version
+  rationale: The planner DAG. Acyclicity is only checkable now that the plan version is inside the work
+    unit id.
+- from: Cycle
+  kind: bounds
+  to: WorkUnit and WorkItem
+  cardinality: 1:N
+  rationale: 'ADR-014 clause 3: the unit of delivery is a cycle bounded by a decision, carrying an appetite
+    and a blast-radius bound so a mis-specified DAG hits a wall rather than a budget. Cycle.current_plan_version
+    says which DAG is in force.'
+- from: ApprovalRecord
+  kind: opens / closes
+  to: Cycle
+  cardinality: 1:1 each
+  rationale: A cycle opens when a specification closes product_spec and ends at the next human gate. Bounded
+    by decisions, not by calendar.
+- from: WorkUnit
+  kind: dispatched_as
+  to: WorkItem
+  cardinality: 1:0..1
+  rationale: '''A work unit becomes a work item when the orchestrator dispatches it'' (GLOSSARY). The
+    moment a plan element acquires execution state.'
+- from: WorkItem
+  kind: realised_by
+  to: PullRequest
+  cardinality: 1:0..1
+  rationale: One issue, one branch, one PR (CLAUDE.md branching rule 2).
+- from: PullRequest
+  kind: carries
+  to: Evidence
+  cardinality: 1:N
+  rationale: The evidence package required for merge (CLAUDE.md requirement 3), plus the PR's own prose
+    (what changed, why, risks) and traceability table, which no other entity holds.
+- from: Finding
+  kind: produces
+  to: WorkItem
+  cardinality: 1:0..1
+  rationale: An accepted finding becomes repair work routed at changes_requested. The repair item inherits
+    the finding's requirement refs, so rework does not escape the traceability walk.
+- from: AgentRun
+  kind: executes
+  to: WorkItem
+  cardinality: N:1
+  rationale: Retries and rework produce several runs against one item (execution.attempt in run-record.example.yaml).
+- from: AgentRun
+  kind: delegates_to
+  to: AgentRun
+  cardinality: 1:N
+  rationale: ADR-005 makes hierarchical delegation the default mechanism; SpecialistDelegated is an event
+    and 'specialist-findings-return-to-the-delegating-parent' is an ADS-001 invariant. A delegation is
+    dispatch of work, not a question, and had no edge.
+- from: AgentRun
+  kind: spans
+  to: RuntimeSession
+  cardinality: 1:N, ordered
+  rationale: A run crosses sessions on handoff, which is what makes ADR-002's provider replaceability
+    recordable.
+- from: RuntimeSession
+  kind: hands_off_to
+  to: RuntimeSession
+  cardinality: 1:0..1 within a run
+  rationale: handoff(targetRuntime) in ROLE_RUNTIME_CONTRACT and the RuntimeHandedOff event; lets evaluation
+    attribute each portion of a run to its provider.
+- from: RuntimeSession
+  kind: consumes
+  to: ContextPacket
+  cardinality: '1:1'
+  rationale: One packet per session, not per run. After a handoff the second session receives different
+    context, and pinning to the run leaves no record of what it got — destroying failure attribution for
+    the case ADR-002 exists to support.
+- from: ContextPacket
+  kind: contains
+  to: ContextItem
+  cardinality: 1:N
+  rationale: The provenance manifest, now including the identity block's role and skill items so PRD-007
+    can separate a bad role prompt from a model failure.
+- from: ContextItem
+  kind: derived_from
+  to: CanonicalArtifact | Requirement | Memory | Evidence | Decision | Finding | Role | Skill
+  cardinality: N:1, polymorphic via source_kind
+  rationale: With source_version and source_content_hash this makes 'stale context' detectable — and it
+    is populatable only because Memory, Decision, Finding, Role and Skill are now hash roots.
+- from: AgentRun
+  kind: uses
+  to: Workspace
+  cardinality: N:1
+  rationale: A repair run reuses the branch's worktree. hook-points.yaml gives workspace its own closed
+    phase, so its lifecycle cannot die with a single run's record.
+- from: AgentRun
+  kind: produces
+  to: Evidence
+  cardinality: 1:N
+  rationale: '''Evidence and evaluation attach to the run'' (GLOSSARY); the after_agent_run point and
+    the evidence hook domain exist for this capture.'
+- from: Requirement
+  kind: governed_by
+  to: ArchitectureDecision
+  cardinality: N:M via constraints[]
+  rationale: The architecture overlay. This per-requirement edge is authoritative; the document-level
+    list derives from constraints UNION architecture_rules[].source_adr filtered to artifact_type adr.
+- from: Requirement
+  kind: requires_gate
+  to: Gate
+  cardinality: N:M via constraints[] of kind gate
+  rationale: Lets an agent know before dispatch which gates the work will cross, which Principle 1 and
+    the orchestrator's stop condition both depend on.
+- from: Rule
+  kind: requires
+  to: check producing Evidence
+  cardinality: 1:N
+  rationale: validation.required_checks is a HARD binding in this repository's reference configuration
+    and reads data nothing defined. Rule.required_checks is also what sources PullRequest.checks[].required,
+    which was asserted and never derived.
+- from: CanonicalArtifact
+  kind: supersedes / superseded_by
+  to: CanonicalArtifact
+  cardinality: 0..1 each way, reciprocal
+  rationale: Within a tier, supersession is the only ordering (precedence rule 3) and the only legal way
+    to reverse an accepted ADR. Both fields are outside the hash, so recording a supersession does not
+    un-accept the artifact being superseded.
+- from: Gate
+  kind: closed_by
+  to: ApprovalRecord
+  cardinality: 1:N
+  rationale: A record names one gate; a gate closes many times. Merging is never a closure, and that rule
+    now lives once on VOCAB-GATES rather than eleven times.
+- from: ApprovalRecord
+  kind: binds
+  to: CanonicalArtifact or Requirement version
+  cardinality: N:M, pinned by content_hash
+  rationale: An approval binds to a version, not a name (ADR-013 rule 1). Requirement-granular hashes
+    let an editorial fix in one requirement be attested without re-opening the whole specification, which
+    is the middle path between false stability and mass re-approval.
+- from: ApprovalRecord
+  kind: reanchors
+  to: ApprovalRecord
+  cardinality: N:M via artifacts[].reanchors
+  rationale: CONTENT_HASHING's attestation shape carries a per-document `approval:` pointer. Without it
+    ATT-0001 cannot say which of APR-0001..0003 each re-anchored hash belongs to, and the mechanism's
+    first required use is unrepresentable.
+- from: CanonicalArtifact
+  kind: approved_by
+  to: ApprovalRecord
+  cardinality: N:M via approvals[]
+  rationale: A list, not a scalar — the two-records and superseded-approval cases were the stated reason
+    for the change and a scalar could not hold them. The binding record is the latest non-revoked gate_approval
+    whose hash, after any attestation chain, matches the artifact's current content_hash.
+- from: ApprovalRecord
+  kind: made_by
+  to: AgentIdentity with kind human
+  cardinality: N:1
+  rationale: An agent may never close a gate, only record a human's closure. approver_account joins to
+    external_accounts, making 'the gate's named approver closed it' checkable.
+- from: ControlledVocabulary
+  kind: contains
+  to: VocabularyTerm
+  cardinality: 1:N
+  rationale: A vocabulary is the sole source for its terms; a token is unique within it and, now that
+    references are vocabulary-qualified, addressable as a graph endpoint.
+- from: Gate
+  kind: is_a
+  to: VocabularyTerm in VOCAB-GATES
+  cardinality: '1:1'
+  rationale: Gate ids are registry vocabulary; Gate specializes the term with approval semantics no other
+    term needs.
+- from: HookBinding
+  kind: binds_to
+  to: VocabularyTerm (hook point)
+  cardinality: N:1, closed set
+  rationale: A binding to an undefined point is invalid; adding a point is a platform_config change.
+- from: AgentIdentity
+  kind: instantiates
+  to: Role
+  cardinality: N:1, version-pinned
+  rationale: Role != model (ADR-002). Pinning the version lets a role evolve while an identity stays on
+    a known definition, which PRD-007's comparison requires.
+- from: AgentIdentity
+  kind: reports_to / delegates_to
+  to: AgentIdentity
+  cardinality: N:1 up, 1:N down
+  rationale: The ownership tree (ADR-005) and the route a question escalates along.
+- from: AgentIdentity
+  kind: owns
+  to: Memory
+  cardinality: 1:N, plus weighted inheritance from role, function, parent, organization and project scopes
+  rationale: Memory belongs to the durable identity, never a session. Inheritance is the ordered walk
+    own -> role/function -> parent/org -> project -> graph-related.
+- from: Memory
+  kind: promoted_to
+  to: Skill or Rule
+  cardinality: N:1
+  rationale: 'Terminal rung of the ladder: authority leaves tier 6 and lives at the new tier, the memory
+    is marked promoted. Nothing skips a rung, which is enforceable only now that `form` is ordered with
+    declared transitions.'
+- from: Decision
+  kind: challenges
+  to: Memory
+  cardinality: 1:N
+  rationale: Precedence rule 5 requires the transition to challenged and names no trigger; Decision.challenges
+    is that record.
+- from: Decision
+  kind: promoted_to
+  to: ArchitectureDecision
+  cardinality: 1:0..1
+  rationale: The only way a decision acquires tier-1 authority, crossing architecture_decision. States
+    the boundary between a decision, an ADR and an approval record the corpus leaves undefined.
+- from: Question
+  kind: escalated_to
+  to: AgentIdentity
+  cardinality: 1:N along the ownership hierarchy
+  rationale: Resolution order is canonical context, validated memory, parent, human. escalation_path is
+    the only durable trace, since no question_escalated hook point exists.
+- from: Question
+  kind: resolves
+  to: Unknown
+  cardinality: N:1
+  rationale: AC-001-002 requires each question to name the unknown it resolves; both sides of that link
+    are new.
+- from: Notification
+  kind: surfaces
+  to: Question | Finding | Gate | WorkItem | release
+  cardinality: N:1 polymorphic
+  rationale: 'Most notifications have no question behind them. This is also the attention-budget queue
+    item: cost_of_delay ranks it, batch groups it, and its timestamps yield the time-to-notice and queue-wait
+    terms ADR-014 makes a precondition for any WIP limit.'
+- from: SupervisoryReview
+  kind: samples
+  to: Decision and Question answers
+  cardinality: 1:N
+  rationale: The non-escalation audit reads decisions agents resolved autonomously and asks whether they
+    should have been escalated. DELIVERY_MODEL states this has no automated equivalent and is explicitly
+    not memory.consolidate.
+- from: Finding
+  kind: raised_against
+  to: AgentRun | PullRequest | WorkItem | CanonicalArtifact
+  cardinality: N:1
+  rationale: Referenced by id, not as a count, so a run can be walked to the findings it produced.
+- from: Finding
+  kind: references
+  to: AcceptanceCriterion or Requirement
+  cardinality: N:1
+  rationale: QA verifies against acceptance criteria, so a QA finding anchors to one — the edge that makes
+    a finding disputable on the spec rather than on taste.
+- from: Event
+  kind: correlates_to
+  to: AgentRun | WorkItem | RuntimeSession | Organization | Project
+  cardinality: N:1 each
+  rationale: The envelope's correlation and partition ids; the only join between the append-only log and
+    the entities it describes.
+- from: Event
+  kind: replayed_to_derive
+  to: Memory | KnowledgeEdge | RegressionCase
+  cardinality: N:M
+  rationale: 'ADR-004 and ADR-017 clause 6: derived indexes are not sources of truth and must be rebuildable.
+    KnowledgeEdge.derived_from_event is the replay anchor the graph currently lacks.'
+- from: RegressionCase
+  kind: frozen_from
+  to: AgentRun
+  cardinality: 1:1, with hashed refs to its ContextPacket, Specification, Role and Skill versions
+  rationale: Cases come from real work. Freezing by reference plus content hash is what lets the case
+    reproduce after the artifacts have moved on — version ids alone do not, since a prompt can be edited
+    in place.
+- from: EvaluationRun
+  kind: replays
+  to: RegressionSuite
+  cardinality: N:1, version-pinned
+  rationale: 'PRD-007''s single acceptance criterion: a new configuration is evaluated against an existing
+    role regression suite before becoming the default worker. `eval compare` is a query over two EvaluationRuns.'
+- from: AgentRun
+  kind: applies
+  to: Skill
+  cardinality: N:M, version-pinned
+  rationale: skill:implement-story@4, skill:swiftui-feature@7. Version pinning is what lets evaluation
+    attribute an outcome change to a skill change.
+- from: WorkUnit
+  kind: affects
+  to: Component
+  cardinality: N:M
+  rationale: 'Routing, conflict detection and CONTEXT_RETRIEVAL priority 4 (''direct graph neighbors:
+    components, dependencies, tests, prior PRs'') — unimplementable while Component had no entity.'
+- from: KnowledgeEdge
+  kind: connects
+  to: any entity by kind-qualified canonical id
+  cardinality: each edge exactly 2 endpoints; entities N:M
+  rationale: The graph is a projection over canonical ids and mints no identity. from_kind and to_kind
+    are inside the edge identity because VocabularyTerm and PullRequest are not identified by a bare global
+    string.
+conflicts_resolved:
+- conflict: 'The draft model silently superseded roughly sixteen logical tables of docs/architecture/DATA_MODEL.md
+    (DES-DATA-MODEL), which is status: approved, human_approved: true, tier 2 — while citing that same
+    artifact as support where it agreed. Dropped without mention: organizations, projects, repositories,
+    project_mappings, workspaces, artifacts, answers, notifications, human_interventions, knowledge_nodes,
+    policies/policy_versions, hooks/hook_runs, embeddings, evaluation_runs, evaluation_scores, regression_suites,
+    routing_observations.'
+  resolution: 'Every table is now given an explicit disposition. Entities added: Organization, Project
+    (absorbing ProjectConfig), Workspace, Notification, Rule (policies/policy_versions), RegressionSuite,
+    EvaluationRun. Fields: repositories[] on Project; artifacts -> Evidence; answers -> Question.answers[];
+    human_interventions -> Event; hooks/hook_runs -> HookBinding plus Event; routing_observations -> performance
+    Memory plus Event; embeddings -> a derived index, not an entity (ADR-004: nothing derived is a source
+    of truth). knowledge_nodes is the one deliberate supersession and is argued separately below. This
+    model does not itself supersede DES-DATA-MODEL: an approved tier-2 artifact can only be superseded
+    by another approved artifact, so where this model and DES-DATA-MODEL still differ, that is a finding
+    to raise per precedence rule 3, not something this document closes.'
+  rationale: AUTHORITY_MODEL precedence rule 3 says two approved artifacts in one tier conflicting without
+    a supersession link are 'a finding, not a thing to resolve by judgment'. The draft resolved sixteen
+    of them by judgment and invisibly, which is the conflict-hiding it was written to end. It also left
+    Event.organization, Event.project and PullRequest.repository pointing at entities that did not exist,
+    so a multi-project platform had no tenancy key and compliance.primary collided across organizations.
+- conflict: ADR-014 is accepted tier 1 and its unit of delivery — a cycle bounded by a decision, carrying
+    an appetite and a blast-radius bound — plus the attention budget, the supervisory review and the non-escalation
+    audit had no entity, field or open question. GLOSSARY defines nine of these as canonical terms.
+  resolution: Cycle, Notification and SupervisoryReview are added. Cycle carries appetite, blast_radius,
+    opened_by/closed_by ApprovalRecord and current_plan_version. Notification carries cost_of_delay, batch,
+    delivered_on/acknowledged_on/serviced_on and interaction_seconds — the attention-budget queue and
+    the instrumentation ADR-014 makes a precondition for any WIP limit. SupervisoryReview carries the
+    audit sample, its findings and the shadow metrics. Gate gains risk_tier (reversible | consequential
+    | irreversible) so ADR-014 clause 7 has a field, with the per-gate assignment left to the human.
+  rationale: A blast radius that is not stored cannot stop anything — 'a mis-specified DAG must hit a
+    wall, not a budget'. And ADR-014's instrumentation consequence names four measurements (interaction
+    time, time-to-notice, queue wait, utilization) that had nothing to attach to, so an accepted tier-1
+    delivery model was unimplementable against the schema.
+- conflict: Assumptions and unknowns had no home, so the corpus's only ADS could not be represented. BA_LOOP,
+    AC-001-001 and PRD-002 all require them, AC-001-002 requires each question to link to the unknown
+    it resolves, and REQ-001-006's invariants include assumptions-explicitly-recorded and critical-unknowns-equals-zero.
+  resolution: Specification gains assumptions[] (ASM-NNN-NNN) and unknowns[] (UNK-NNN-NNN) as identified
+    sub-objects with prose statements and status, plus success_criteria and workflows in the intent block.
+    Question gains resolves_unknown.
+  rationale: Two of the nine readiness invariants ranged over data that did not exist, making them mechanically
+    unevaluable. Identified sub-objects rather than entities is the treatment Requirement.invariants and
+    Requirement.risks already get — referenceable without a new node.
+- conflict: 'Notification was folded into Question with no conflict entry, though states.yaml question_severity
+    declares applies_to: [question, notification, finding], DES-DATA-MODEL has a notifications table,
+    DES-SYSTEM-ARCHITECTURE lists notifications in the Communication plane, and PRD-003 names them alongside
+    questions and findings.'
+  resolution: Reversed. Notification is restored as its own entity and additionally carries the ADR-014
+    attention-budget fields, so one entity serves two needs the model had left unserved.
+  rationale: Most notifications have no question behind them — a finding raised, a release ready, a gate
+    open, a digest. Folding it in meant the only way to notify a human was to ask them something, which
+    inverts management by exception, and it silently invalidated a registry applies_to entry that is the
+    sole source for that vocabulary.
+- conflict: 'KnowledgeNode was superseded on the claim that every entity is addressable by its own canonical
+    id, which was false three ways: Component, API, DataEntity, Branch, Commit and Release had no home;
+    VocabularyTerm, PullRequest and KnowledgeEdge had composite or absent ids while the model''s own relationships
+    terminated on them; and Memory.evidence declared ref_kind: commit.'
+  resolution: 'KnowledgeNode stays superseded, but the orphans are now placed. Component is a new entity
+    absorbing API and DataEntity as component_kind. Branch and Commit become fields on PullRequest and
+    Workspace, not nodes. VocabularyTerm gets a globally qualified id (VOCAB-GATES:product_spec) and Gate
+    resolves through it; Role and Skill get role:/skill: prefixes so `compliance-analyst@1` is unambiguous;
+    PullRequest gets a store-neutral id with the provider composite as external_key; KnowledgeEdge puts
+    from_kind and to_kind inside its identity tuple. Memory.evidence ref_kind drops commit for pull_request
+    and work_item. Release remains an open question and is removed from Evidence.supersedes_existing.'
+  rationale: A deletion without homes for the members is not a supersession. CONTEXT_RETRIEVAL priority
+    4 ranks 'components, dependencies, tests, prior PRs' as direct graph neighbours, which was unimplementable
+    with no Component, and an ambiguous endpoint makes the traceability walk unreliable in the direction
+    hardest to notice.
+- conflict: Specification could not represent seven of the eight PRDs — PRD-001 and PRD-003..008 have
+    no ADS, no capabilities, no per-requirement ids and no actors — while prd_projection_id was a 0..1
+    scalar contradicting its own stated N:M rationale.
+  resolution: 'prd_projection_ids becomes a list, and Specification gains conformance: narrative | structured.
+    A narrative Specification has no capabilities or requirements and its only projection is a prose PRD,
+    so it still has a canonical identity, a content_hash and an approvable record. Re-specifying the seven
+    at structured conformance is a migration with its own work items, not a footnote.'
+  rationale: Under the previous shape those seven documents had no canonical identity at all — PRD was
+    not an entity — so approving PRD-003 at the product_spec gate would bind to nothing hashable. Whether
+    a narrative Specification may close product_spec is left as an open question, because it is a governance
+    call about how much rigour intent must have before work starts.
+- conflict: 'CanonicalArtifact declared prose_fields: [] and defined no payload, so principles, specs,
+    policies, standards and the ~34 design documents — including approved tier-0 PRINCIPLES and approved
+    DES-DATA-MODEL — became envelopes whose entire content sat outside the schema and therefore outside
+    content_hash.'
+  resolution: CanonicalArtifact gains a required ordered sections[] of {id, heading, prose} as the default
+    payload for any type without a structured subtype; a subtype's named prose leaves replace it rather
+    than supplement it.
+  rationale: ADR-016's own top risk is that 'a field the schema omits is invisible to the hash'. Without
+    a payload a POL-NNN or an approved design document could be rewritten end to end with no hash change,
+    no version increment and no gate re-opening — silently mutable constitutional and rules tiers. Section
+    ids also give Requirement.constraints something finer than a whole document to target (SPEC-AUTHORITY#precedence-4).
+- conflict: alternatives[].verdict was a vocabulary of rejected | rejected_as_target_retained_as_provider
+    | rejected_outright | accepted — four rhetorical sentence-openings from two ADRs promoted to governed
+    tokens, non-disjoint, with `accepted` incoherent on an alternative, and unable to express ADR-016's
+    'rejected as the anchor, adopted for leaves'.
+  resolution: 'Reduced to three disjoint tokens: rejected | partially_adopted | deferred. The qualification
+    stays in the prose rationale, where every ADR already writes it.'
+  rationale: ADR-017 rejected full structuring precisely because 'an ADR whose alternatives are checkboxes
+    is worthless to the person who has to understand the decision in two years'. A vocabulary that looks
+    queryable and encodes phrasing accidents is worse than a blob, and it would have been minted through
+    the platform_config gate permanently.
+- conflict: 'readiness_state was a single token on Specification, while states.yaml declares readiness_outcome
+    applies_to: [readiness_evaluation] — an entity the model did not have — and readiness gates exist
+    per role in the grooming, BA, architecture and planning loops. AC-001-007 requires the outcome to
+    name each failed invariant.'
+  resolution: ReadinessEvaluation becomes an entity with subject, evaluating_role, iteration, outcome,
+    failed_invariants[], questions_raised[] and a prose assessment. Specification.readiness_state is retained
+    only as a cached projection of the latest evaluation.
+  rationale: The loop iterates by construction ('repeats the loop until it passes'), so readiness is a
+    series of evidenced judgements, not a current value; and one field cannot hold four roles' outcomes.
+    It was also the first counterexample to the model's own rule that ControlledVocabulary.applies_to
+    holds entity names.
+- conflict: The hash boundary of a composite artifact was never stated, so it was undefined whether editing
+    a Requirement invalidated the Specification's product_spec approval — either the human approved a
+    shell, or a typo fix re-opened the gate for the whole specification.
+  resolution: 'Every entity declares hash_unit: root or child. Specification is a root whose canonical
+    form includes its capabilities, requirements, criteria and verifications — resolving toward invalidation
+    per SPEC-CONTENT-HASHING. Requirement and AcceptanceCriterion additionally carry their own content_hash,
+    so an ApprovalRecord can bind at requirement granularity and an editorial change to one requirement
+    can be attested without re-opening the specification.'
+  rationale: SPEC-CONTENT-HASHING is explicit that 'false stability is the dangerous one' and that ambiguity
+    resolves toward invalidation. Whole-tree hashing alone gives ADR-016's rejected mass re-approval;
+    body-only hashing gives false stability. Requirement-granular hashes inside a whole-tree root is the
+    only shape that avoids both.
+- conflict: Gate, ControlledVocabulary, VocabularyTerm, HookBinding, ProjectConfig, Role and AgentIdentity
+    had no content_hash, source_hash or approval binding — yet all sit behind platform_config, and ADR-013
+    rule 1 binds an approval to {artifact_id, version, content_hash}. Flipping Gate.blocking, repointing
+    Gate.approver, deleting product_spec from active_gates or widening AgentIdentity.tool_grants.allow
+    all changed meaningful content with nothing to detect it.
+  resolution: 'A model-level invariant: no entity may be gated unless it is hashable. content_hash, source_hash
+    and hash_unit are added to Organization, Project, Gate, ControlledVocabulary, VocabularyTerm, HookBinding,
+    Role, AgentIdentity, Skill, Rule, Memory, Decision, Finding and RegressionSuite, and ApprovalRecord.artifacts[]
+    can name any of them.'
+  rationale: The corpus hashes documents and nothing else, and the draft inherited that scope while newly
+    declaring eleven other classes canonical. The unhashed set contained the entire mechanical enforcement
+    of Principle 1 — widening a tool grant is the surface production_secrets and billing_configuration
+    fire on.
+- conflict: 'ApprovalRecord — the root of trust for every gate closure — was declared immutable with nothing
+    anchoring it: no content_hash and no source_hash of its own, so its verbatim statement, a scope_note
+    carve-out, or a revocation could be edited or deleted undetected.'
+  resolution: ApprovalRecord gains content_hash, source_hash and prev_record_hash, chaining records within
+    their id space exactly as Event.integrity does.
+  rationale: ADR-013's entire fabrication mitigation is that the record captures the quote rather than
+    referencing a transcript, and ADR-016 clause 3 gives every artifact a source_hash to detect in-place
+    edits. The one record class where an in-place edit is catastrophic was the one that did not get either.
+    There is no reason Event gets a chain and ApprovalRecord does not.
+- conflict: 'The draft dismissed the ADR-013/ADR-016 hash-scope conflict on the premise that ADR-013 ''never
+    defined the computation''. It did define the scope — ''content_hash covers the document body, excluding
+    front matter'' — whereas SPEC-CONTENT-HASHING excludes only seven named fields, so id, tier, owner,
+    enforcement, supersedes and superseded_by all fall inside the hash. Consequence: CLAUDE.md''s mandated
+    ''Superseded by ADR-NNN'' line mutates a hashed field on an accepted ADR, which under clause 5 increments
+    its version and returns it to proposed — superseding an ADR un-accepts the ADR it supersedes.'
+  resolution: 'The exclusion set is extended to the full lifecycle and provenance envelope: status, version,
+    human_approved, approvals, approved_on, last_reviewed, the hashes, supersedes, superseded_by, owner,
+    store and the projection block. id, artifact_type, tier, title, enforcement and all payload fields
+    stay hashed, because a tier or enforcement change genuinely alters what an agent does. This is a correction
+    to SPEC-CONTENT-HASHING, which is draft tier 0 and carries no authority; it does not supersede ADR-016,
+    whose clause 1 defines the algorithm and leaves the exclusion set to the spec.'
+  rationale: 'The extension restores ADR-013''s stated reason — approval and provenance metadata must
+    not make an approval self-invalidating — while keeping ADR-016''s canonical-JSON algorithm intact.
+    The concrete failures it removes are real and current: superseding an ADR, reassigning owner on a
+    role handover, and migrating a rule from prose to check would each have re-opened gates for no change
+    in meaning.'
+- conflict: ContextItem.source_content_hash and source_version were required for every delivered item,
+    but Memory, Decision, Finding, Role and Skill had no hash and no version, so the field was unpopulatable
+    for most of its own source kinds — and RegressionCase pinned role and skill by id only, while Role.operating_instruction
+    and Skill.procedure sat on unhashed entities declared immutable with nothing enforcing it.
+  resolution: Those five entities become hash roots. RegressionCase gains role_content_hash and skill_content_hashes.
+    ContextItem.source_kind gains role and skill, and the identity block's contents are recorded as ContextItems.
+  rationale: Stale-context attribution is ContextItem's sole purpose and it did not work for memory, the
+    source class most likely to go stale. And a regression case comparing outcomes across role versions
+    is not reproducible if a role prompt was edited in place, which is precisely the comparison PRD-007
+    exists to make.
+- conflict: WorkUnit's identity rule said ids were scoped to specification and plan version while the
+    declared format was WU-<spec>-NNN, containing no plan version. After a replan, WU-001-003 exists twice
+    with one id, so prerequisites are ambiguous and the DAG's acyclicity is unverifiable.
+  resolution: 'The id becomes WU-<specification>-<plan-version>-NNN, and Cycle carries current_plan_version
+    to say which DAG is in force. No separate Plan entity: a plan is a version of a cycle''s DAG, not
+    a thing with its own lifecycle.'
+  rationale: A replan produces a new DAG rather than mutating one, so the plan version is part of what
+    identifies a node. Putting it in the id rather than adding an entity keeps the first hop of the execution
+    walk resolvable without a fifth Control-plane record.
+- conflict: Evidence bound to VerificationRequirement by a required foreign key with no derivation rule
+    — the only producer-side link was an optional free-text target_ref described as a 'component, test
+    suite or check name' matched against a CI check name. And VerificationRequirement -> Evidence was
+    1:N with no currency rule, so a pass and a later fail both stood.
+  resolution: 'VerificationRequirement gains a required producer {kind, key} (check | suite | review |
+    policy), store-neutral. Evidence records the producer_key it matched and gains supersedes. Satisfaction
+    is defined as: for every required verification, the latest non-superseded Evidence passes and its
+    verified_content_hash equals the criterion''s current hash.'
+  rationale: A required field with no derivation rule is filled by guesswork or left null, and either
+    way the walk's fifth hop fails. Without a currency rule the evidence matrix has no deterministic answer,
+    so 'never merge on a red or skipped required check' could not be evaluated from the data. A check
+    name is also a CI-provider coupling of exactly the kind the model banned for WorkItem.
+- conflict: Evidence.verification_requirement was required on the argument that 'evidence with no verification
+    is telemetry' — but the `docs` check, secret scanning and lint discharge no tier-2 verification, while
+    CLAUDE.md makes a required check's result load-bearing for merge and hooks.yaml binds evidence.capture
+    for every run.
+  resolution: 'verification_requirement becomes optional and Evidence gains evidence_class: bound | unbound.
+    An unbound record is a required check or run artifact with no tier-2 obligation; only bound evidence
+    can satisfy a verification.'
+  rationale: Forcing a fabricated VerificationRequirement for every CI job, or letting check results live
+    in a second unmodelled place, would each recreate the duplication the model exists to end. The class
+    marker keeps AUTHORITY_MODEL precedence rule 4 honest — an unbound green check still satisfies no
+    requirement — without orphaning the results.
+- conflict: Evidence carried no version or hash of what it verified, so evidence produced against a superseded
+    requirement text silently continued to satisfy the rewritten one.
+  resolution: Evidence gains verified_content_hash, recording the AcceptanceCriterion hash as it stood
+    at production time; the matrix reports satisfied only on a hash match, and otherwise reports stale.
+  rationale: Under ADR-016 clause 5 a rewritten requirement re-opens its gate but nothing re-opened the
+    evidence. That is the same false-stability failure the model correctly identified for approvals, unfixed
+    one layer down, defeating the very rule (precedence rule 4) the VerificationRequirement/Evidence split
+    was introduced to make enforceable.
+- conflict: 'PullRequest declared prose_fields: [] and modelled reviews as {reviewer, verdict, at}, while
+    .github/pull_request_template.md — which REGISTRIES names as the evidence package''s current shape
+    and CLAUDE.md makes mandatory — requires four prose sections and a per-change Change | Satisfies |
+    Verified by table, and gates.yaml makes a review a gate-closure surface whose text ''is the statement''.'
+  resolution: PullRequest gains prose what_changed, why and risks, a required traceability[] of {change_ref,
+    satisfies_id, verified_by_evidence}, and reviews[].body captured verbatim with named_artifacts. checks[]
+    becomes a derived view over unbound Evidence rather than a second stored copy.
+  rationale: 'The claim that the PR body is a pure projection was false: no entity held ''what forced
+    this now'', and none held the change-to-requirement mapping at diff granularity. On the chat surface
+    ADR-013 captures the verbatim statement; storing an enum on the github_review surface reintroduced
+    exactly the fabrication risk it closed.'
+- conflict: ContextPacket was pinned 1:1 to AgentRun while CONSOLIDATION builds a packet at session start
+    and ROLE_RUNTIME_CONTRACT describes a handoff rehydrating a new session — and AgentRun.sessions was
+    an ordered list precisely because a run spans providers.
+  resolution: ContextPacket is keyed to (agent_run, runtime_session), 1:1 with the session and 1:N from
+    the run. ContextItem carries runtime_session.
+  rationale: After a handoff from claude-subscription to codex-subscription the second session receives
+    different context, and under the previous shape there was no record of what it received — destroying
+    failure attribution for exactly the case ADR-002 exists to support, and leaving RegressionCase.context_snapshot
+    ambiguous for any multi-session run.
+- conflict: 'Specialist delegation was unrepresentable: ADR-005 makes it the default mechanism, UNIVERSAL_AGENT_LOOP
+    step 4 is ''delegate'', SpecialistDelegated is an event, and ADS-001 REQ-001-004''s invariant is ''specialist-findings-return-to-the-delegating-parent''
+    — but AgentRun had no parent_run and Finding.target no delegating run.'
+  resolution: AgentRun gains delegated_from and delegations[], and delegation becomes an edge type with
+    declared endpoints. Findings raised in a specialist run resolve to the delegating parent through that
+    edge.
+  rationale: A delegation is dispatch of work producing its own run and findings, not a question. Without
+    the edge the invariant cannot be checked and the SpecialistDelegated event correlates to nothing.
+- conflict: Tier 3 had no payload, though GLOSSARY defines Policy as blocking and Standard as non-blocking,
+    POLICY_MODEL makes a policy executable at before_pr, and hooks.yaml binds validation.required_checks
+    as a HARD hook in this repository's reference configuration — reading data nothing defined.
+  resolution: 'A single Rule entity with kind: policy | standard, carrying a prose rule and rationale,
+    a structured applies_to selector, enforcement stage, hook_points and required_checks[]. Blocking is
+    derived from kind. PullRequest.checks[].required sources from Rule.required_checks rather than being
+    asserted.'
+  rationale: One entity because the payload is identical and the only difference is whether violation
+    blocks — the distinction GLOSSARY actually draws. Two entities would duplicate a selector, an enforcement
+    stage and a check list to encode one boolean. Whether the corpus wants them separate is a tier-3 decision
+    recorded as an open question.
+- conflict: CanonicalArtifact.approved_by was a single ApprovalRecord id, which did not fix the case the
+    change was justified by ('a document covered by two records, or one whose approval was superseded,
+    is unresolvable'), and the draft recorded only one validator defect while scripts/validate_docs.py
+    also string-compares approved_by against the record's approver (lines ~246-252) and would fail every
+    artifact on the day the model lands.
+  resolution: 'approvals[] is a list, included in the hash exclusion set. Resolution rule: the binding
+    approval is the latest non-revoked gate_approval whose artifact entry, after applying any attestation
+    chain, matches the artifact''s current content_hash. Two enforcement defects are recorded against
+    scripts/validate_docs.py: the sha256-prefix check at line 244 (which rejects canonical/v2:) and the
+    approved_by/approver identity comparison, which must become an id resolution.'
+  rationale: A scalar cannot hold two records; and under-reporting enforcement breakage is the same conflict-hiding
+    the model was written to end. A validator is enforcement stage 'check', not an authority — a check
+    contradicting an accepted ADR is wrong by definition, but it must be named, not omitted.
+- conflict: 'The claim that the document-level architecture.decisions list is derivable from requirements''
+    constraints is false against the only ADS instance: ADS-001 lists ADR-002 there and in no requirement''s
+    constraints, while the constraints union also contains PRINCIPLES, SPEC-AUTHORITY, DES-QUESTION-ESCALATION
+    and STATES, which are not decisions.'
+  resolution: 'The list is derived as constraints[].target_id UNION architecture_rules[].source_adr, filtered
+    to artifact_type: adr. Stored nowhere; a validator rule asserts the derived set is complete.'
+  rationale: The stored list is one fact in two places, which ADR-012 and ADR-015 both legislate against
+    — but the previous derivation returned a set wrong in both directions and would have lost ADR-002
+    from ADS-001's architecture linkage entirely.
+- conflict: 'The consolidation ladder was still unorderable after the Memory merge: CONSOLIDATION''s rungs
+    are Observation -> Candidate -> Validated Pattern -> Procedure -> Standard/Skill, but ''validated
+    pattern -> procedure'' is a form change at constant status, and `form` had no ordering, no transitions
+    and no promotion criteria — while its five tokens could not express a candidate destined to become
+    a Standard.'
+  resolution: 'form becomes an ordered vocabulary with declared allowed_transitions: observation -> candidate_lesson
+    -> validated_pattern -> procedure -> candidate_rule. anti_pattern moves out of the ladder into a `polarity`
+    flag, since it is a sign, not a rung. Promotion eligibility thresholds over observed_successes / observed_failures
+    / confidence remain undecided and are an open question.'
+  rationale: AUTHORITY_MODEL rests on 'nothing skips a rung', and an unordered enum rejects nothing —
+    the schema could not refuse observation -> procedure. Making the ordering structural is available
+    now; setting the numeric promotion bar is a judgement CONSOLIDATION itself only says 'may include',
+    so inventing thresholds would be coining policy in a schema.
+- conflict: Nothing recorded a generated projection or a mirror, though ADR-015 clause 5 requires a mirror
+    to be 'stamped as generated, and never edited in place' and ADR-017 clause 3 says the same of markdown
+    — and APR-0004's scope_note names the absence of a generator as a live inconsistency. Meanwhile `prd`
+    stayed an approvable, gated, front-matter-bearing type, so an approval could bind to a rendering rather
+    than to the Specification.
+  resolution: 'CanonicalArtifact gains a projection block {is_projection, generated_from, generated_from_version,
+    generated_from_content_hash, generator, generated_on}. Rule: a projection carries no status, no approvals
+    and no content_hash, is never named in an ApprovalRecord, and never triggers a gate; an unstamped
+    rendering is a validation error. The docs/prd/** and docs/ads/** path triggers on product_spec are
+    retired in favour of a {artifact_type: specification} selector, and the gate''s title ''Approval of
+    a PRD/ADS pair'' no longer describes what it approves.'
+  rationale: Without a stamp nothing distinguishes a conformant rendering from a hand-edited one, which
+    is ADR-017's own top risk. And leaving PRD approvable meant the reachable end state was a human approving
+    a generated view with its own hash while the canonical Specification stayed unapproved — 'the approval
+    covers content nobody approved', inverted.
+- conflict: HookBinding required project_config and Skill had no scope, contradicting PRD-008 ('central
+    workflows/skills/hooks are versioned outside project repos; project repos contain only local configuration
+    and domain-specific extensions') and PROJECT_BOOTSTRAP.
+  resolution: 'HookBinding, Skill and Rule each carry scope: organization | project, with the project
+    reference optional.'
+  rationale: A required per-project key made a centrally versioned binding illegal, so the adoption model
+    PRD-008 specifies could not be configured at all.
+- conflict: Role and AgentIdentity carried no organization, while Memory.scope required organization and
+    project, Event required them as partition keys, and Project.organization_template names a role set.
+    Two projects instantiating the standard template both mint compliance.primary and compliance-analyst@1.
+  resolution: Organization is an entity; Role ids are role:<slug>@<version> scoped to an organization;
+    AgentIdentity ids are <organization>/<domain>.<instance>. organization_template stays a field on Organization
+    rather than becoming an entity, since it names a role set that Role records already constitute.
+  rationale: Without a tenancy key, memory namespaces, approvals and run records collide across tenants
+    — and the model's own rules forbid replacing that key with a path.
+- conflict: hash_scheme was made required on ApprovalRecord, retroactively invalidating APR-0001..0003,
+    which carry no such key and which the model simultaneously calls immutable. It was also a single record-level
+    field, though a migration attestation carries legacy and canonical hashes in the same record by definition.
+  resolution: The scheme moves into each hash's own prefix (canonical/v2:sha256:<64 hex>, legacy/truncated-32:sha256:<32
+    hex>). A record-level hash_scheme is no longer required; where absent on an existing record, legacy/truncated-32
+    is the defined default. ApprovalRecord.migration.from/to.algorithm becomes descriptive. The bare `sha256:`
+    prefix is retired because it names three different computations distinguishable only by digest length.
+  rationale: A required field three immutable records lack forces either mutation of approval provenance
+    or permanent schema invalidity, and the model stated neither intent. Recording the scheme wrongly
+    is not cosmetic — it determines which computation a verifier runs to decide whether an approval still
+    binds.
+- conflict: Merging MigrationAttestation into ApprovalRecord lost the per-document `approval:` back-reference
+    CONTENT_HASHING specifies, and made gate, surface, session, approver_account and approved_on required
+    for all kinds — a set an attestation cannot satisfy, since it has no gate and no approving statement.
+  resolution: 'artifacts[] gains `reanchors: ApprovalRecord id`. gate, surface and session are required
+    only for record_kind: gate_approval. approver/approved_on are read as attester/attested_on for an
+    attestation. method_kind (a vocabulary) plus method_note replaces prose-only method. ADR-016 places
+    attestations under .agentic/attestations/ while gates.yaml sets record_location to .agentic/approvals/;
+    one location is chosen for the entity and the validator''s ^APR-\d{4}$ pattern widens to (APR|ATT|EDL)
+    with per-kind required-field sets.'
+  rationale: The corpus's first attestation must re-anchor APR-0001..0003 across three separate records,
+    and without the pointer it cannot say which approval each new hash belongs to — the mechanism's first
+    and only required use was unrepresentable. method_kind matters because 'which approvals rest on a
+    weak method' is the only operational use of ADR-016's visibility requirement, and prose makes it answerable
+    one record at a time.
+- conflict: Workspace was folded into AgentRun as a 1:1 block, against DES-DATA-MODEL's workspaces table
+    and hook-points.yaml's dedicated workspace phase (after_workspace_create, before_workspace_remove)
+    — while repair runs routinely share one branch and worktree.
+  resolution: Workspace is restored as an entity keyed by (repository, branch, worktree_name) with AgentRun
+    referencing it N:1.
+  rationale: Under a run-keyed 1:1 block a repair run either creates a second worktree for one branch
+    or cannot record which workspace it used, and before_workspace_remove — 'last chance to preserve evidence'
+    — would bind to a block that dies with its parent record in a CLOSED registry phase.
+- conflict: Answer was folded into Question as single-valued fields, which cannot hold the flow DES-QUESTION-ESCALATION
+    specifies (parent attempts resolution, then escalation, then a human answers) and which AC-001-005/006
+    are exactly the two cases of.
+  resolution: Question.answers[] is a list of {id, answered_by, answered_on, answer, answer_basis, resolution_source,
+    accepted} with a single accepted marker.
+  rationale: A question answered by the parent, disputed, then answered by the human kept only the last
+    answer. The non-escalation audit and REGRESSION_AND_TRAINING's learning triple both need the superseded
+    one.
+- conflict: Gate.closure absorbed a document-level closure block into eleven per-gate copies, including
+    merge_closes_gates 'always false'.
+  resolution: The four absolutes and the surfaces list move to ControlledVocabulary VOCAB-GATES as closure_policy.
+    Gates keep closure_overrides limited to surfaces and record_kind. merge_closes_gates is removed as
+    a field entirely.
+  rationale: A field whose only legal value is false is a schema that can express a Principle 1 violation,
+    and eleven copies of 'ambiguity is not approval' are eleven places to drift. ADR-013's force comes
+    from those rules being global.
+- conflict: Five state enums were coined inline (Decision.status, PullRequest.state, Evidence.outcome,
+    AgentIdentity.status, RuntimeSession.ended_reason) while the model argued that adding a token must
+    go through platform_config, and Finding.severity borrowed question_severity, two of whose five tokens
+    (`question`, `approval`) are not finding severities.
+  resolution: All five become controlled vocabularies. Finding gets its own VOCAB-FINDING-SEVERITY, which
+    must define `material`, since the legal and privacy_risk_acceptance gates both fire on 'a material
+    finding' with no definition anywhere.
+  rationale: REGISTRIES rule 1 makes a registry the sole source for its vocabulary, and the model coining
+    five axes in prose is the behaviour it prohibits. Adopting a mis-scoped applies_to from the registry
+    is equally inconsistent in a model that rewrites document_status.applies_to and rejects work_state's
+    GitHub claim.
+- conflict: Requirement.constraints[].note was optional prose glossed as 'the reading of it', but the
+    corpus's actual key is `rule:`, present on every constraint and carrying the normative statement —
+    and DES-ARCHITECTURE-LOOP's readiness gate requires machine-readable architecture constraints.
+  resolution: '`rule` is restored as a required field; `note` remains as an optional reviewer gloss.'
+  rationale: Renaming a mandatory rule to an optional note demoted the only place a constraint says what
+    it constrains, and an id-only constraint is not machine-readable in the sense the architecture readiness
+    gate demands.
+- conflict: 'AgentIdentity could not express the narrowing the model promised: Role gained completion_criteria
+    and applicable_gates with ''the identity may only narrow them'', but the identity had no override
+    fields for either, while agent-role.example.yaml carries `completion:` and `human_gates:` on the instance.'
+  resolution: AgentIdentity gains completion_criteria_overrides and gate_overrides alongside the capability,
+    skill and tool-grant overrides.
+  rationale: Two fields of the one shipped role example otherwise had no destination on either entity,
+    and the model's own narrowing rule was unrepresentable.
+- conflict: Role.completion_criteria and Requirement.invariants were treated asymmetrically — invariants
+    got ids, an optional predicate and an open question, completion criteria got bare slugs like risk_summary_complete.
+    Question.suggested_answers were bare tokens naming three product options with different compliance
+    consequences. ContextPacket.allowed_scope was prose-only.
+  resolution: completion_criteria takes the invariant shape {id, token, statement, predicate, evaluated_by}
+    and joins open question 4. suggested_answers becomes {token, statement, implication, recommended}.
+    allowed_scope becomes structured store-neutral refs {components, artifacts, requirements, work_items}
+    plus a prose scope_note, the same split Decision and ApprovalRecord already use.
+  rationale: 'Completion criteria are what an agent uses to declare its own run finished — the self-marking
+    risk RISK-001-002 names, one level up. Suggested answers are the trade-offs QUESTION_ESCALATION requires
+    an escalation to state, and a slug is the label of a discarded argument. And scope containment is
+    a security boundary: prose-only means it can never leave enforcement stage prose, which Principle
+    5 forbids for behaviour that must always happen.'
+- conflict: ADR risks and consequences were single prose blobs while Requirement.risks was an identified
+    list, and ADR consequences carry obligations ('APR-0001..0003 must be re-anchored') and dependencies
+    ('gated on ADR-017's blocking deliverable') that the model separately structured as depends_on.
+  resolution: 'risks becomes {id, statement, mitigation, status} — the shape Requirement.risks already
+    uses — and consequences becomes {id, statement, kind, ref} with kind implication | obligation | dependency.
+    refines and depends_on derive from kind: dependency rather than being hand-mirrored. CanonicalArtifact
+    gains a prose change_note per version.'
+  rationale: 'A tier-2 risk can be cited and retired and a tier-1 risk could not be referenced at all;
+    APR-0004''s scope_note already gestures at ADR-017''s standing risk in prose because there was no
+    id. Consequence bullets naming work are the untracked backlog the model supersedes KnownGap over.
+    And the change_note is the highest-value argued field in the model: ADR-016 clause 5 re-opens the
+    gate on a hash change, and the human was being asked to re-approve with nothing saying what moved.'
+- conflict: VerificationRequirement.method (four tokens) and Evidence.evidence_type (seven tokens) were
+    two enums over one axis that did not compose — diff, run_record and release discharge none of the
+    methods — while RegressionCase.required_verifications was described as covering tests, checks, architecture
+    and policy criteria, four categories the method vocabulary had two of.
+  resolution: 'One vocabulary with a declared mapping: each method token lists the evidence_type tokens
+    that can discharge it (attributes.discharged_by), validated on write. architecture_check is added
+    as a fifth method. ADS-001''s kebab spellings become aliases.'
+  rationale: Without an admissibility rule the join degrades to 'someone set the foreign key', which is
+    the tier-5-satisfies-tier-2 confusion precedence rule 4 exists to prevent, reintroduced through the
+    type system.
+- conflict: 'The evaluation cluster was one entity where the corpus has five: RegressionCase.suite_refs
+    pointed at a non-existent entity, and DES-DATA-MODEL lists regression_suites, evaluation_runs, evaluation_scores
+    and routing_observations while DEVCTL exposes `eval run <suite>` and `eval compare <baseline> <candidate>`.'
+  resolution: RegressionSuite and EvaluationRun are added; evaluation_scores becomes EvaluationRun.scores[];
+    RoutingObservation is deliberately not an entity — a routing observation is a performance Memory (memory_type
+    already has the token) derived from Events, which is what ADR-004 requires of everything derived.
+  rationale: PRD-007's single acceptance criterion is that a new configuration be evaluated against an
+    existing role regression suite before becoming the default worker, and there was nowhere to put that
+    result. Routing observations, by contrast, are exactly what the performance memory type was defined
+    for; a separate table would duplicate it.
+- conflict: The Experience plane had zero entities though ADR-010 makes it one of seven and DES-SYSTEM-ARCHITECTURE
+    enumerates its contents, including the learning inbox where a human curates tier 6 — while Memory.status
+    transitions had no actor, timestamp or reason.
+  resolution: 'Notification covers approvals-pending, escalations and digests. Memory gains status_changed_by
+    and status_changed_on. No InboxItem entity: the inbox is a view over Memory records with status candidate
+    or validated, filtered by scope, which is a query rather than a record.'
+  rationale: ADR-015's consequence — 'the abstraction has to reach the Experience Plane or it only half
+    works' — is about stores reaching the UI, not about the UI minting state. A curation act needs an
+    actor and a timestamp, which are now recorded; a queue view over existing records needs no entity
+    of its own.
+- conflict: Every identifier said 'sequential, never reused' or 'store-minted' with no allocator named,
+    against ADR-017 clause 4's explicit multi-writer model. Two agents drafting requirements in one specification
+    both mint REQ-001-009; two parallel branches both take ADR-019 — which nearly happens in this corpus,
+    where numbers are allocated by reading a directory.
+  resolution: 'Stated as a model invariant: the authoritative store for an artifact''s type issues its
+    id, allocation is a write to that store, and no client derives an id by scanning a directory or listing.
+    The concrete reservation mechanism under the local git provider is an open question.'
+  rationale: Because ids are embedded in child ids (CAP/REQ/AC/VER all carry the specification number)
+    and referenced from ApprovalRecords by id plus hash, a collision is not a nuisance — it silently cross-binds
+    an approval to the wrong artifact.
+- conflict: 'Path coupling was under-reported. The draft named scripts/validate_docs.py line 128 as ''the
+    last piece of path-based reasoning'', but that check only fires for adr/prd/ads, while DOCUMENT_LIFECYCLE
+    line 68 states the deeper rule: ''non-numbered types derive their id from the filename'' — how every
+    SPEC-, DES-, GUIDE- and EX- id in the corpus is minted.'
+  resolution: DOCUMENT_LIFECYCLE line 68 is named as the path coupling to remove. Under the store-allocator
+    rule above, DES-/SPEC-/GUIDE-/EX- ids are store-issued and uniqueness-checked in the store, with the
+    filename becoming a projection detail.
+  rationale: Thirty-four design documents plus five specs get their canonical id from a path today, so
+    the migration had no defined source of ids for two thirds of the corpus.
+- conflict: Adoption was reduced to a config block, though LEGACY_ADOPTION produces an adoption report
+    and a non-destructive patch proposal, PRD-008 repeats it, and directory mappings are the mechanism
+    ADR-015's non-destructive promise depends on.
+  resolution: No AdoptionReport entity. An adoption report is Findings plus a proposed Project.knowledge
+    mapping plus WorkItems, all of which exist; a patch proposal is an unmerged PullRequest. Project.adoption
+    keeps level, assessed_on, evidence_refs, blocking_work_items and a prose assessment_note.
+  rationale: Every component of an adoption report already has a home, and minting a report entity would
+    create a second place for findings and proposed work — the duplication the model exists to end. Recorded
+    as a deliberate decision rather than an omission.
+- conflict: Release was superseded into Evidence and simultaneously left as an open question, and Check
+    was superseded into Evidence while also stored as PullRequest.checks[].
+  resolution: Release is removed from Evidence.supersedes_existing and left solely as an open question.
+    PullRequest.checks[] becomes a derived view over unbound Evidence records; only Evidence is stored.
+  rationale: A superseded entity and an open question about the same entity cannot both be true, and Check
+    having two homes reintroduces the one-fact-two-places drift the model legislates against elsewhere.
+- conflict: 'ADS-001''s `governed_by: STATES` was resolved to VOCAB-WORK-STATE, but the constraint''s
+    own rule reads ''Outcomes use the readiness_outcome axis''.'
+  resolution: 'It resolves to VOCAB-READINESS-OUTCOME. The general rule: a constraint citing a multi-axis
+    registry file must name the axis, since `STATES` is a file holding six vocabularies and a file is
+    a local-provider detail with no id.'
+  rationale: A one-line error in the flagship example of why registries need ids, pointing at the real
+    design issue — resolving a file to a single arbitrary axis hides that the reference was under-specified.
+- conflict: Project.knowledge is keyed by artifact_type, but .agentic/project.yaml — which CLAUDE.md says
+    the first runtime must read unchanged — uses category keys (`architecture`, `prds`, `adrs`), has no
+    key for `design`, `skill`, `guide`, `schema` or `example`, and `design` is the corpus's dominant type
+    spread across nine directories, against ADR-015 clause 2's one-store-per-type rule.
+  resolution: 'The model states the conformant shape: knowledge keyed by artifact_type token. The reference
+    instance''s keys are recorded as non-conformant and must be corrected in a platform_config change.
+    Whether `design` may be sub-scoped across nine homes, or must collapse to one store, is an open question
+    — it weakens ADR-015 clause 2 and would need a superseding ADR.'
+  rationale: A runtime required to read the instance unchanged cannot read `architecture:` as a type.
+    The model can fix the schema shape and cannot choose between weakening an accepted decision and re-homing
+    34 documents; that is a human call.
+- conflict: The documents defining most of these entity shapes — ADS_OVERVIEW, ROLE_RUNTIME_CONTRACT,
+    KNOWLEDGE_GRAPH, CONTEXT_PACKET, CONTEXT_PROVENANCE, MEMORY_ARCHITECTURE, DELIVERY_MODEL, GLOSSARY
+    and all five tier-0 specs — are draft and carry no authority, while DES-DATA-MODEL and DES-SYSTEM-ARCHITECTURE
+    are approved.
+  resolution: Stated rather than assumed. Where an accepted ADR speaks (ADR-001, 002, 004, 005, 006, 007,
+    010, 012, 013, 014, 015, 016, 017) the model follows and cites it. Where an approved tier-2 design
+    document speaks (DES-DATA-MODEL, DES-SYSTEM-ARCHITECTURE, DES-COMPONENTS) it is treated as binding
+    and any divergence is raised as a finding rather than closed here. Where only drafts speak, they are
+    the best available description and the entity's shape is revisable at their gate. No draft is treated
+    as binding in a conflict.
+  rationale: 'Precedence rule 2: a draft ADR outranks nothing. The alternative — modelling only what accepted
+    artifacts define — would leave about six entities and would not serve the base-data schema ADR-017
+    calls the blocking deliverable. The correction from the previous version is that approved design documents
+    are no longer treated as drafts of convenience.'
+open_questions:
+- Are skills agent-authorable or human-gated? AUTHORITY_MODEL says tier 4 'may be agent-authored within
+  policy', DOCUMENT_LIFECYCLE places skills at .agentic/skills/, and gates.yaml puts all of .agentic/**
+  behind platform_config whose aliases include role_definitions. The terminal rung of the promotion ladder
+  is therefore simultaneously agent-authorable and human-gated. Either skills move out of .agentic/ or
+  tier 4 is gated and AUTHORITY_MODEL's sentence is wrong. Governance, not modelling.
+- 'Gate tiering: the model adds Gate.risk_tier per ADR-014 clause 7 and cannot assign it. All eleven gates
+  are blocking: true with approver human.cto, so the registry cannot distinguish approving a production
+  release from approving a typo fix in .agentic/**. Which gates are reversible (sampled audit), which
+  are consequential (attention budget), and which are irreversible (named human, never batched) is the
+  human''s call — and ADR-014 argues that not making it is what produces rubber-stamping.'
+- 'The ToolGrant namespace, wildcard expansion (deployment.*) and deny-precedence semantics are unspecified
+  and recorded as a known gap. This is security-relevant: production_secrets and billing_configuration
+  both fire on ''an agent requests a capability'' against a namespace with no defined membership, so neither
+  gate can be enforced. The model names the field and cannot invent its grammar.'
+- Do invariants and completion criteria get a predicate language, or does 'mechanically checkable' mean
+  an agent judges and records the outcome? REQ-001-006 claims its nine invariants are mechanically checkable
+  and AC-001-007 requires each failed one to be named, while both they and Role.completion_criteria are
+  bare kebab slugs with no evaluator. One answer settles both, and it decides whether the `predicate`
+  and `evaluated_by` fields are real.
+- Are classification, finding and capability gate triggers evaluable at all? The model structures selectors
+  for artifact_type, tier and status. 'Architecture impact assessed as high by the Architecture Lead'
+  and 'a material finding' are human classifications with no evaluable form, and `material` is undefined
+  anywhere despite two gates firing on it. Each needs a decision on whether it becomes a rule or stays
+  a recorded human judgement.
+- Is a release a distinct entity, a state over a set of PullRequests, or a WorkItem type? production_release
+  is a blocking gate triggered by 'release candidate reaches the human release gate (SDLC phase 8)' and
+  Release is a graph node type, but the corpus gives no shape to gate on. Evidence.evidence_type keeps
+  a `release` token as a placeholder; the entity question is open.
+- 'Does promoting a Memory to a Skill or a tier-3 Rule require a gate, and which one? CONSOLIDATION says
+  ''human approval for high-impact standards'' and names no gate; no gate triggers on tier 3 or 4 at all.
+  Related and equally open: the promotion thresholds over observed_successes, observed_failures and confidence.
+  CONSOLIDATION says criteria ''may include'' repeat use and absence of counterexamples, which is not
+  a rule, and inventing numbers would be coining policy in a schema.'
+- External reference — a library's API, a vendor's documentation — has no authority tier, yet ContextItem.authority_level
+  is required on every delivered item and stale library knowledge is a named cause of the 'stale context'
+  failure. Adding a tier to the seven-tier model, or a defined out-of-band value, changes the precedence
+  rules and is a tier-0 change.
+- Which store is authoritative for each plane? The model gives Project.stores the shape and cannot choose
+  the providers. WorkUnit is the sharpest case — derived from approved requirements (knowledge) but consumed
+  by the orchestrator (control), with no work_units table anywhere — but the same question is open for
+  Question, Decision, Finding, ContextPacket, Event and the evaluation entities.
+- 'May a Decision be recorded by a non-human agent, and what makes a decision ''consequential'' enough
+  to require promotion to an ADR? GLOSSARY says ''typically from a human''; QUESTION_ESCALATION step 6
+  says an answer becomes a decision ''when consequential'', with no test. Both answers change whether
+  Decision.decider may be kind: agent and whether promotion is mandatory or discretionary.'
+- 'The tier-0 specs that define this model — SPEC-AUTHORITY, SPEC-LIFECYCLE, SPEC-REGISTRIES, SPEC-CONTENT-HASHING,
+  SPEC-GLOSSARY — are all draft with human_approved: false, so by precedence rule 2 the constitutional
+  layer carries no authority, including the rule that says so, while the validator enforces them as a
+  required check. Approving them is a human act at a gate and nothing in this model substitutes for it.
+  The model''s amendment to SPEC-CONTENT-HASHING''s exclusion set (adding supersedes, superseded_by, owner,
+  store, approvals) rides on that approval.'
+- 'The local work store''s on-disk format is undefined — ADR-012 calls it ''the next deliverable'' and
+  says that until it exists neither store is fully specified — while .agentic/project.yaml already sets
+  work_store: local. WorkItem''s schema is given here; its serialization for the store this repository
+  actually uses is unmade.'
+- 'Does `design` get sub-scoped across nine directories, or collapse to one store? ADR-015 clause 2 requires
+  one authoritative store per document type, and `design` is the corpus''s dominant type with nine homes
+  and no configured store at all. Sub-scoping weakens an accepted decision and needs a superseding ADR;
+  collapsing means re-homing 34 documents. Related: the reference project.yaml''s knowledge keys are categories,
+  not artifact types, and a runtime told to read it unchanged cannot resolve them.'
+- 'May a narrative Specification (conformance: narrative, no capabilities or requirements) close the product_spec
+  gate? PRD-001 and PRD-003..008 are narrative today. Saying yes means approving intent that no requirement
+  decomposes; saying no means those seven must be re-specified before any work traces to them. This is
+  the migration''s cost, and it is a product decision.'
+- How are sequential ids allocated under the local git provider? The model states that the authoritative
+  store issues ids and that no client derives one by scanning a directory, which is how ADR-019 would
+  be allocated today. The concrete reservation mechanism — a compare-and-swap registry file, or a UUID-plus-display-number
+  split — is unmade, and ADR-017 clause 4's multi-writer model makes it load-bearing.
+- 'How is Notification.cost_of_delay computed? DELIVERY_MODEL says ranking is ''by cost of delay: what
+  is blocked, how much, and how irreversibly'' and gives no formula, while the model supplies the fields.
+  Getting this wrong is not a display defect — it is what determines which decisions a human sees first
+  under a bounded attention budget.'
+- Are Policy and Standard one entity or two? The model makes them one (Rule with kind), because the payload
+  is identical and only blocking differs. GLOSSARY treats them as distinct terms and DES-DATA-MODEL has
+  policies/policy_versions and no standards table. Tier 3 has no artifacts, so this is decidable cheaply
+  now and expensively later.

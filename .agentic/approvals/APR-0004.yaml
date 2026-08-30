@@ -1,0 +1,64 @@
+# Approval record, per ADR-013.
+
+id: APR-0004
+gate: architecture_decision
+surface: chat
+session: session_015ipWtR28BoQtwZYCBh6BfM
+
+approver: MykullZeroOne
+approved_on: 2026-08-30
+recorded_on: 2026-08-30
+
+# Hashes below use the LEGACY scheme -- sha256 of the raw markdown body, truncated to
+# 32 characters -- not the canonical/v2 scheme ADR-016 defines. This is deliberate and
+# unavoidable: ADR-016 hashes structured base data, none exists yet, and the spec says
+# so ("Not yet applicable"). Accepting ADR-016 does not make it implementable.
+# These four records join APR-0001..0003 in the set requiring re-anchoring by the first
+# migration attestation.
+hash_scheme: legacy/truncated-32
+
+artifacts:
+  - id: ADR-015
+    path: docs/adr/ADR-015-KNOWLEDGE-STORE-PROVIDERS.md
+    title: ADR-015 — Pluggable Knowledge Stores, One Authoritative Home Per Document
+    version: 2
+    content_hash: sha256:ffe379b694211b3d0ad86197d737623e
+  - id: ADR-016
+    path: docs/adr/ADR-016-CANONICAL-CONTENT-HASHING.md
+    title: ADR-016 — Canonical Content Hashing and Migration Attestation
+    version: 2
+    content_hash: sha256:9c29d62995214a49a446c2813b38faea
+  - id: ADR-017
+    path: docs/adr/ADR-017-STRUCTURED-BASE-DATA.md
+    title: ADR-017 — Structured Base Data, Documents as Projections
+    version: 1
+    content_hash: sha256:62f5a4e99bad873bbeed8b21a2c090e3
+  - id: ADR-018
+    path: docs/adr/ADR-018-GITHUB-APP-ADAPTER.md
+    title: ADR-018 — A GitHub App Is the Control-Plane Adapter
+    version: 1
+    content_hash: sha256:cf61b0815c43756210760cafe4cf67e9
+
+request: >
+  Four ADRs were merged to main in pull request #2 and remained `proposed`, since
+  merging does not close a gate. Their status was put to the human, with the note that
+  four architectural decisions in one act is the batch size ADR-014 warns produces
+  rubber-stamping, and a suggestion to take ADR-017/018 separately from ADR-015/016.
+
+statement: >
+  Accept 15-18 write the approval records
+
+scope_note: >
+  Accepts ADR-015 (v2), ADR-016 (v2), ADR-017 and ADR-018. No proposed ADR remains.
+
+  The human was offered a split into two acts and chose to accept all four together.
+  Recorded because ADR-014 identifies batch approval as a complacency risk, and the
+  record should show the choice was made knowingly rather than by omission.
+
+  Accepting ADR-017 makes hand-authored markdown contrary to an accepted decision:
+  documents are now a generated projection of structured base data, and no generator
+  exists. That inconsistency is live from this record forward and is tracked as
+  ADR-017's own stated risk.
+
+  docs/spec/CONTENT_HASHING.md remains `draft`. It was not named and its promotion is
+  outside this record.

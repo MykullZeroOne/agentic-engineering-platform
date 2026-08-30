@@ -1,0 +1,42 @@
+# Approval record, per ADR-013 -- which this approval supersedes.
+
+id: APR-0006
+gate: architecture_decision
+surface: chat
+session: session_015ipWtR28BoQtwZYCBh6BfM
+
+approver: MykullZeroOne
+approved_on: 2026-08-30
+recorded_on: 2026-08-30
+hash_scheme: legacy/truncated-32
+
+artifacts:
+  - id: ADR-019
+    path: docs/adr/ADR-019-CONVERSATIONAL-APPROVAL-V2.md
+    title: ADR-019 — Conversational Approval, Restated
+    content_hash: legacy/truncated-32:sha256:d56f2a7d72fe8185ce26711485b7245c
+
+request: >
+  Reported that ADR-013 and ADR-016 define content_hash incompatibly while both are
+  accepted, and that approved_by is specified as a pointer to the approval record but
+  implemented as an identity name. Proposed ADR-019 superseding ADR-013: same substance,
+  with the hash scope stated as a principle and delegated to ADR-016 so the two cannot
+  drift again, and approved_by separated from a new approval_record pointer.
+
+statement: >
+  Accept ADR-019 and merge
+
+scope_note: >
+  Accepts ADR-019 only. Its supersession of ADR-013 takes effect with this record:
+  ADR-019.supersedes and ADR-013.superseded_by are set, and ADR-013 moves to `superseded`.
+
+  ADR-013's body is deliberately NOT edited. CLAUDE.md says to add a "Superseded by
+  ADR-NNN" line to the original, but that instruction predates front matter; the
+  superseded_by field now carries it machine-readably. Editing the body would change
+  ADR-013's content hash and invalidate APR-0002, which approved it.
+
+  ADR-019's consequences are NOT implemented here: approval_record is not yet in the
+  SPEC-LIFECYCLE front-matter contract, the 24 artifacts carrying approved_by have no
+  pointer, and the validator has no agreement check for it. That is follow-up work,
+  deliberately excluded from an already oversized pull request. Until it lands, ADR-019
+  is accepted and unimplemented -- a tracked inconsistency, not a silent one.
