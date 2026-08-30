@@ -65,6 +65,27 @@ gates:
     aliases: []
     enforcement: prose
 
+  - id: constitutional_change
+    title: Constitutional change approval
+    description: >
+      Approval of a tier-0 artifact: the principles, and the specifications that define
+      how authority, document lifecycle, vocabulary and hashing work. Tier 0 sits above
+      architecture in docs/spec/AUTHORITY_MODEL.md, so folding it into
+      architecture_decision would understate it. Until this gate existed the highest
+      authority tier in the system was the only one nothing gated.
+    approver: human.cto
+    blocking: true
+    triggers:
+      - kind: path
+        condition: docs/vision/**
+      - kind: path
+        condition: docs/spec/**
+      - kind: artifact_status
+        condition: a tier-0 artifact transitions to `approved`
+    sources: ["docs/spec/AUTHORITY_MODEL.md"]
+    aliases: []
+    enforcement: prose
+
   - id: architecture_decision
     title: Architecture decision approval
     description: >

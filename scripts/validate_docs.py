@@ -30,9 +30,19 @@ TYPE_TIER = {"principle": 0, "spec": 0, "adr": 1, "prd": 2, "ads": 2, "design": 
 
 # `accepted` is the ADR spelling of `approved`; only ADRs may use it.
 AUTHORITATIVE = {"approved", "accepted"}
+# A retired artifact was legitimately approved once. Supersession ends its force; it does
+# not rewrite the fact that a human approved it, so these statuses keep their approval fields.
+RETIRED = {"superseded", "deprecated"}
 ID_PATTERN = {"adr": r"^ADR-\d{3}$", "prd": r"^PRD-\d{3}$", "ads": r"^ADS-\d{3}$"}
 
 ENFORCEMENT_STAGES = {"prose", "check", "hook"}
+
+# Hash schemes and their digest lengths, per docs/spec/CONTENT_HASHING.md. A bare
+# "sha256:" prefix is the pre-ADR-016 form: accepted during the interim but warned on,
+# so existing records apply visible pressure toward the migration attestation rather
+# than sitting silently non-conformant.
+HASH_SCHEMES = {"canonical/v2": 64, "legacy/truncated-32": 32}
+LEGACY_BARE_PREFIX = "sha256:"
 
 # Required ADR sections, per docs/spec/DOCUMENT_LIFECYCLE.md. ADR-001..008 predate the
 # requirement and are accepted and immutable, so they are grandfathered rather than rewritten.
@@ -134,7 +144,7 @@ def check_documents(docs, states):
                 err(rel, f"status {status!r} requires human_approved: true")
             if not fm["approved_by"] or not fm["approved_on"]:
                 err(rel, f"status {status!r} requires approved_by and approved_on")
-        elif fm["human_approved"]:
+        elif fm["human_approved"] and status not in RETIRED:
             err(rel, f"human_approved: true is invalid for status {status!r}")
 
         if typ == "adr" and re.match(r"^ADR-\d{3}$", str(fid)):
@@ -241,8 +251,19 @@ def check_approvals(gates, by_id, fms):
             if aid not in by_id:
                 err(rel, f"approves unknown artifact {aid!r}")
                 continue
-            if not str(art.get("content_hash", "")).startswith("sha256:"):
-                err(rel, f"artifact {aid} missing a sha256 content_hash")
+            h = str(art.get("content_hash", ""))
+            if h.startswith(LEGACY_BARE_PREFIX):
+                # Pre-ADR-016 form: no scheme prefix, so the computation is ambiguous.
+                warnings.append(f"{rel}: {aid} carries a bare {LEGACY_BARE_PREFIX} hash; "
+                                f"needs re-anchoring by attestation (ADR-016)")
+            else:
+                scheme, sep, digest = h.partition(":sha256:")
+                if not sep or scheme not in HASH_SCHEMES:
+                    err(rel, f"artifact {aid} hash {h!r} names no known scheme "
+                             f"(expected one of {sorted(HASH_SCHEMES)})")
+                elif len(digest) != HASH_SCHEMES[scheme]:
+                    err(rel, f"artifact {aid} scheme {scheme!r} requires a "
+                             f"{HASH_SCHEMES[scheme]}-character digest, got {len(digest)}")
             # The artifact must point back at the identity that actually approved it.
             claimed = fms[aid].get("approved_by")
             if claimed != rec.get("approver"):

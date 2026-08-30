@@ -1,0 +1,66 @@
+# Approval record, per ADR-013.
+#
+# First closure of the constitutional_change gate, added in the same change. Until now the
+# highest authority tier in the system was the only one nothing gated: gates.yaml covered
+# docs/adr/**, docs/architecture/**, docs/prd/**, docs/ads/**, docs/security/** and
+# .agentic/**, and tier 0 fell through.
+
+id: APR-0005
+gate: constitutional_change
+surface: chat
+session: session_015ipWtR28BoQtwZYCBh6BfM
+
+approver: MykullZeroOne
+approved_on: 2026-08-30
+recorded_on: 2026-08-30
+
+# Scheme-qualified, per ADR-016. These are still legacy digests -- canonical/v2 hashes
+# structured base data and none exists yet -- but the prefix now names the computation
+# instead of leaving it ambiguous. The bare `sha256:` form in APR-0001..0004 is what the
+# validator warns on.
+hash_scheme: legacy/truncated-32
+
+artifacts:
+  - id: SPEC-AUTHORITY
+    path: docs/spec/AUTHORITY_MODEL.md
+    title: Authority Model
+    content_hash: legacy/truncated-32:sha256:534ad0ded0767a2f0817c0e7b135dfe9
+  - id: SPEC-LIFECYCLE
+    path: docs/spec/DOCUMENT_LIFECYCLE.md
+    title: Document Lifecycle and Front Matter
+    content_hash: legacy/truncated-32:sha256:5cf39bcea273fbf46f31c4f97820e5dc
+  - id: SPEC-REGISTRIES
+    path: docs/spec/REGISTRIES.md
+    title: Registries
+    content_hash: legacy/truncated-32:sha256:5161a2d28bb09182f2ba26e8993d1fcf
+  - id: SPEC-GLOSSARY
+    path: docs/GLOSSARY.md
+    title: Glossary
+    content_hash: legacy/truncated-32:sha256:2366a0b0273721d359c2d2ff46e8711b
+
+request: >
+  Reported that every tier-0 specification was `draft` with human_approved: false, so by
+  AUTHORITY_MODEL's own precedence rule the document defining authority carried none --
+  and that gates.yaml had no trigger covering tier 0 at all. Proposed adding a
+  constitutional_change gate and approving only the four stable specifications, leaving
+  CONTENT_HASHING and ENTITY_MODEL draft because both are actively contested.
+
+statement: >
+  Approve the four stable specs and add constitutional_change gate
+
+scope_note: >
+  Approves SPEC-AUTHORITY, SPEC-LIFECYCLE, SPEC-REGISTRIES and SPEC-GLOSSARY only.
+
+  Deliberately NOT approved and still draft: SPEC-CONTENT-HASHING (its computation was
+  rewritten today and ADR-019 proposes changing what binds to it) and SPEC-ENTITY-MODEL
+  and its data file (41 entities with 17 unanswered open questions). Draft is the correct
+  status for both, not a compromise.
+
+  SPEC-GLOSSARY was corrected before approval, not after: its work-item entry still
+  asserted that GitHub is authoritative for work state, which ADR-012 v2 superseded.
+  Approving first and correcting after would have changed the content hash and invalidated
+  this record immediately.
+
+  ADR-019 is proposed in the same change and, if accepted, adds `approval_record` to the
+  front-matter contract. That is a material change to SPEC-LIFECYCLE and will re-open its
+  gate. It is approved as it stands today, not as it will stand after.

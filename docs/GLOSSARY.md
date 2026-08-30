@@ -2,12 +2,12 @@
 id: SPEC-GLOSSARY
 type: spec
 tier: 0
-status: draft
+status: approved
 version: 1
 owner: human.cto
-human_approved: false
-approved_by: null
-approved_on: null
+human_approved: true
+approved_by: MykullZeroOne
+approved_on: 2026-08-30
 supersedes: null
 superseded_by: null
 last_reviewed: 2026-08-29
@@ -21,9 +21,9 @@ use the term.
 
 ## Work
 
-**Work item** — a unit of tracked work. GitHub is authoritative for its state (ADR-001); the
-`work_items` table mirrors it. Its lifecycle is `work_state` in
-`.agentic/registries/states.yaml`.
+**Work item** — a unit of tracked work. Its authoritative store is whichever `work_store`
+names (ADR-012); this repository uses `local`. The `work_items` table is a projection, never
+the source. Its lifecycle is `work_state` in `.agentic/registries/states.yaml`.
 *Deprecated synonyms: story, ticket, task.*
 
 **Work unit** — a node in a planner-produced DAG (`docs/agents/PLANNING_ORCHESTRATION_LOOP.md`).

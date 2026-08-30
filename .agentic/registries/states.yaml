@@ -15,8 +15,12 @@ axes:
 
   # --- What a unit of work is doing -------------------------------------
   work_state:
-    description: Lifecycle of a work item. GitHub is authoritative for this axis (ADR-001).
-    source: docs/github/GITHUB_CONTROL_PLANE.md
+    description: >
+      Lifecycle of a work item. The authoritative store is whichever `work_store` names
+      (ADR-012), not fixed to GitHub. ADR-001 still makes GitHub authoritative for
+      execution state generally -- pull requests, checks, releases -- but ADR-012 v2 made
+      the work-item store configurable.
+    source: docs/adr/ADR-012-WORK-STORE-SINGLE-SOURCE.md
     applies_to: [work_item]
     terminal: [done, cancelled]
     normal_flow: [intake, refinement, ready, in_progress, review, validation, integration, ready_to_merge, done]

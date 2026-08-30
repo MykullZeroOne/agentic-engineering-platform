@@ -38,12 +38,12 @@ Constitutional and meta-specification. Tier 0.
 
 | ID | Document | Status | Path |
 | --- | --- | --- | --- |
-| `SPEC-GLOSSARY` | Glossary | `draft` | [docs/GLOSSARY.md](docs/GLOSSARY.md) |
-| `SPEC-AUTHORITY` | Authority Model | `draft` | [docs/spec/AUTHORITY_MODEL.md](docs/spec/AUTHORITY_MODEL.md) |
+| `SPEC-GLOSSARY` | Glossary | `approved` | [docs/GLOSSARY.md](docs/GLOSSARY.md) |
+| `SPEC-AUTHORITY` | Authority Model | `approved` | [docs/spec/AUTHORITY_MODEL.md](docs/spec/AUTHORITY_MODEL.md) |
 | `SPEC-CONTENT-HASHING` | Canonical Content Hashing | `draft` | [docs/spec/CONTENT_HASHING.md](docs/spec/CONTENT_HASHING.md) |
-| `SPEC-LIFECYCLE` | Document Lifecycle and Front Matter | `draft` | [docs/spec/DOCUMENT_LIFECYCLE.md](docs/spec/DOCUMENT_LIFECYCLE.md) |
+| `SPEC-LIFECYCLE` | Document Lifecycle and Front Matter | `approved` | [docs/spec/DOCUMENT_LIFECYCLE.md](docs/spec/DOCUMENT_LIFECYCLE.md) |
 | `SPEC-ENTITY-MODEL-GUIDE` | Entity Model — How to Read It | `draft` | [docs/spec/ENTITY_MODEL.md](docs/spec/ENTITY_MODEL.md) |
-| `SPEC-REGISTRIES` | Registries | `draft` | [docs/spec/REGISTRIES.md](docs/spec/REGISTRIES.md) |
+| `SPEC-REGISTRIES` | Registries | `approved` | [docs/spec/REGISTRIES.md](docs/spec/REGISTRIES.md) |
 | `SPEC-ENTITY-MODEL` | Entity Model | `draft` | [docs/spec/entity-model.yaml](docs/spec/entity-model.yaml) |
 | `PRINCIPLES` | Product and Engineering Principles | `approved` | [docs/vision/PRINCIPLES.md](docs/vision/PRINCIPLES.md) |
 
@@ -71,6 +71,7 @@ Immutable once accepted. Reverse by superseding. Tier 1.
 | `ADR-016` | Canonical Content Hashing and Migration Attestation | `accepted` | [docs/adr/ADR-016-CANONICAL-CONTENT-HASHING.md](docs/adr/ADR-016-CANONICAL-CONTENT-HASHING.md) |
 | `ADR-017` | Structured Base Data, Documents as Projections | `accepted` | [docs/adr/ADR-017-STRUCTURED-BASE-DATA.md](docs/adr/ADR-017-STRUCTURED-BASE-DATA.md) |
 | `ADR-018` | A GitHub App Is the Control-Plane Adapter | `accepted` | [docs/adr/ADR-018-GITHUB-APP-ADAPTER.md](docs/adr/ADR-018-GITHUB-APP-ADAPTER.md) |
+| `ADR-019` | Conversational Approval, Restated | `proposed` | [docs/adr/ADR-019-CONVERSATIONAL-APPROVAL-V2.md](docs/adr/ADR-019-CONVERSATIONAL-APPROVAL-V2.md) |
 
 ## Product requirements
 

@@ -48,6 +48,7 @@ runtime_preferences:
 # Gate IDs resolve against .agentic/registries/gates.yaml. All gates in that registry
 # apply to this repository; this list records which are active during bootstrap.
 human_gates:
+  - constitutional_change
   - product_spec
   - architecture_decision
   - architecture_high_risk
