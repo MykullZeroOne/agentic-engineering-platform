@@ -65,10 +65,10 @@ Immutable once accepted. Reverse by superseding. Tier 1.
 | `ADR-012` | One Authoritative Work Store, Configurable Per Project | `accepted` | [docs/adr/ADR-012-WORK-STORE-SINGLE-SOURCE.md](docs/adr/ADR-012-WORK-STORE-SINGLE-SOURCE.md) |
 | `ADR-013` | Conversational Approval Closes Human Gates | `accepted` | [docs/adr/ADR-013-CONVERSATIONAL-APPROVAL.md](docs/adr/ADR-013-CONVERSATIONAL-APPROVAL.md) |
 | `ADR-014` | Supervisory-Control Delivery Model | `accepted` | [docs/adr/ADR-014-SUPERVISORY-CONTROL-DELIVERY.md](docs/adr/ADR-014-SUPERVISORY-CONTROL-DELIVERY.md) |
-| `ADR-015` | Pluggable Knowledge Stores, One Authoritative Home Per Document | `proposed` | [docs/adr/ADR-015-KNOWLEDGE-STORE-PROVIDERS.md](docs/adr/ADR-015-KNOWLEDGE-STORE-PROVIDERS.md) |
-| `ADR-016` | Canonical Content Hashing and Migration Attestation | `proposed` | [docs/adr/ADR-016-CANONICAL-CONTENT-HASHING.md](docs/adr/ADR-016-CANONICAL-CONTENT-HASHING.md) |
-| `ADR-017` | Structured Base Data, Documents as Projections | `proposed` | [docs/adr/ADR-017-STRUCTURED-BASE-DATA.md](docs/adr/ADR-017-STRUCTURED-BASE-DATA.md) |
-| `ADR-018` | A GitHub App Is the Control-Plane Adapter | `proposed` | [docs/adr/ADR-018-GITHUB-APP-ADAPTER.md](docs/adr/ADR-018-GITHUB-APP-ADAPTER.md) |
+| `ADR-015` | Pluggable Knowledge Stores, One Authoritative Home Per Document | `accepted` | [docs/adr/ADR-015-KNOWLEDGE-STORE-PROVIDERS.md](docs/adr/ADR-015-KNOWLEDGE-STORE-PROVIDERS.md) |
+| `ADR-016` | Canonical Content Hashing and Migration Attestation | `accepted` | [docs/adr/ADR-016-CANONICAL-CONTENT-HASHING.md](docs/adr/ADR-016-CANONICAL-CONTENT-HASHING.md) |
+| `ADR-017` | Structured Base Data, Documents as Projections | `accepted` | [docs/adr/ADR-017-STRUCTURED-BASE-DATA.md](docs/adr/ADR-017-STRUCTURED-BASE-DATA.md) |
+| `ADR-018` | A GitHub App Is the Control-Plane Adapter | `accepted` | [docs/adr/ADR-018-GITHUB-APP-ADAPTER.md](docs/adr/ADR-018-GITHUB-APP-ADAPTER.md) |
 
 ## Product requirements
 
