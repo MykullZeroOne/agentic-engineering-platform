@@ -58,9 +58,12 @@ Recorded rather than invented. Each needs a decision before it can be added:
 - **Skill schema.** Skills are referenced with a `name@version` syntax throughout
   (`compliance-review@1`, `implement-story@4`) but have no schema, and `.agentic/skills/` is
   empty.
-- **Evidence package schema.** Required for merge by `CLAUDE.md`, produced by
-  `docs/agents/ENGINEERING_LOOP.md`, consumed by QA and review — and undefined. It should become
-  the pull request template.
+- **Evidence package schema.** The package now has a *shape* —
+  `.github/pull_request_template.md` — covering what changed, why, traceability,
+  verification, and gates crossed. It does not yet have a *schema*. Under ADR-017 an
+  evidence package is structured data of which the pull request body is one projection, so
+  the template is an interim human-facing form, not the definition. QA and review still
+  cannot consume it mechanically.
 - **External reference has no authority tier.** `docs/spec/AUTHORITY_MODEL.md` covers project
   intent (tiers 0-4), execution state (5), and learned memory (6). Facts about the outside world —
   a library's API, a vendor's documentation — are none of these. They are not project knowledge and

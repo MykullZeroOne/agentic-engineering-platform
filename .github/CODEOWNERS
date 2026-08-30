@@ -1,0 +1,16 @@
+# Routes the independent review that CLAUDE.md merge requirement #4 demands: the agent
+# that wrote a change never approves it. With a single human this routes everything to
+# one reviewer, which is honest about the bus factor ADR-014 records as accepted risk
+# rather than pretending a rotation exists.
+
+*                       @MykullZeroOne
+
+# Gated paths, per .agentic/registries/gates.yaml. Listed separately so the gate a change
+# crosses is visible in the review request itself, not only in the PR body.
+
+/docs/adr/              @MykullZeroOne   # architecture_decision
+/docs/architecture/     @MykullZeroOne   # architecture_decision
+/docs/prd/              @MykullZeroOne   # product_spec
+/docs/ads/              @MykullZeroOne   # product_spec
+/docs/security/         @MykullZeroOne   # security_policy
+/.agentic/              @MykullZeroOne   # platform_config
