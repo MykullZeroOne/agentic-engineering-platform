@@ -3,7 +3,7 @@ id: ADR-015
 type: adr
 tier: 1
 status: proposed
-version: 1
+version: 2
 owner: human.cto
 human_approved: false
 approved_by: null
@@ -37,7 +37,8 @@ Stores are pluggable.**
 
 1. **The schema is `docs/spec/DOCUMENT_LIFECYCLE.md`** — `id`, `type`, `tier`, `status`, `version`,
    `owner`, approval fields, and supersession links. A store may represent these however it likes;
-   it may not omit them.
+   it may not omit them. Per ADR-017 a store holds structured base data, and markdown is a
+   generated projection of it rather than the thing stored.
 
 2. **One authoritative store per document type, not per project.** This deliberately differs from
    ADR-012. Work items are one homogeneous collection, so one store is right. Documents are typed
@@ -61,6 +62,13 @@ Stores are pluggable.**
 4. **A store that cannot represent the schema cannot be authoritative.** If a tool has nowhere to
    put `tier`, `status`, or the approval fields without loss, it is not eligible. Provider
    conformance is demonstrable, not asserted.
+
+   This test disqualifies most of GitHub for documents, which is worth stating because the
+   assumption is natural. Issues are work items with a state machine, not documents. The wiki is a
+   second repository with a weak API and no review flow. Discussions are conversational. **The only
+   good document home GitHub offers is repository files** — which is the `local` provider, since
+   `local` means "files in the repository," not "on this machine." GitHub-the-work-tracker and
+   GitHub-as-a-git-host are different things, and only the second is a knowledge store.
 
 5. **Mirrors are permitted and are never authoritative.** A read-only copy published into another
    system for visibility is fine, must be stamped as generated, and must never be edited in place.
