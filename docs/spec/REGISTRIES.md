@@ -61,5 +61,12 @@ Recorded rather than invented. Each needs a decision before it can be added:
 - **Evidence package schema.** Required for merge by `CLAUDE.md`, produced by
   `docs/agents/ENGINEERING_LOOP.md`, consumed by QA and review — and undefined. It should become
   the pull request template.
+- **External reference has no authority tier.** `docs/spec/AUTHORITY_MODEL.md` covers project
+  intent (tiers 0-4), execution state (5), and learned memory (6). Facts about the outside world —
+  a library's API, a vendor's documentation — are none of these. They are not project knowledge and
+  must not be conflated with it, but agents need them and their retrieval must reach the context
+  provenance manifest, since stale library knowledge is a common cause of the "stale context"
+  failure `CONTEXT_PROVENANCE.md` exists to distinguish. Distinct from ADR-015, which governs where
+  *our* documents live.
 - **Capability namespace.** `agent-role.example.yaml` grants `github.read`, `repository.write`,
   `deployment.*`. The namespace, wildcard semantics, and deny-precedence rules are unspecified.
