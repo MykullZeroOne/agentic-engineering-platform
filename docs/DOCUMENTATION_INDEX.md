@@ -42,7 +42,9 @@ Constitutional and meta-specification. Tier 0.
 | `SPEC-AUTHORITY` | Authority Model | `draft` | [docs/spec/AUTHORITY_MODEL.md](docs/spec/AUTHORITY_MODEL.md) |
 | `SPEC-CONTENT-HASHING` | Canonical Content Hashing | `draft` | [docs/spec/CONTENT_HASHING.md](docs/spec/CONTENT_HASHING.md) |
 | `SPEC-LIFECYCLE` | Document Lifecycle and Front Matter | `draft` | [docs/spec/DOCUMENT_LIFECYCLE.md](docs/spec/DOCUMENT_LIFECYCLE.md) |
+| `SPEC-ENTITY-MODEL-GUIDE` | Entity Model — How to Read It | `draft` | [docs/spec/ENTITY_MODEL.md](docs/spec/ENTITY_MODEL.md) |
 | `SPEC-REGISTRIES` | Registries | `draft` | [docs/spec/REGISTRIES.md](docs/spec/REGISTRIES.md) |
+| `SPEC-ENTITY-MODEL` | Entity Model | `draft` | [docs/spec/entity-model.yaml](docs/spec/entity-model.yaml) |
 | `PRINCIPLES` | Product and Engineering Principles | `approved` | [docs/vision/PRINCIPLES.md](docs/vision/PRINCIPLES.md) |
 
 ## Architecture decisions
