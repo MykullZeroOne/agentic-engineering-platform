@@ -64,6 +64,7 @@ Immutable once accepted. Reverse by superseding. Tier 1.
 | `ADR-012` | One Authoritative Work Store, Configurable Per Project | `accepted` | [docs/adr/ADR-012-WORK-STORE-SINGLE-SOURCE.md](docs/adr/ADR-012-WORK-STORE-SINGLE-SOURCE.md) |
 | `ADR-013` | Conversational Approval Closes Human Gates | `accepted` | [docs/adr/ADR-013-CONVERSATIONAL-APPROVAL.md](docs/adr/ADR-013-CONVERSATIONAL-APPROVAL.md) |
 | `ADR-014` | Supervisory-Control Delivery Model | `accepted` | [docs/adr/ADR-014-SUPERVISORY-CONTROL-DELIVERY.md](docs/adr/ADR-014-SUPERVISORY-CONTROL-DELIVERY.md) |
+| `ADR-015` | Pluggable Knowledge Stores, One Authoritative Home Per Document | `proposed` | [docs/adr/ADR-015-KNOWLEDGE-STORE-PROVIDERS.md](docs/adr/ADR-015-KNOWLEDGE-STORE-PROVIDERS.md) |
 
 ## Product requirements
 
