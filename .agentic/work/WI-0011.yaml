@@ -16,3 +16,4 @@ description: |
 required_gates:
 - platform_config
 branch: claude/docs-processes-review-4vyl8q
+pull_request: 4
