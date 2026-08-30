@@ -2,14 +2,14 @@
 id: ADR-013
 type: adr
 tier: 1
-status: accepted
+status: superseded
 version: 1
 owner: human.cto
 human_approved: true
 approved_by: MykullZeroOne
 approved_on: 2026-08-29
 supersedes: null
-superseded_by: null
+superseded_by: ADR-019
 last_reviewed: 2026-08-29
 ---
 
