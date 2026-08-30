@@ -105,6 +105,12 @@ stops functioning for any document outside the repository.
   detail.
 - Generated mirrors need a stamp and a generator; hand-copying a document into another system is
   the drift this decision forbids.
+- **A first-party view over the knowledge plane becomes necessary, not optional.** Pluggable stores
+  make the store an implementation detail for agents; without a single place a human reads and
+  approves documents, this decision fragments *their* experience across Confluence, GitHub and the
+  repository instead. The abstraction has to reach the Experience Plane or it only half works.
+  `PRD-005` covers agent observability and has no knowledge surface; that gap is now load-bearing.
+- Content hashing must be defined before any non-local provider ships. Specified by ADR-016.
 
 ## Risks
 

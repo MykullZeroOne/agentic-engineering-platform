@@ -40,6 +40,7 @@ Constitutional and meta-specification. Tier 0.
 | --- | --- | --- | --- |
 | `SPEC-GLOSSARY` | Glossary | `draft` | [docs/GLOSSARY.md](docs/GLOSSARY.md) |
 | `SPEC-AUTHORITY` | Authority Model | `draft` | [docs/spec/AUTHORITY_MODEL.md](docs/spec/AUTHORITY_MODEL.md) |
+| `SPEC-CONTENT-HASHING` | Canonical Content Hashing | `draft` | [docs/spec/CONTENT_HASHING.md](docs/spec/CONTENT_HASHING.md) |
 | `SPEC-LIFECYCLE` | Document Lifecycle and Front Matter | `draft` | [docs/spec/DOCUMENT_LIFECYCLE.md](docs/spec/DOCUMENT_LIFECYCLE.md) |
 | `SPEC-REGISTRIES` | Registries | `draft` | [docs/spec/REGISTRIES.md](docs/spec/REGISTRIES.md) |
 | `PRINCIPLES` | Product and Engineering Principles | `approved` | [docs/vision/PRINCIPLES.md](docs/vision/PRINCIPLES.md) |
@@ -65,6 +66,7 @@ Immutable once accepted. Reverse by superseding. Tier 1.
 | `ADR-013` | Conversational Approval Closes Human Gates | `accepted` | [docs/adr/ADR-013-CONVERSATIONAL-APPROVAL.md](docs/adr/ADR-013-CONVERSATIONAL-APPROVAL.md) |
 | `ADR-014` | Supervisory-Control Delivery Model | `accepted` | [docs/adr/ADR-014-SUPERVISORY-CONTROL-DELIVERY.md](docs/adr/ADR-014-SUPERVISORY-CONTROL-DELIVERY.md) |
 | `ADR-015` | Pluggable Knowledge Stores, One Authoritative Home Per Document | `proposed` | [docs/adr/ADR-015-KNOWLEDGE-STORE-PROVIDERS.md](docs/adr/ADR-015-KNOWLEDGE-STORE-PROVIDERS.md) |
+| `ADR-016` | Canonical Content Hashing and Migration Attestation | `proposed` | [docs/adr/ADR-016-CANONICAL-CONTENT-HASHING.md](docs/adr/ADR-016-CANONICAL-CONTENT-HASHING.md) |
 
 ## Product requirements
 
