@@ -1,0 +1,12 @@
+id: WI-0005
+store: local
+project: PRJ-mykullzeroone/agentic-engineering-platform
+type: chore
+work_state: ready
+priority: normal
+title: Re-anchor legacy approval hashes to scheme-qualified form
+description: |
+  Fifteen content_hash values in APR-0001 through APR-0004 carry a bare `sha256:` prefix, which
+  names no computation and is what the validator warns on. Normalise them to
+  `legacy/truncated-32:sha256:` under a migration attestation per ADR-016. This does not move them
+  to canonical/v2 -- that needs structured base data, which does not exist yet.

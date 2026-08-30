@@ -1,0 +1,14 @@
+id: WI-0001
+store: local
+project: PRJ-mykullzeroone/agentic-engineering-platform
+type: spec
+work_state: ready
+priority: high
+title: 'Implement ADR-019: separate approved_by from approval_record'
+description: |
+  ADR-019 is accepted and unimplemented. Add `approval_record` to the front-matter contract in
+  SPEC-LIFECYCLE, populate it across the artifacts carrying `approved_by`, and add an agreement
+  check to validate_docs.py alongside the existing approver check. This is a material change to
+  SPEC-LIFECYCLE and re-opens its constitutional_change gate.
+required_gates:
+- constitutional_change

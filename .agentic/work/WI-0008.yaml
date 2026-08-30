@@ -1,0 +1,13 @@
+id: WI-0008
+store: local
+project: PRJ-mykullzeroone/agentic-engineering-platform
+type: feat
+work_state: ready
+priority: normal
+title: Generate the markdown projection from base data
+description: |
+  ADR-017 makes documents a generated projection of structured data. No generator exists, so every
+  hand-authored document widens the gap between an accepted decision and actual practice. ADR-017
+  records this as its own principal risk.
+dependencies:
+- WI-0009

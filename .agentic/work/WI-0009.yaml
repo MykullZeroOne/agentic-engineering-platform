@@ -1,0 +1,13 @@
+id: WI-0009
+store: local
+project: PRJ-mykullzeroone/agentic-engineering-platform
+type: spec
+work_state: ready
+priority: normal
+title: Resolve the entity model's open questions and accept it
+description: |
+  SPEC-ENTITY-MODEL is draft with 17 open questions, several of which decide whether parts of it
+  are correct -- notably whether a narrative specification may close the product_spec gate, which
+  seven of the eight current PRDs would depend on.
+required_gates:
+- constitutional_change
