@@ -122,13 +122,24 @@ def content_only(rel: str, raw: str | None):
     return raw
 
 
+def file_hash(rel: str) -> str | None:
+    """`legacy/file-32`: sha256 over the whole file at HEAD, for a config artifact.
+
+    Raw bytes, matching how the digest in a record is computed. A config artifact has no
+    markdown body, which is why truncated-32 cannot describe one.
+    """
+    proc = subprocess.run(["git", "show", f"HEAD:{rel}"], cwd=ROOT, capture_output=True)
+    if proc.returncode != 0:
+        return None
+    return hashlib.sha256(proc.stdout).hexdigest()[:32]
+
+
 def load_records() -> list[dict]:
     return [yaml.safe_load(p.read_text()) for p in sorted(APPROVALS.glob("APR-*.yaml"))]
 
 
 def cover(gate_id: str, rel: str, records: list[dict]) -> tuple[str, str]:
     """Best coverage this path has for this gate: (state, detail)."""
-    actual = body_hash(rel)
     stale = None
     for rec in records:
         if rec.get("gate") != gate_id:
@@ -137,6 +148,10 @@ def cover(gate_id: str, rel: str, records: list[dict]) -> tuple[str, str]:
             if art.get("path") != rel:
                 continue
             declared = str(art.get("content_hash", "")).rpartition(":")[2]
+            # Which digest to recompute comes off the record, not off the extension:
+            # a config artifact hashes whole, a document hashes its body. Guessing here
+            # would let the two drift apart the moment a scheme changes.
+            actual = file_hash(rel) if art.get("kind") == "config" else body_hash(rel)
             if actual is None:
                 return "covered", f"{rec['id']} (currency unverifiable)"
             if declared == actual:
@@ -228,9 +243,9 @@ def main() -> int:
             # Named the loudest way available: a record accepted here can never go stale,
             # because nothing can tell whether the file still matches what was approved.
             print(f"\nWARNING: {unverified} path(s) accepted on a record whose currency "
-                  f"could not be checked. legacy/truncated-32 is defined over a markdown "
-                  f"body, so a YAML artifact's approval never re-opens on edit. "
-                  f"canonical/v2 (ADR-016) is what closes this.")
+                  f"could not be checked, so that approval never re-opens on edit. A "
+                  f"non-markdown artifact needs `kind: config` on its record entry to be "
+                  f"hashed under legacy/file-32; without it there is no digest to compare.")
         if unevaluated:
             print(f"\nNot evaluable from a diff: {'; '.join(unevaluated)}")
 

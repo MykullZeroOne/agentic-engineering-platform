@@ -1,0 +1,80 @@
+# Approval record, per ADR-013 as superseded by ADR-019.
+#
+# First closure of platform_config, and the first record over config artifacts rather
+# than documents. Until scripts/validate_docs.py learned `kind: config`, this gate could
+# not be closed at all: every one of its trigger paths is YAML under .agentic/, which
+# collect() does not scan, so any record naming one failed as an unknown artifact.
+
+id: APR-0008
+gate: platform_config
+surface: chat
+session: session_015ipWtR28BoQtwZYCBh6BfM
+
+approver: MykullZeroOne
+approved_on: 2026-08-31
+recorded_on: 2026-08-31
+
+# legacy/file-32 hashes the whole file. truncated-32 is defined over a markdown body and
+# a config artifact has none, so it cannot describe these. Both are interim: canonical/v2
+# (ADR-016) supersedes them, and until it exists an edit here does not re-open this gate
+# on its own -- check_gates.py reports these paths as "currency unverifiable".
+hash_scheme: legacy/file-32
+
+artifacts:
+  - id: CFG-PROJECT
+    kind: config
+    path: .agentic/project.yaml
+    title: Project configuration
+    content_hash: legacy/file-32:sha256:b8afe2ddc72e9c34004bef5d304324de
+  - id: CFG-GATES
+    kind: config
+    path: .agentic/registries/gates.yaml
+    title: Gate registry
+    content_hash: legacy/file-32:sha256:d22b6ff760e9da1da918c6eb5ea2349f
+  - id: CFG-HOOK-POINTS
+    kind: config
+    path: .agentic/registries/hook-points.yaml
+    title: Hook point registry
+    content_hash: legacy/file-32:sha256:ae857ed8603aedf473dacf53c7072f58
+  - id: CFG-STATES
+    kind: config
+    path: .agentic/registries/states.yaml
+    title: State registry
+    content_hash: legacy/file-32:sha256:66488d1fc829c4690cb89773d7c0bed1
+  - id: CFG-VOCABULARIES
+    kind: config
+    path: .agentic/registries/vocabularies.yaml
+    title: Controlled vocabulary registry
+    content_hash: legacy/file-32:sha256:841e0377f9edaed0792e279b987ec6d1
+  - id: CFG-HOOKS
+    kind: config
+    path: .agentic/hooks/hooks.yaml
+    title: Hook bindings
+    content_hash: legacy/file-32:sha256:87578e8328974d36b5fd5b017c5c4865
+
+request: >
+  Reported that platform_config was unclosable: approval records validate artifacts
+  against the document index, which scans only docs/ and examples/, so a record naming a
+  registry failed as an unknown artifact. Also reported that the gate's real scope is six
+  files, not the three named in earlier reports -- hooks.yaml, hook-points.yaml and
+  states.yaml had never been covered either. Offered to extend the record format now and
+  close the gate, or to defer both to WI-0013.
+
+statement: >
+  settings are squash only now, close the gates
+
+  -- with the approach confirmed by selecting "Extend validator, then close".
+
+scope_note: >
+  Approves the six config artifacts above at the content they carry in this change, which
+  includes the legacy/file-32 term added to vocabularies.yaml to make this record
+  expressible. The hash is recorded after that edit, not before, so it binds to what
+  landed rather than to what the file looked like when the work started.
+
+  .agentic/roles/.gitkeep matches the .agentic/roles/** trigger and is not approved. It is
+  an empty placeholder; that the trigger reaches it is a precision problem in gates.yaml,
+  recorded in WI-0014 rather than papered over by approving a zero-byte file.
+
+  This closes the gate for the content named. It does not make platform_config
+  self-maintaining: until canonical/v2 exists, editing any file above leaves this record
+  claiming coverage it can no longer verify.

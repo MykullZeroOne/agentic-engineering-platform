@@ -85,6 +85,10 @@ vocabularies:
     terms:
       - {token: canonical/v2,        digest_length: 64, description: Canonical JSON over the structured artifact}
       - {token: legacy/truncated-32, digest_length: 32, description: Pre-ADR-016 digest over a raw markdown body}
+      # A config artifact has no markdown body to hash, so truncated-32 cannot describe
+      # one. Added to close platform_config, whose every trigger path is YAML under
+      # .agentic/. Same interim status as truncated-32: canonical/v2 supersedes both.
+      - {token: legacy/file-32,      digest_length: 32, description: Pre-ADR-016 digest over a whole config file}
 
   approval_surface:
     description: Where a human may close a gate. Merging a pull request is not a member.
