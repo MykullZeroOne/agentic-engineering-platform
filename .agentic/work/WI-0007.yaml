@@ -9,5 +9,3 @@ description: |
   ADR-012 requires it: phases, sequencing and exit criteria are intent and stay in documentation;
   anything with a status is state and belongs in the work store. The roadmap has been acting as the
   de facto backlog, which Principle 3 forbids.
-dependencies:
-- WI-0008
