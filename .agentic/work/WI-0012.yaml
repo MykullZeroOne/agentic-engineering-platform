@@ -1,0 +1,23 @@
+id: WI-0012
+store: local
+project: PRJ-mykullzeroone/agentic-engineering-platform
+type: ci
+work_state: review
+priority: high
+title: Enforce human gates in CI, advisory first
+description: |
+  CLAUDE.md merge requirement 5 -- "an agent must never merge a PR that crosses a human
+  gate" -- was prose with nothing behind it, and all twelve gates in gates.yaml carried
+  `enforcement: prose`. PR #4 and PR #5 both merged with open gates and nothing objected.
+
+  Add scripts/check_gates.py: evaluate the `path` triggers in gates.yaml against a pull
+  request diff, and require an approval record covering every changed path a triggered
+  gate claims. A record covers a path when it names the same gate, names that path, and
+  -- for markdown, where legacy/truncated-32 is computable -- still matches the file's
+  current body. Merging is not a closure surface (ADR-019), so nothing else in the
+  pipeline can notice an unapproved gated change.
+
+  Advisory in this change: it reports without failing. The gate debt already on `main`
+  has to be cleared before the rule can block, which is WI-0013.
+required_gates: []
+branch: ci/12-gate-check

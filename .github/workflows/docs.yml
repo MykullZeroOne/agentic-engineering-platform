@@ -14,7 +14,11 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
+      # Full history: check_gates.py diffs against the merge base to see what a pull
+      # request actually changes. A shallow clone has no merge base to diff against.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-python@v5
         with:
@@ -34,3 +38,13 @@ jobs:
             git diff docs/DOCUMENTATION_INDEX.md
             exit 1
           fi
+
+      # Human gates, per .agentic/registries/gates.yaml. Advisory for now: it reports
+      # which gates a change opens without failing the build, so the gate debt already
+      # on `main` can be cleared before the rule starts blocking. Add `--strict` to
+      # enforce, and move the six path-triggered gates to enforcement `check` in the
+      # same change -- the registry should not claim a stage the pipeline is not at.
+      - name: Check human gates
+        if: github.event_name == 'pull_request'
+        run: |
+          python3 scripts/check_gates.py --base "origin/${{ github.base_ref }}"
