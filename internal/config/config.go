@@ -49,10 +49,12 @@ type Vocabularies struct {
 	} `yaml:"vocabularies"`
 }
 
-// States is the state registry: named axes, each a closed set of tokens.
+// States is the state registry: named axes, each a closed set of tokens with an
+// optional normal_flow giving the order they are expected to move through.
 type States struct {
 	Axes map[string]struct {
-		Values []struct {
+		NormalFlow []string `yaml:"normal_flow"`
+		Values     []struct {
 			Token string `yaml:"token"`
 		} `yaml:"values"`
 	} `yaml:"axes"`
@@ -61,12 +63,17 @@ type States struct {
 // WorkItem is one file in the local work store.
 type WorkItem struct {
 	ID            string   `yaml:"id"`
+	Store         string   `yaml:"store"`
+	Project       string   `yaml:"project"`
 	Type          string   `yaml:"type"`
 	WorkState     string   `yaml:"work_state"`
 	Priority      string   `yaml:"priority"`
 	Title         string   `yaml:"title"`
+	Description   string   `yaml:"description"`
 	RequiredGates []string `yaml:"required_gates"`
 	Dependencies  []string `yaml:"dependencies"`
+	Parent        string   `yaml:"parent"`
+	Branch        string   `yaml:"branch"`
 }
 
 // Root is a project directory: the one holding .agentic/.
@@ -142,6 +149,18 @@ func (s *States) Tokens(axis string) (map[string]bool, bool) {
 		out[v.Token] = true
 	}
 	return out, true
+}
+
+// Flow returns an axis's normal_flow and its full token list, in registry order.
+func (s *States) Flow(axis string) (flow []string, values []string) {
+	ax, ok := s.Axes[axis]
+	if !ok {
+		return nil, nil
+	}
+	for _, v := range ax.Values {
+		values = append(values, v.Token)
+	}
+	return ax.NormalFlow, values
 }
 
 // LoadWorkItems reads every WI-*.yaml in the local work store, sorted by filename.

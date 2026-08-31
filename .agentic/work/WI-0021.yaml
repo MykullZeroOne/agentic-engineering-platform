@@ -1,0 +1,40 @@
+id: WI-0021
+store: local
+project: PRJ-mykullzeroone/agentic-engineering-platform
+type: feat
+work_state: review
+priority: high
+title: devctl work list and show
+description: |
+  Reading the work store meant opening twenty YAML files. Every bookkeeping pull request
+  today came from not being able to see it: PR #6 moved three items to awaiting_human, PR #8
+  moved one to done, and both existed because nobody could tell at a glance what was stale.
+
+  `devctl work list` renders the store as a table, ordered by the work_state axis's
+  normal_flow so it reads as a pipeline rather than an alphabetical dump. States off that
+  flow -- blocked, awaiting_human, failed, cancelled -- sort last and carry a `!` marker,
+  because those are the ones a reader needs to notice rather than scroll past. The order is
+  read from states.yaml, not hardcoded: the flow is the registry's to define and a second
+  copy here would drift the moment a state is added. `--state`, `--type` and `--priority`
+  narrow it. `devctl work show WI-NNNN` prints one item in full.
+
+  READ-ONLY, and the omission is the point. A `devctl work set-state` would be the third
+  mechanism for the same job -- prose asking an agent to remember, a human editing YAML by
+  hand, and now a command -- when work.advance_state is bound under after_merge precisely so
+  none of those is needed. Adding a writing command would make the hook redundant before it
+  is ever built.
+
+  Running it against this repository proved its own case immediately: nine items sit in
+  `review` whose pull requests all merged, and three in `awaiting_human` whose gates closed
+  hours ago. Twelve of twenty rows are false. That is the backlog work.advance_state exists
+  to eliminate, now visible in one command instead of twenty file opens.
+
+  required_gates are shown but never evaluated. Whether a gate is closed is check_gates.py's
+  answer; computing it here would put the same rule in two languages, which is the drift this
+  repository keeps legislating against. The output says "see check_gates" rather than
+  implying coverage it has not checked.
+
+  Ordering and the attention marker were mutation-tested: reversing the flow comparison and
+  removing the off-flow ranking each failed two tests, and restoring them passed.
+required_gates: []
+branch: feat/21-devctl-work
