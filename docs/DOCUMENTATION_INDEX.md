@@ -45,7 +45,7 @@ Constitutional and meta-specification. Tier 0.
 | `SPEC-LIFECYCLE` | Document Lifecycle and Front Matter | `proposed` | [docs/spec/DOCUMENT_LIFECYCLE.md](docs/spec/DOCUMENT_LIFECYCLE.md) |
 | `SPEC-ENTITY-MODEL-GUIDE` | Entity Model — How to Read It | `draft` | [docs/spec/ENTITY_MODEL.md](docs/spec/ENTITY_MODEL.md) |
 | `SPEC-LOCAL-WORK-STORE` | Local Work Store | `draft` | [docs/spec/LOCAL_WORK_STORE.md](docs/spec/LOCAL_WORK_STORE.md) |
-| `SPEC-REGISTRIES` | Registries | `approved` | [docs/spec/REGISTRIES.md](docs/spec/REGISTRIES.md) |
+| `SPEC-REGISTRIES` | Registries | `proposed` | [docs/spec/REGISTRIES.md](docs/spec/REGISTRIES.md) |
 | `SPEC-ENTITY-MODEL` | Entity Model | `draft` | [docs/spec/entity-model.yaml](docs/spec/entity-model.yaml) |
 | `PRINCIPLES` | Product and Engineering Principles | `approved` | [docs/vision/PRINCIPLES.md](docs/vision/PRINCIPLES.md) |
 

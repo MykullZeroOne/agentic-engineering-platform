@@ -2,7 +2,7 @@ id: WI-0003
 store: local
 project: PRJ-mykullzeroone/agentic-engineering-platform
 type: spec
-work_state: ready
+work_state: review
 priority: normal
 title: Add a controlled-vocabulary registry
 description: |
@@ -11,3 +11,4 @@ description: |
   registry. Surfaced while writing SPEC-LOCAL-WORK-STORE, which had to enumerate types inline.
 required_gates:
 - platform_config
+branch: claude/docs-processes-review-4vyl8q

@@ -2,13 +2,13 @@
 id: SPEC-REGISTRIES
 type: spec
 tier: 0
-status: approved
-version: 1
+status: proposed
+version: 2
 owner: human.cto
-human_approved: true
-approved_by: MykullZeroOne
-approved_on: 2026-08-30
-approval_record: APR-0005
+human_approved: false
+approved_by: null
+approved_on: null
+approval_record: null
 supersedes: null
 superseded_by: null
 last_reviewed: 2026-08-29
@@ -29,6 +29,11 @@ duplicating a registry in markdown guarantees drift. Read the YAML; it is commen
 | `gates.yaml` | Human-approval gate IDs, triggers, approvers | 4 divergent vocabularies across `project.yaml`, `GOVERNANCE.md`, `CLAUDE.md`, `agent-role.example.yaml` |
 | `hook-points.yaml` | The closed set of lifecycle boundaries and the hook ID namespace | 3 divergent sets across `hooks.yaml`, `HOOKS.md`, ADR-007 |
 | `states.yaml` | Six state axes and their canonical tokens | 5 overlapping vocabularies with colliding tokens |
+| `vocabularies.yaml` | Closed enumerations that are not state axes | Hardcoded constants in `validate_docs.py` and enumerations inline in specifications |
+
+`states.yaml` and `vocabularies.yaml` are separate for a structural reason, not a stylistic one:
+a state axis has transitions, terminal values and a normal flow; a vocabulary is a flat closed
+set. Folding one into the other would give every vocabulary fields it has no meaning for.
 
 Approval records live alongside them in `.agentic/approvals/`. They are not a registry — each is a
 single immutable event — but they are the provenance the registries' gates depend on. See ADR-013.

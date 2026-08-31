@@ -24,9 +24,16 @@ REQUIRED = ["id", "type", "tier", "status", "version", "owner",
             "human_approved", "approved_by", "approved_on", "approval_record",
             "supersedes", "superseded_by", "last_reviewed"]
 
-TYPE_TIER = {"principle": 0, "spec": 0, "adr": 1, "prd": 2, "ads": 2, "design": 2,
-             "policy": 3, "standard": 3, "skill": 4,
-             "guide": None, "schema": None, "example": None}
+def _vocab(name):
+    """Terms of one controlled vocabulary, keyed by token."""
+    v = yaml.safe_load((REG / "vocabularies.yaml").read_text())["vocabularies"]
+    return {term["token"]: term for term in v[name]["terms"]}
+
+
+# Derived from .agentic/registries/vocabularies.yaml rather than hardcoded, so the rule
+# lives in the registry and the validator reads it. Previously each of these was a Python
+# constant that documentation restated -- two copies, one of them authoritative by accident.
+TYPE_TIER = {tok: term["tier"] for tok, term in _vocab("artifact_type").items()}
 
 # `accepted` is the ADR spelling of `approved`; only ADRs may use it.
 AUTHORITATIVE = {"approved", "accepted"}
@@ -35,13 +42,13 @@ AUTHORITATIVE = {"approved", "accepted"}
 RETIRED = {"superseded", "deprecated"}
 ID_PATTERN = {"adr": r"^ADR-\d{3}$", "prd": r"^PRD-\d{3}$", "ads": r"^ADS-\d{3}$"}
 
-ENFORCEMENT_STAGES = {"prose", "check", "hook"}
+ENFORCEMENT_STAGES = set(_vocab("enforcement_stage"))
 
 # Hash schemes and their digest lengths, per docs/spec/CONTENT_HASHING.md. A bare
 # "sha256:" prefix is the pre-ADR-016 form: accepted during the interim but warned on,
 # so existing records apply visible pressure toward the migration attestation rather
 # than sitting silently non-conformant.
-HASH_SCHEMES = {"canonical/v2": 64, "legacy/truncated-32": 32}
+HASH_SCHEMES = {tok: term["digest_length"] for tok, term in _vocab("hash_scheme").items()}
 LEGACY_BARE_PREFIX = "sha256:"
 
 # Local work store, per docs/spec/LOCAL_WORK_STORE.md. Types are CLAUDE.md's branch types,
@@ -49,8 +56,8 @@ LEGACY_BARE_PREFIX = "sha256:"
 # that drift. work_state is not enumerated here: states.yaml is its sole source.
 WORK_REQUIRED = ["id", "store", "project", "type", "work_state", "priority",
                  "title", "description"]
-WORK_TYPES = {"feat", "fix", "docs", "spec", "adr", "chore", "refactor", "test", "ci"}
-WORK_PRIORITIES = {"low", "normal", "high", "urgent"}
+WORK_TYPES = set(_vocab("work_item_type"))
+WORK_PRIORITIES = set(_vocab("priority"))
 
 # Required ADR sections, per docs/spec/DOCUMENT_LIFECYCLE.md. ADR-001..008 predate the
 # requirement and are accepted and immutable, so they are grandfathered rather than rewritten.
@@ -251,7 +258,7 @@ def check_approvals(gates, by_id, fms):
             err(rel, f"approval id {rec.get('id')!r} does not match APR-NNNN")
         if rec.get("gate") not in known_gates:
             err(rel, f"unknown gate id {rec.get('gate')!r}")
-        if rec.get("surface") not in gates["closure"]["surfaces"]:
+        if rec.get("surface") not in set(_vocab("approval_surface")):
             err(rel, f"surface {rec.get('surface')!r} is not a valid closure surface")
 
         for art in rec.get("artifacts", []) or []:
