@@ -2,7 +2,7 @@ id: WI-0013
 store: local
 project: PRJ-mykullzeroone/agentic-engineering-platform
 type: ci
-work_state: review
+work_state: done
 priority: high
 title: Clear gate debt, make the gate check blocking, derive work state
 description: |

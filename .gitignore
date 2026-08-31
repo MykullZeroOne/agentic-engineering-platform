@@ -4,3 +4,8 @@ __pycache__/
 
 # Go build output
 /devctl
+
+# Agent and IDE scratch. CLAUDE.md forbids committing agent scratch output; these are
+# the directories this repository has actually seen it land in.
+.agent/
+.idea/

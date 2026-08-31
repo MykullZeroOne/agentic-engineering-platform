@@ -2,7 +2,7 @@ id: WI-0021
 store: local
 project: PRJ-mykullzeroone/agentic-engineering-platform
 type: feat
-work_state: review
+work_state: done
 priority: high
 title: devctl work list and show
 description: |

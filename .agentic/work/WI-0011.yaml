@@ -2,7 +2,7 @@ id: WI-0011
 store: local
 project: PRJ-mykullzeroone/agentic-engineering-platform
 type: spec
-work_state: in_progress
+work_state: done
 priority: high
 title: Define the local work store on-disk format
 description: |

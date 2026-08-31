@@ -2,7 +2,7 @@ id: WI-0001
 store: local
 project: PRJ-mykullzeroone/agentic-engineering-platform
 type: spec
-work_state: awaiting_human
+work_state: done
 priority: high
 title: 'Implement ADR-019: separate approved_by from approval_record'
 description: |

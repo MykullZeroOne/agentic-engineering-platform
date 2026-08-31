@@ -2,7 +2,7 @@ id: WI-0005
 store: local
 project: PRJ-mykullzeroone/agentic-engineering-platform
 type: chore
-work_state: review
+work_state: done
 priority: normal
 title: Re-anchor legacy approval hashes to scheme-qualified form
 description: |
