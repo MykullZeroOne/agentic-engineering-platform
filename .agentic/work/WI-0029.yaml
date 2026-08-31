@@ -1,0 +1,45 @@
+id: WI-0029
+store: local
+project: PRJ-mykullzeroone/agentic-engineering-platform
+type: spec
+work_state: review
+priority: high
+title: Give capabilities a principal model
+description: |
+  Second ADR-022 absorption, and the first that crosses a gate. SPEC-CAPABILITIES is approved
+  (APR-0003), so editing its body fires constitutional_change. An agent may write the record; only
+  a human closes the gate.
+
+  The gap: SPEC-CAPABILITIES specified WHAT may be done and HOW a grant evaluates, and never said
+  what HOLDS a grant. Principle 2 ("role != model") was expressed in prose and nowhere in the
+  data. Absorbed from Kairo's docs/v2/17-security/auth-rbac.md, narrowed -- Kairo's organization
+  and billing tiers are dropped because AEP has no tenancy.
+
+  Three principals: User, Team, Token. AN AGENT IS NOT A PRINCIPAL TYPE -- it is a token whose
+  kind is `agent`, carrying an effective role and a scope. That is the structural form of
+  Principle 2: a role is a durable identity, a runtime session is transient, and a token is what a
+  transient thing holds.
+
+  A token may act `on_behalf_of` a user, and that attribution is carried on every event and
+  CHECKED FOR AUDIT, NEVER FOR AUTHORIZATION. A token acting for an owner does not gain the
+  owner's permissions. Collapsing the two is precisely the identity collapse ADR-018 rejects a
+  personal access token for, one layer up.
+
+  THIS IS THE MISSING HALF OF WI-0016. CLAUDE.md records independent review as suspended because
+  "this repository has one human identity, and agents act as that identity, so GitHub cannot tell
+  author from reviewer". With a principal model, AEP's OWN records can tell them apart: author is
+  a token, reviewer is a different token or a user, and on_behalf_of names the human behind each.
+  It does not fix GitHub's view -- ADR-018's App is what makes GitHub see a distinct actor. The
+  two together are the answer and neither alone is.
+
+  Scope also closes one of this document's own known limits. Whether reading another agent's
+  memory across a namespace boundary needs its own capability: it does not. It needs the read to
+  fall outside the token's scope, which the existing memory.* tokens then evaluate normally.
+
+  Two new known limits recorded rather than hidden: principals are specified and not stored, since
+  no user, team or token record exists anywhere in .agentic/; and the role kinds named here are
+  not tokens in vocabularies.yaml, which makes them prose. Both are platform_config changes.
+required_gates:
+- constitutional_change
+dependencies: []
+branch: spec/29-agent-principal-model
