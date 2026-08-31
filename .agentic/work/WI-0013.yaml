@@ -1,0 +1,31 @@
+id: WI-0013
+store: local
+project: PRJ-mykullzeroone/agentic-engineering-platform
+type: ci
+work_state: intake
+priority: high
+title: Clear gate debt and make the gate check blocking
+description: |
+  Follow-on to WI-0012. Replaying PR #5 through check_gates.py finds two gates that
+  merged open, and both are still open on `main`:
+
+    constitutional_change  SPEC-CAPABILITIES (no record), SPEC-LIFECYCLE and
+                           SPEC-REGISTRIES (APR-0005 approved an earlier version)
+    platform_config        .agentic/project.yaml, registries/gates.yaml,
+                           registries/vocabularies.yaml (no record names them)
+
+  Closing these needs a human approval and a record; an agent may only write the record
+  down (Principle 1). Once clear, add `--strict` to the CI step and move the six
+  path-triggered gates from `enforcement: prose` to `check` in the same change. Not
+  before: `check` means a check enforces the rule, and while the step is advisory it
+  does not, so bumping the stage early would make the registry claim a stage the
+  pipeline is not at.
+
+  Note also that platform_config's three paths are YAML, where legacy/truncated-32 is
+  undefined -- it is specified over a markdown body. Their records can name the path but
+  their currency cannot be verified until canonical/v2 exists (ADR-016, WI-0005).
+required_gates:
+- constitutional_change
+- platform_config
+dependencies:
+- WI-0012
