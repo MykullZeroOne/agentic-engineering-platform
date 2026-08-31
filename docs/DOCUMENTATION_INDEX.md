@@ -75,6 +75,7 @@ Immutable once accepted. Reverse by superseding. Tier 1.
 | `ADR-017` | Structured Base Data, Documents as Projections | `accepted` | [docs/adr/ADR-017-STRUCTURED-BASE-DATA.md](docs/adr/ADR-017-STRUCTURED-BASE-DATA.md) |
 | `ADR-018` | A GitHub App Is the Control-Plane Adapter | `accepted` | [docs/adr/ADR-018-GITHUB-APP-ADAPTER.md](docs/adr/ADR-018-GITHUB-APP-ADAPTER.md) |
 | `ADR-019` | Conversational Approval, Restated | `accepted` | [docs/adr/ADR-019-CONVERSATIONAL-APPROVAL-V2.md](docs/adr/ADR-019-CONVERSATIONAL-APPROVAL-V2.md) |
+| `ADR-020` | The Hook Engine | `proposed` | [docs/adr/ADR-020-HOOK-ENGINE.md](docs/adr/ADR-020-HOOK-ENGINE.md) |
 
 ## Product requirements
 

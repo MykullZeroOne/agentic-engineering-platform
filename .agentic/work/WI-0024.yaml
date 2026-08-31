@@ -1,0 +1,166 @@
+id: WI-0024
+store: local
+project: PRJ-mykullzeroone/agentic-engineering-platform
+type: adr
+work_state: review
+priority: high
+title: Decide the hook engine's execution model
+description: |
+  .agentic/hooks/hooks.yaml has said "NOTHING EXECUTES THIS FILE YET" since it was written.
+  Thirteen bindings, none executed. Principle 5 says behaviour that must always happen
+  belongs in hooks.yaml rather than in prose asking an agent to remember, and a file nothing
+  executes cannot deliver that -- it has been prose in a different syntax.
+
+  Building the engine forced a decision the implementation could not make, because the rules
+  contradict each other on it. after_merge fires on the trunk, and the first useful thing to
+  do there -- reconcile work state -- writes to .agentic/work/. CLAUDE.md rule 1 says never
+  commit directly to main; all change arrives through a pull request.
+
+  TWO ROUNDS OF REVIEW. Seven objections across two drafts, all of which held. The net effect
+  is that the v1 engine is much narrower than first proposed: event-scoped, read-only, and
+  fail-closed. Everything needing a wider scope was moved out of the engine rather than
+  granted to it.
+
+  First round, four findings:
+
+    1. Authority conflict. The draft made the merge record authoritative for post-merge
+       work_state, contradicting ADR-012 clause 2 ("work_store names the authoritative store.
+       Never two"). Both tier 1, no supersession. Resolved by effective_state, a read-time
+       projection that is never persisted and never consulted for dispatch. ADR-012 untouched.
+
+    2. Hard hooks failed open. Reporting every unimplemented binding and failing on none
+       includes work.validate_state and validation.required_checks, whose class halts on
+       failure. Resolved by an explicit `implementation` field on every binding.
+
+    3. Red trunk contradicted soft semantics. work.advance_state is bound soft
+       (log_and_continue), and WI-0023 had already recorded that wiring drift into CI would
+       redden trunk immediately. Resolved by defining aggregate exit semantics.
+
+    4. No runtime contract at all. Resolved by adding one.
+
+  Second round, three findings, all sharper than the first set:
+
+    5. `declared` hard bindings still failed open OPERATIONALLY. Marking them was cosmetic:
+       a skipped binding did not affect the exit code, so before_agent_run could exit 0 while
+       skipping all four of its hard controls. The engine now fails closed -- declared + hard
+       blocks with exit 1. The consequence is that before_agent_run cannot pass at v1, which
+       is the decision working rather than a defect.
+
+    6. The event and idempotency contracts conflicted. Keying idempotency by event SHA while
+       requiring a full-history trunk scan means replaying one delivery after the trunk grows
+       returns a different answer, so the replay is not a replay. Also, several hook points
+       have no commit SHA at all -- before_agent_run needs a work item, an agent run and a
+       workspace. Resolved by a generic event envelope with a stable event_id, typed subjects
+       validated per point, and a hook-specific payload; after_merge now inspects only the
+       commit its event supplies, and repository-wide reconciliation moves to
+       `devctl work reconcile`. A shallow checkout is now sufficient for after_merge.
+
+    7. work.advance_state described behaviour the engine is forbidden to perform. Renamed
+       work.detect_state_drift. `devctl work advance` keeps its name and its job, since it is
+       the human-run command that does mutate, on a branch, through a pull request.
+
+  Third round, three findings from an automated pre-push review, all of which held:
+
+    8. The trigger contradicted an accepted ADR. Specifying a GitHub Actions workflow on push
+       to main contradicts ADR-018 clause 3 ("Webhooks are the event source") and its explicit
+       rejection of Actions as the integration surface, which permits Actions only for the
+       checks themselves. It was also unimplementable on its own terms: Actions does not
+       receive X-GitHub-Delivery, so the stable event_id the idempotency key depends on cannot
+       be constructed there. Resolved by routing event delivery through the App webhook per
+       ADR-018, which means after_merge has NO automatic trigger until that adapter exists.
+       The engine ships invocable explicitly and nothing fires it. Naming the dependency is
+       the decision; wiring Actions as a stopgap would contradict an accepted ADR to buy a
+       trigger for one soft read-only hook.
+
+    9. The migration count was wrong. hooks.yaml holds fourteen bindings (5 + 3 + 1 + 5), not
+       thirteen, and with exactly one registered that means THIRTEEN must be marked `declared`,
+       seven of them hard. Under a schema with no default, a binding missing the field is a
+       configuration error, so the miscount would have exited 2 or silently dropped a binding.
+
+   10. An acceptance criterion could not fail. "Re-running one event does not duplicate an
+       external effect" passes vacuously while clause 5 forbids external writes -- there is
+       nothing to duplicate -- and would have stayed green until the first writable handler
+       double-applied an event. Replaced by two criteria that can fail: replay produces
+       byte-identical results, and a handler declaring `writes: external` is refused while no
+       event store is configured. That second one also converts clause 5 from an assertion
+       into an enforced pre-flight check, which closes a risk the previous draft had recorded
+       and left open.
+
+  Fourth round, three more findings, all of which held:
+
+   11. Soft handler ERRORS read as success. The exit table mapped "handler failed or reported
+       a finding, class soft" to one row, so work.detect_state_drift failing to read the
+       supplied commit looked identical to it having read the commit and found no drift. The
+       caller saw success for a check that never ran -- the same fail-open shape as finding 5,
+       one level down. Split: a soft error exits 1, a soft finding exits 0. log_and_continue is
+       still honoured, because it governs whether later bindings run, not what the exit code
+       says. Drift remains a finding, so it still does not redden anything.
+
+   12. The external-write refusal was conditioned on the wrong thing. "Refused while no
+       durable event store is configured" implies that configuring one makes external writes
+       safe, but having a store is not having an atomic CLAIM: a webhook retried by GitHub, or
+       one delivery picked up by two replicas, executes the effect twice whether or not
+       something is recording that it happened. v1 now refuses `writes: external`
+       unconditionally, and permitting it requires atomic claim-and-replay of
+       (project, event_id, binding_id), which is a later decision with a store design behind
+       it rather than a configuration flag.
+
+   13. Byte-identical replay was unachievable by construction. v1 persists no results, so
+       replaying an old envelope after hooks.yaml or a compiled handler changes necessarily
+       runs the CURRENT implementation while the result records the current handler version
+       and configuration hash. Narrowed to identical FINDINGS at the same handler version and
+       configuration hash -- which is why both values are in the result envelope, so a
+       divergence is attributable rather than mysterious.
+
+  Fifth round, from surveying Kairo for WI-0025. Two changes, one of which is the ADR's own
+  premise:
+
+   14. RULE 1 WAS READ AS BROADER THAN IT IS. Two drafts concluded the engine can record nothing
+       after a merge because CLAUDE.md rule 1 forbids committing to main. Rule 1's text is
+       scoped to main: "Never commit directly to main and never force-push it." A git note is
+       not a commit on main -- it lives in refs/notes/*, which branch protection on main does
+       not cover. So a hook MAY attach provenance to a merge commit by writing a note, violating
+       no rule. AEP needs this more than most: squash merge means the branch tip is never an
+       ancestor of main, so the Closes trailer is the only surviving link and PRs #8 and #9 both
+       merged without one. A trailer must be written before the merge; a note can be written
+       after. Clause 5 now permits notes under a narrow scope -- a dedicated ref, identifiers
+       only, never a substitute for a record in the work store or approvals. It remains a
+       `writes: external` operation, so it is refused at v1 until the atomic claim exists: the
+       clause opens a door that stays shut, on purpose.
+
+       The failure mode is worth naming separately from the fix. A decision was built around a
+       constraint that did not exist, and it took a survey of an unrelated repository to notice.
+
+   15. CLAUSE 2'S STATED REASON WAS FALSE, AND THE DECISION SURVIVED ANYWAY. Executable
+       configuration was rejected on security surface -- "no mitigation exists". Kairo ships
+       pkg/security/plugin.go with ValidatePluginSpec, AuditPluginSpec, validatePluginCommand
+       and BuildPluginEnvironment; pkg/plugin runs an audited JSON protocol over
+       exec.CommandContext; and .claude/hooks/ has been executing that pattern in production.
+       Three demonstrations that the surface is manageable.
+
+       The reason that survives is blast radius, which the mitigation does not address. In
+       Kairo, .claude/settings.json is written by a human. In AEP, .agentic/ is written by
+       agents -- that is the operating model. A validated arbitrary command is still an
+       arbitrary command. hooks.yaml is a platform_config trigger so every such change needs
+       human approval first, which is the right control and also the argument that the
+       mechanism is premature at one implemented hook. The door is named, not sealed: revisit
+       when a hook must be written in something other than Go, with the ported validation in
+       hand rather than as a hypothetical.
+
+  Also incorporated: hooks/v2 makes `implementation` mandatory rather than defaulted, so
+  schema validation rather than default interpretation catches a missing field; implemented_by
+  is removed as executable configuration; v1 handlers are read-only, so evaluation.record and
+  memory.consolidate cannot be registered until a durable event store exists; and ten
+  acceptance criteria are named, each of which must be demonstrated by a test.
+
+  Written as `proposed`, not `accepted`. A proposed ADR carries no authority and does not fire
+  architecture_decision, which is scoped `authoritative` (WI-0018). Accepting it is a separate
+  change that opens the gate and needs a human approval and a record; an agent may only write
+  the record down.
+
+  The implementation is deliberately not in this change. It touches hooks.yaml, whose header
+  and schema this ADR makes false, and that is a platform_config change with its own gate.
+required_gates: []
+dependencies:
+- WI-0023
+branch: adr/24-hook-engine
