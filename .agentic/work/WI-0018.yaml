@@ -1,0 +1,35 @@
+id: WI-0018
+store: local
+project: PRJ-mykullzeroone/agentic-engineering-platform
+type: spec
+work_state: intake
+priority: normal
+title: Decide whether a gate should trigger on edits to draft artifacts
+description: |
+  constitutional_change fires on any path under docs/spec/, regardless of the artifact's
+  status. Editing SPEC-ENTITY-MODEL -- draft, carrying no authority, with eleven open
+  questions -- therefore opens the gate, and there is nothing meaningful to approve: the
+  document asserts nothing binding before or after the edit. Approving it to make the check
+  go green would be false, so the honest outcome is a gate that stays open on every draft
+  edit and trains people to ignore it.
+
+  The gate already has an `artifact_status` trigger for the transition that does matter --
+  a tier-0 artifact reaching `approved`. That is the moment authority is granted. The path
+  trigger is what over-fires.
+
+  Options, none free:
+
+  - Make the path trigger status-aware: fire only when the artifact is already approved, or
+    is transitioning to it. Needs check_gates.py to read front matter, which it deliberately
+    does not do today -- it compares content, not status. It also cannot see a transition
+    from a diff alone without reading both sides' front matter.
+  - Split the gate: one for editing approved tier-0 content, one for approving it. Two gates
+    where the registry has one, and every document citing constitutional_change needs review.
+  - Accept the noise and rely on the reviewer to notice status. Cheapest, and exactly the
+    "prose asking someone to remember" this repository keeps replacing with checks.
+
+  Not urgent while the check is advisory. It becomes urgent the moment WI-0013 adds
+  --strict, because then every edit to a draft specification blocks its own pull request.
+required_gates: []
+dependencies:
+- WI-0013
