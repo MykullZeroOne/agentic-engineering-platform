@@ -2,7 +2,7 @@ id: WI-0002
 store: local
 project: PRJ-mykullzeroone/agentic-engineering-platform
 type: spec
-work_state: review
+work_state: awaiting_human
 priority: high
 title: Define the agent capability namespace and grant semantics
 description: |
