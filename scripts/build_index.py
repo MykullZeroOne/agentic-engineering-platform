@@ -86,6 +86,7 @@ def main() -> int:
            "human_approved: false",
            "approved_by: null",
            "approved_on: null",
+           "approval_record: null",
            "supersedes: null",
            "superseded_by: null",
            f"last_reviewed: {prior.get('last_reviewed', '2026-08-29')}",

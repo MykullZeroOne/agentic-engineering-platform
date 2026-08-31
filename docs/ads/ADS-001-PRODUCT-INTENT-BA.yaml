@@ -16,6 +16,7 @@ owner: human.cto
 human_approved: false
 approved_by: null
 approved_on: null
+approval_record: null
 supersedes: null
 superseded_by: null
 last_reviewed: 2026-08-29

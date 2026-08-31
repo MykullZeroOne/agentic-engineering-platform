@@ -1,0 +1,145 @@
+# Controlled vocabularies.
+#
+# Closed enumerations that are NOT state axes. Everything here was previously a hardcoded
+# constant in scripts/validate_docs.py or an enumeration inline in a specification, which
+# meant the rule lived in code and the documentation restated it -- the drift this
+# repository keeps legislating against.
+#
+# Distinct from .agentic/registries/states.yaml, and the distinction is structural rather
+# than stylistic: a state axis has transitions, terminal values and a normal flow. A
+# vocabulary is a flat closed set. Conflating them would give every vocabulary fields it
+# has no meaning for.
+
+version: 1
+schema: vocabularies/v1
+
+vocabularies:
+
+  artifact_type:
+    description: Kinds of canonical artifact, and the tier each carries.
+    applies_to: [CanonicalArtifact.type]
+    source: docs/spec/DOCUMENT_LIFECYCLE.md
+    terms:
+      - {token: principle, tier: 0,    location: docs/vision/,     numbering: none}
+      - {token: spec,      tier: 0,    location: docs/spec/,       numbering: "SPEC-<NAME>"}
+      - {token: adr,       tier: 1,    location: docs/adr/,        numbering: "ADR-NNN"}
+      - {token: prd,       tier: 2,    location: docs/prd/,        numbering: "PRD-NNN"}
+      - {token: ads,       tier: 2,    location: docs/ads/,        numbering: "ADS-NNN"}
+      - {token: design,    tier: 2,    location: "docs/**",        numbering: "DES-<NAME>"}
+      - {token: policy,    tier: 3,    location: docs/policies/,   numbering: "POL-NNN"}
+      - {token: standard,  tier: 3,    location: docs/standards/,  numbering: "STD-NNN"}
+      - {token: skill,     tier: 4,    location: .agentic/skills/, numbering: "<name>@<version>"}
+      - {token: guide,     tier: null, location: "docs/**",        numbering: "GUIDE-<NAME>"}
+      - {token: schema,    tier: null, location: docs/schemas/,    numbering: none}
+      - {token: example,   tier: null, location: examples/,        numbering: "EX-<NAME>"}
+
+  work_item_type:
+    description: >
+      Kinds of work item. Deliberately identical to CLAUDE.md's branch types, so a work
+      item's type and its branch prefix are one token rather than two vocabularies that
+      drift apart.
+    applies_to: [WorkItem.type]
+    source: docs/spec/LOCAL_WORK_STORE.md
+    terms:
+      - {token: feat,     description: New capability}
+      - {token: fix,      description: Corrects incorrect behaviour}
+      - {token: docs,     description: Documentation only}
+      - {token: spec,     description: Specification or schema}
+      - {token: adr,      description: Records or supersedes a decision}
+      - {token: chore,    description: Maintenance with no behavioural change}
+      - {token: refactor, description: Restructures without changing behaviour}
+      - {token: test,     description: Verification only}
+      - {token: ci,       description: Build, checks, or automation}
+
+  priority:
+    description: >
+      Ordering hint only. It is not cost of delay, which DELIVERY_MODEL requires for the
+      attention budget and which has no formula yet -- see the known gaps.
+    applies_to: [WorkItem.priority]
+    source: docs/spec/LOCAL_WORK_STORE.md
+    terms:
+      - {token: low,    description: Do when nothing else is waiting}
+      - {token: normal, description: Default}
+      - {token: high,   description: Ahead of normal work}
+      - {token: urgent, description: Displaces in-flight work}
+
+  enforcement_stage:
+    description: >
+      How a rule is currently enforced. Rules start at `prose` and migrate rightward as the
+      platform is built; the set still at `prose` is the acceptance criteria for the hook
+      engine.
+    applies_to: [CanonicalArtifact.enforcement, Gate.enforcement]
+    source: docs/spec/AUTHORITY_MODEL.md
+    terms:
+      - {token: prose, description: An agent must read the rule and honour it}
+      - {token: check, description: A validator or CI check enforces it}
+      - {token: hook,  description: An AEP lifecycle hook enforces it deterministically}
+
+  hash_scheme:
+    description: >
+      Content-hash computations. The prefix names the computation, so a digest is never
+      ambiguous between schemes. A bare `sha256:` prefix predates ADR-016 and is not a
+      member of this vocabulary -- the validator warns on it.
+    applies_to: [ApprovalRecord.hash_scheme, CanonicalArtifact.content_hash]
+    source: docs/spec/CONTENT_HASHING.md
+    terms:
+      - {token: canonical/v2,        digest_length: 64, description: Canonical JSON over the structured artifact}
+      - {token: legacy/truncated-32, digest_length: 32, description: Pre-ADR-016 digest over a raw markdown body}
+
+  approval_surface:
+    description: Where a human may close a gate. Merging a pull request is not a member.
+    applies_to: [ApprovalRecord.surface]
+    source: docs/adr/ADR-019-CONVERSATIONAL-APPROVAL-V2.md
+    terms:
+      - {token: chat,          description: An explicit instruction in conversation with an agent}
+      - {token: github_review, description: A pull request review naming what it approves}
+      - {token: ui,            description: The agent workspace. Not implemented}
+
+  capability:
+    description: >
+      What an agent may do. The namespace is CLOSED: a grant naming a token that is not
+      here is an error, never a silently ignored no-op. `gated_by` is what makes the
+      security gates evaluable -- production_secrets and billing_configuration previously
+      triggered on "an agent requests a capability" against a namespace with no defined
+      membership, so neither could fire.
+    applies_to: [AgentIdentity.tools.allow, AgentIdentity.tools.deny, WorkUnit.required_capabilities]
+    source: docs/spec/CAPABILITIES.md
+    terms:
+      # Source control and the control plane
+      - {token: github.read,               description: Read issues, pull requests, checks, releases}
+      - {token: github.write_issue,        description: Create and update work items in the github store}
+      - {token: github.write_pr,           description: Open and update pull requests}
+      - {token: github.review,             description: Submit a pull request review}
+      - {token: repository.read,           description: Read repository contents}
+      - {token: repository.write,          description: Commit and push to a branch}
+
+      # Workspace and runtime
+      - {token: workspace.create,          description: Create an isolated worktree}
+      - {token: workspace.remove,          description: Destroy a worktree}
+      - {token: runtime.start,             description: Start a provider session}
+      - {token: runtime.control,           description: Message, pause, resume, cancel a session}
+      - {token: runtime.handoff,           description: Move a run to another runtime}
+
+      # Knowledge and memory
+      - {token: knowledge.search,          description: Search canonical knowledge}
+      - {token: knowledge.context,         description: Request a context packet}
+      - {token: knowledge.write,           description: Author or amend a canonical artifact}
+      - {token: memory.read,               description: Read consolidated memory}
+      - {token: memory.write,              description: Record a memory candidate}
+      - {token: memory.promote,            description: Promote a memory up the ladder}
+      - {token: reference.lookup,          description: Retrieve external documentation. Not project knowledge}
+
+      # Communication
+      - {token: communication.ask_parent,  description: Ask the owning parent agent a question}
+      - {token: communication.escalate,    description: Escalate to a human}
+      - {token: communication.record_finding, description: Record a QA or review finding}
+      - {token: communication.notify,      description: Send a notification}
+
+      # Gated. Each names the gate that must be closed before it may be exercised.
+      - {token: deployment.deploy,         description: Deploy a release,        gated_by: production_release}
+      - {token: deployment.rollback,       description: Roll back a release,     gated_by: production_release}
+      - {token: secrets.read,              description: Read a production secret, gated_by: production_secrets}
+      - {token: secrets.write,             description: Create or rotate a production secret, gated_by: production_secrets}
+      - {token: billing.read,              description: Read billing configuration, gated_by: billing_configuration}
+      - {token: billing.write,             description: Change billing or spend configuration, gated_by: billing_configuration}
+      - {token: data.destructive,          description: Irreversible data change, gated_by: destructive_data_change}

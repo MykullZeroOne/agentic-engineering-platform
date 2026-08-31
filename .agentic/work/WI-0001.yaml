@@ -2,7 +2,7 @@ id: WI-0001
 store: local
 project: PRJ-mykullzeroone/agentic-engineering-platform
 type: spec
-work_state: ready
+work_state: review
 priority: high
 title: 'Implement ADR-019: separate approved_by from approval_record'
 description: |
@@ -12,3 +12,4 @@ description: |
   SPEC-LIFECYCLE and re-opens its constitutional_change gate.
 required_gates:
 - constitutional_change
+branch: claude/docs-processes-review-4vyl8q

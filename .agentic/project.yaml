@@ -30,6 +30,7 @@ registries:
   gates: .agentic/registries/gates.yaml
   hook_points: .agentic/registries/hook-points.yaml
   states: .agentic/registries/states.yaml
+  vocabularies: .agentic/registries/vocabularies.yaml
 
 # The authoritative work store, per ADR-012. Exactly one, never two.
 # This repository starts on `local`: it has no issues, and GitHub ceremony is not
