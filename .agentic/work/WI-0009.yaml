@@ -6,8 +6,20 @@ work_state: ready
 priority: normal
 title: Resolve the entity model's open questions and accept it
 description: |
-  SPEC-ENTITY-MODEL is draft with 17 open questions, several of which decide whether parts of it
-  are correct -- notably whether a narrative specification may close the product_spec gate, which
-  seven of the eight current PRDs would depend on.
+  SPEC-ENTITY-MODEL is draft. Six of its seventeen open questions are now resolved and moved to
+  `resolved_questions`, which keeps each one's reasoning instead of deleting it: gate risk tiering
+  (Q2), the capability namespace (Q3), the tier-0 specs' own authority (Q11), the local work store
+  format (Q12), whether a narrative specification may close product_spec (Q14), and whether Policy
+  and Standard are one entity (Q17).
+
+  Three of those were settled by work landing rather than by anyone deciding -- Q3 by
+  SPEC-CAPABILITIES, Q11 by APR-0005 and APR-0007, Q12 by the live work store. They had been
+  answered for some time and the list had not caught up, which is its own finding: an open-question
+  list nobody prunes overstates how unsettled a model is.
+
+  Eleven remain and the model stays draft. The heaviest are which store is authoritative for each
+  plane (Q9), whether invariants get a predicate language (Q4), whether skills are agent-authorable
+  (Q1, where AUTHORITY_MODEL and gates.yaml disagree), and how cost_of_delay is computed (Q16).
 required_gates:
 - constitutional_change
+branch: spec/18-resolve-open-decisions

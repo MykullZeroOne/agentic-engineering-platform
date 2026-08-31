@@ -3092,21 +3092,68 @@ conflicts_resolved:
     artifacts define — would leave about six entities and would not serve the base-data schema ADR-017
     calls the blocking deliverable. The correction from the previous version is that approved design documents
     are no longer treated as drafts of convenience.'
+# Answered. Kept rather than deleted: a question's disappearance does not record its answer,
+# and the reasoning is what a later reader needs. Numbering follows the original list.
+resolved_questions:
+  - question: 2 -- Gate risk tiering
+    answer: >
+      Assigned. reversible = platform_config, constitutional_change, product_spec,
+      architecture_decision. consequential = architecture_high_risk, security_policy,
+      billing_configuration. irreversible = legal, privacy_risk_acceptance,
+      production_secrets, destructive_data_change, production_release.
+    test: >
+      Can a git revert undo the effect. Everything inside the repository can, so irreversible
+      means the effect escapes it: a secret disclosed, data deleted, a legal commitment made,
+      a release shipped. The tier then only asks at what cost.
+    settled_by: Human decision, 2026-08-31. Enforced by scripts/validate_docs.py.
+
+  - question: 3 -- ToolGrant namespace, wildcard expansion and deny precedence
+    answer: >
+      Specified. The capability namespace is closed with 29 tokens across 12 domains;
+      deny beats allow; wildcards expand at grant time against the registry as it stands.
+      production_secrets and billing_configuration now trigger on named capability tokens,
+      so both are evaluable rather than firing on an undefined namespace.
+    settled_by: SPEC-CAPABILITIES, approved by APR-0007. Was WI-0002.
+
+  - question: 11 -- The tier-0 specs carry no authority
+    answer: >
+      Resolved for four of five. SPEC-AUTHORITY and SPEC-GLOSSARY were approved by APR-0005;
+      SPEC-LIFECYCLE and SPEC-REGISTRIES lapsed on material change and were re-approved at v2
+      by APR-0007, alongside SPEC-CAPABILITIES. SPEC-CONTENT-HASHING remains draft and is the
+      one part of this question still open.
+    settled_by: APR-0005 and APR-0007.
+
+  - question: 12 -- The local work store has no on-disk format
+    answer: >
+      Defined and in use. SPEC-LOCAL-WORK-STORE gives the format, .agentic/work/ holds 18
+      items under it, and scripts/validate_docs.py enforces the schema, the type and priority
+      vocabularies, and link resolution. The specification itself is still draft.
+    settled_by: SPEC-LOCAL-WORK-STORE and the live store. Was WI-0011.
+
+  - question: 14 -- May a narrative Specification close product_spec
+    answer: >
+      Yes, but nothing traces to it. A narrative PRD may be approved as intent; no WorkUnit
+      may cite it as its requirement until requirements are decomposed. PRD-001 and
+      PRD-003..008 stay usable as direction without letting work claim a traceability that
+      does not exist.
+    consequence: >
+      `approved` on a PRD no longer implies decomposable requirements, so anything consuming
+      requirements must check for them rather than assuming approval implies them.
+    settled_by: Human product decision, 2026-08-31.
+
+  - question: 17 -- Are Policy and Standard one entity or two
+    answer: >
+      One. Rule with a `kind` field, as this model already had it. The payload is identical
+      and only enforceability differs. GLOSSARY keeps both as distinct terms -- they become
+      kind values -- and DES-DATA-MODEL's policies table follows rather than leads.
+    settled_by: Human decision, 2026-08-31, while tier 3 is still empty and the choice is free.
+
 open_questions:
 - Are skills agent-authorable or human-gated? AUTHORITY_MODEL says tier 4 'may be agent-authored within
   policy', DOCUMENT_LIFECYCLE places skills at .agentic/skills/, and gates.yaml puts all of .agentic/**
   behind platform_config whose aliases include role_definitions. The terminal rung of the promotion ladder
   is therefore simultaneously agent-authorable and human-gated. Either skills move out of .agentic/ or
   tier 4 is gated and AUTHORITY_MODEL's sentence is wrong. Governance, not modelling.
-- 'Gate tiering: the model adds Gate.risk_tier per ADR-014 clause 7 and cannot assign it. All eleven gates
-  are blocking: true with approver human.cto, so the registry cannot distinguish approving a production
-  release from approving a typo fix in .agentic/**. Which gates are reversible (sampled audit), which
-  are consequential (attention budget), and which are irreversible (named human, never batched) is the
-  human''s call — and ADR-014 argues that not making it is what produces rubber-stamping.'
-- 'The ToolGrant namespace, wildcard expansion (deployment.*) and deny-precedence semantics are unspecified
-  and recorded as a known gap. This is security-relevant: production_secrets and billing_configuration
-  both fire on ''an agent requests a capability'' against a namespace with no defined membership, so neither
-  gate can be enforced. The model names the field and cannot invent its grammar.'
 - Do invariants and completion criteria get a predicate language, or does 'mechanically checkable' mean
   an agent judges and records the outcome? REQ-001-006 claims its nine invariants are mechanically checkable
   and AC-001-007 requires each failed one to be named, while both they and Role.completion_criteria are
@@ -3138,25 +3185,11 @@ open_questions:
   to require promotion to an ADR? GLOSSARY says ''typically from a human''; QUESTION_ESCALATION step 6
   says an answer becomes a decision ''when consequential'', with no test. Both answers change whether
   Decision.decider may be kind: agent and whether promotion is mandatory or discretionary.'
-- 'The tier-0 specs that define this model — SPEC-AUTHORITY, SPEC-LIFECYCLE, SPEC-REGISTRIES, SPEC-CONTENT-HASHING,
-  SPEC-GLOSSARY — are all draft with human_approved: false, so by precedence rule 2 the constitutional
-  layer carries no authority, including the rule that says so, while the validator enforces them as a
-  required check. Approving them is a human act at a gate and nothing in this model substitutes for it.
-  The model''s amendment to SPEC-CONTENT-HASHING''s exclusion set (adding supersedes, superseded_by, owner,
-  store, approvals) rides on that approval.'
-- 'The local work store''s on-disk format is undefined — ADR-012 calls it ''the next deliverable'' and
-  says that until it exists neither store is fully specified — while .agentic/project.yaml already sets
-  work_store: local. WorkItem''s schema is given here; its serialization for the store this repository
-  actually uses is unmade.'
 - 'Does `design` get sub-scoped across nine directories, or collapse to one store? ADR-015 clause 2 requires
   one authoritative store per document type, and `design` is the corpus''s dominant type with nine homes
   and no configured store at all. Sub-scoping weakens an accepted decision and needs a superseding ADR;
   collapsing means re-homing 34 documents. Related: the reference project.yaml''s knowledge keys are categories,
   not artifact types, and a runtime told to read it unchanged cannot resolve them.'
-- 'May a narrative Specification (conformance: narrative, no capabilities or requirements) close the product_spec
-  gate? PRD-001 and PRD-003..008 are narrative today. Saying yes means approving intent that no requirement
-  decomposes; saying no means those seven must be re-specified before any work traces to them. This is
-  the migration''s cost, and it is a product decision.'
 - How are sequential ids allocated under the local git provider? The model states that the authoritative
   store issues ids and that no client derives one by scanning a directory, which is how ADR-019 would
   be allocated today. The concrete reservation mechanism — a compare-and-swap registry file, or a UUID-plus-display-number
@@ -3165,7 +3198,3 @@ open_questions:
   is blocked, how much, and how irreversibly'' and gives no formula, while the model supplies the fields.
   Getting this wrong is not a display defect — it is what determines which decisions a human sees first
   under a bounded attention budget.'
-- Are Policy and Standard one entity or two? The model makes them one (Rule with kind), because the payload
-  is identical and only blocking differs. GLOSSARY treats them as distinct terms and DES-DATA-MODEL has
-  policies/policy_versions and no standards table. Tier 3 has no artifacts, so this is decidable cheaply
-  now and expensively later.

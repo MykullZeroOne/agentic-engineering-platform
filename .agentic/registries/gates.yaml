@@ -54,6 +54,7 @@ gates:
       Gates the transition from the BA loop into grooming and architecture.
     approver: human.cto
     blocking: true
+    risk_tier: reversible
     triggers:
       - kind: artifact_status
         condition: PRD or ADS transitions to `approved`
@@ -75,6 +76,7 @@ gates:
       authority tier in the system was the only one nothing gated.
     approver: human.cto
     blocking: true
+    risk_tier: reversible
     triggers:
       - kind: path
         condition: docs/vision/**
@@ -93,6 +95,7 @@ gates:
       this gate covers the act of recording a decision, at any risk level.
     approver: human.cto
     blocking: true
+    risk_tier: reversible
     triggers:
       - kind: path
         condition: docs/adr/**
@@ -114,6 +117,7 @@ gates:
       invalidates an accepted ADR.
     approver: human.cto
     blocking: true
+    risk_tier: consequential
     triggers:
       - kind: classification
         condition: architecture impact assessed as high by the Architecture Lead
@@ -126,6 +130,7 @@ gates:
     description: Approval of any change to security governance, boundaries, or policy.
     approver: human.cto
     blocking: true
+    risk_tier: consequential
     triggers:
       - kind: path
         condition: docs/security/**
@@ -141,6 +146,7 @@ gates:
       and may not close this gate.
     approver: human.cto
     blocking: true
+    risk_tier: irreversible
     triggers:
       - kind: finding
         condition: a Legal Preflight Analyst raises a material finding
@@ -153,6 +159,7 @@ gates:
     description: Explicit human acceptance of a material privacy or product risk.
     approver: human.cto
     blocking: true
+    risk_tier: irreversible
     triggers:
       - kind: finding
         condition: a Privacy Analyst raises a material finding
@@ -168,6 +175,7 @@ gates:
       gate and rule behaves, so they gate on themselves.
     approver: human.cto
     blocking: true
+    risk_tier: reversible
     triggers:
       - kind: path
         condition: .agentic/project.yaml
@@ -176,7 +184,9 @@ gates:
       - kind: path
         condition: .agentic/hooks/**
       - kind: path
-        condition: .agentic/roles/**
+        condition: .agentic/roles/*.yaml
+      - kind: path
+        condition: CLAUDE.md
     # Narrowed from `.agentic/**`, which was broader than this gate's own description
     # and produced a circularity: an approval record under .agentic/approvals/ would
     # itself have required an approval. Records, work items and skills are artifacts
@@ -194,6 +204,7 @@ gates:
     description: Approval to deploy or roll back a release in production.
     approver: human.cto
     blocking: true
+    risk_tier: irreversible
     triggers:
       - kind: lifecycle
         condition: release candidate reaches the human release gate (SDLC phase 8)
@@ -205,6 +216,7 @@ gates:
     title: Production secret access or change
     approver: human.cto
     blocking: true
+    risk_tier: irreversible
     description: Any read, rotation, or modification of production secrets.
     triggers:
       - kind: capability
@@ -218,6 +230,7 @@ gates:
     description: Irreversible data changes, including schema migrations that drop or rewrite data.
     approver: human.cto
     blocking: true
+    risk_tier: irreversible
     triggers:
       - kind: path
         condition: migrations/**
@@ -230,6 +243,7 @@ gates:
     description: Changes to billing, payment, or spend configuration.
     approver: human.cto
     blocking: true
+    risk_tier: consequential
     triggers:
       - kind: capability
         condition: billing.read, billing.write

@@ -22,22 +22,22 @@ artifacts:
     path: docs/adr/ADR-015-KNOWLEDGE-STORE-PROVIDERS.md
     title: ADR-015 — Pluggable Knowledge Stores, One Authoritative Home Per Document
     version: 2
-    content_hash: sha256:ffe379b694211b3d0ad86197d737623e
+    content_hash: legacy/truncated-32:sha256:ffe379b694211b3d0ad86197d737623e
   - id: ADR-016
     path: docs/adr/ADR-016-CANONICAL-CONTENT-HASHING.md
     title: ADR-016 — Canonical Content Hashing and Migration Attestation
     version: 2
-    content_hash: sha256:9c29d62995214a49a446c2813b38faea
+    content_hash: legacy/truncated-32:sha256:9c29d62995214a49a446c2813b38faea
   - id: ADR-017
     path: docs/adr/ADR-017-STRUCTURED-BASE-DATA.md
     title: ADR-017 — Structured Base Data, Documents as Projections
     version: 1
-    content_hash: sha256:62f5a4e99bad873bbeed8b21a2c090e3
+    content_hash: legacy/truncated-32:sha256:62f5a4e99bad873bbeed8b21a2c090e3
   - id: ADR-018
     path: docs/adr/ADR-018-GITHUB-APP-ADAPTER.md
     title: ADR-018 — A GitHub App Is the Control-Plane Adapter
     version: 1
-    content_hash: sha256:cf61b0815c43756210760cafe4cf67e9
+    content_hash: legacy/truncated-32:sha256:cf61b0815c43756210760cafe4cf67e9
 
 request: >
   Four ADRs were merged to main in pull request #2 and remained `proposed`, since

@@ -199,6 +199,16 @@ def check_index(by_id):
 def check_gates(gates):
     known = {g["id"] for g in gates["gates"]}
     aliases = {a for g in gates["gates"] for a in g.get("aliases", [])}
+
+    # ADR-014 clause 7 tiers gates by reversibility. Required, not optional: a gate with no
+    # tier is indistinguishable from a reversible one, and the whole point of the clause is
+    # that treating every gate alike is what produces rubber-stamping.
+    tiers = set(_vocab("risk_tier"))
+    for g in gates["gates"]:
+        if g.get("risk_tier") not in tiers:
+            err(".agentic/registries/gates.yaml",
+                f"gate {g['id']!r} risk_tier {g.get('risk_tier')!r} not in {sorted(tiers)}")
+
     for name in ("project.yaml",):
         path = ROOT / ".agentic" / name
         data = yaml.safe_load(path.read_text())

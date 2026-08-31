@@ -14,23 +14,26 @@ approver: MykullZeroOne
 approved_on: 2026-08-29
 recorded_on: 2026-08-29
 
+# Re-anchored by ATT-0001: recomputed under legacy/truncated-32 and byte-identical.
+hash_scheme: legacy/truncated-32
+
 artifacts:
   - id: ADR-009
     path: docs/adr/ADR-009-TRUNK-BASED-SQUASH-MERGE.md
     title: ADR-009 — Trunk-Based Development with Squash Merge
-    content_hash: sha256:c83a5f7112902e59f77e9ee348784dc4
+    content_hash: legacy/truncated-32:sha256:c83a5f7112902e59f77e9ee348784dc4
   - id: ADR-010
     path: docs/adr/ADR-010-SEVEN-PLANE-ARCHITECTURE.md
     title: ADR-010 — Seven-Plane Architecture
-    content_hash: sha256:189689b39b24e7c074cd743f364b0af5
+    content_hash: legacy/truncated-32:sha256:189689b39b24e7c074cd743f364b0af5
   - id: ADR-011
     path: docs/adr/ADR-011-GO-MODULAR-MONOLITH.md
     title: ADR-011 — Go and a Modular Monolith for the First Implementation
-    content_hash: sha256:888c90cd3b50811d54221244300f5f05
+    content_hash: legacy/truncated-32:sha256:888c90cd3b50811d54221244300f5f05
   - id: ADR-013
     path: docs/adr/ADR-013-CONVERSATIONAL-APPROVAL.md
     title: ADR-013 — Conversational Approval Closes Human Gates
-    content_hash: sha256:ed4265797c68bde031e9c554e57cb8a9
+    content_hash: legacy/truncated-32:sha256:ed4265797c68bde031e9c554e57cb8a9
 
 request: >
   Presented five proposed ADRs (009 trunk-based squash merge, 010 seven-plane architecture,
