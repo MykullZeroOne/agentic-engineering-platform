@@ -1,0 +1,46 @@
+# Migration attestation, per ADR-016.
+#
+# Not an approval. It establishes that nine artifacts approved before approval records
+# existed still hold the content that was approved, so records can be written for them
+# retroactively without inventing provenance. ADR-016 requires a human attester who names
+# the method, because "trust me" is not a method.
+
+id: ATT-0002
+kind: migration_attestation
+attester: MykullZeroOne
+attested_on: 2026-08-31
+
+from: {store: local, algorithm: "no record; approved before ADR-013"}
+to:   {store: local, algorithm: "legacy/truncated-32"}
+
+method: >
+  Recomputation across full git history. For each of the nine artifacts, every commit that
+  has ever touched it was checked out and its body hashed under legacy/truncated-32 -- sha256
+  over the markdown body with front matter excluded. Each artifact yielded exactly ONE
+  distinct body hash across its entire history: three commits each, all front-matter-only
+  changes, none touching a line of content.
+
+  The content approved on 2026-08-29 is therefore provably the content today, and a record
+  binding these artifacts at their current hash records a real approval rather than
+  constructing one. This is verifiable rather than asserted: re-run the same walk and it
+  must again produce one distinct body per artifact.
+
+scope_note: >
+  Covers PRINCIPLES and ADR-001 through ADR-008. All nine carry human_approved: true,
+  approved_by: MykullZeroOne and approved_on: 2026-08-29 in their front matter already --
+  the approval happened and was recorded in the artifact. What was missing is the record
+  ADR-013 later required, which is why approval_record was null and why the validator
+  forced it to stay null.
+
+  The attestation does NOT re-approve anything and does not change any content. It
+  establishes one fact -- the bodies are unchanged since introduction -- on which APR-0012
+  and APR-0013 write the records that were never written.
+
+  Why this mattered enough to do now: WI-0013 made the gate check blocking, and these nine
+  were the only artifacts that could neither carry a record nor be blocked without becoming
+  permanently unmergeable. They were passed through as GRAND, unverified, at tiers 0 and 1 --
+  the highest authority in the system with the weakest provenance in it. That bypass is
+  removed in the same change.
+
+  Not covered, and still on legacy/truncated-32: everything here remains an interim scheme.
+  canonical/v2 (ADR-016) needs structured base data that does not exist (ADR-017, WI-0008).

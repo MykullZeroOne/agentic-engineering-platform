@@ -65,10 +65,11 @@ ADR_SECTIONS = ["## Context", "## Decision", "## Alternatives considered",
                 "## Consequences", "## Risks"]
 ADR_STRUCTURE_FROM = 9
 
-# Approved before ADR-013 established approval records. Listed so the absence is visible
-# rather than silently tolerated; they are reported as warnings, not errors.
-PRE_RECORD_APPROVALS = {"PRINCIPLES", "ADR-001", "ADR-002", "ADR-003", "ADR-004",
-                        "ADR-005", "ADR-006", "ADR-007", "ADR-008"}
+# PRINCIPLES and ADR-001..008 were approved before ADR-013 established approval records, and
+# for a time this file forced their approval_record to stay null -- which under a blocking
+# gate check made them the only artifacts that could neither be verified nor blocked. They
+# now carry APR-0012 and APR-0013, written retroactively on the attestation in ATT-0002 that
+# their bodies are unchanged since introduction. No special case remains.
 APPROVAL_FIELDS = ["id", "gate", "surface", "approver", "approved_on",
                    "artifacts", "request", "statement"]
 
@@ -349,10 +350,6 @@ def check_approvals(gates, by_id, fms):
             # human_approved: supersession ends its force, not the fact of its approval.
             if fm.get("approval_record") and fm["status"] not in RETIRED:
                 err(by_id[fid], f"approval_record set on a {fm['status']!r} artifact")
-            continue
-        if fid in PRE_RECORD_APPROVALS:
-            if fm.get("approval_record"):
-                err(by_id[fid], "predates approval records; approval_record must be null")
             continue
         if fid not in approved_ids:
             # A dangling pointer is worse than a missing one: it claims provenance that

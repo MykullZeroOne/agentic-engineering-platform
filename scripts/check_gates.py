@@ -30,7 +30,7 @@ APPROVALS = ROOT / ".agentic" / "approvals"
 # The front-matter contract, imported rather than restated: two copies of this list would
 # drift the moment DOCUMENT_LIFECYCLE.md gains a field, and one of them would be wrong.
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
-from validate_docs import REQUIRED as FRONT_MATTER, PRE_RECORD_APPROVALS  # noqa: E402
+from validate_docs import REQUIRED as FRONT_MATTER  # noqa: E402
 
 # Only `path` triggers are evaluable from a diff. The others -- classification, finding,
 # lifecycle, capability -- need runtime signals that do not exist yet, so the gates
@@ -133,16 +133,6 @@ def status_at(rel: str, ref: str) -> str | None:
     return fm.get("status") if fm else None
 
 
-def grandfathered(rel: str) -> bool:
-    """Whether this artifact predates approval records and so can never carry one.
-
-    PRINCIPLES and ADR-001..008 are approved, and validate_docs.py requires their
-    approval_record to be null -- writing one fails the build. Under --strict they would
-    otherwise be permanently unmergeable, which is enforcement turning into a wall rather
-    than a gate. Reported, never blocking; ADR-016 attestation (WI-0005) is the real fix.
-    """
-    fm = front_matter_at(rel, "HEAD") or front_matter_at(rel, "HEAD~1")
-    return bool(fm) and str(fm.get("id")) in PRE_RECORD_APPROVALS
 
 
 def authority(rel: str, base: str) -> tuple[bool, bool]:
@@ -237,7 +227,7 @@ def main() -> int:
         print(f"OK: no changes against {args.base}.")
         return 0
 
-    open_gates, unverified, grand_count, lines, unevaluated = 0, 0, 0, [], []
+    open_gates, unverified, quiet_paths, lines, unevaluated = 0, 0, 0, [], []
 
     for gate in gates:
         triggers = gate.get("triggers", []) or []
@@ -295,13 +285,6 @@ def main() -> int:
                 detail.append(("unchanged", rel, "body unchanged; front matter only"))
                 continue
             state, why = cover(gate["id"], rel, records)
-            if state != "covered" and grandfathered(rel):
-                # Approved before approval records existed and unable to carry one.
-                # Reported so the gap stays visible, never blocking.
-                grand_count += 1
-                detail.append(("grand", rel, "predates approval records; needs ADR-016 "
-                                             "attestation (WI-0005), not a record"))
-                continue
             if state == "covered" and why.endswith("(currency unverifiable)"):
                 unverified += 1
             if state != "covered":
@@ -309,6 +292,7 @@ def main() -> int:
             detail.append((state, rel, why))
 
         if not any(s not in ("unchanged", "draft") for s, _, _ in detail):
+            quiet_paths += len(detail)
             continue
 
         status = "OPEN" if gate_open else "closed"
@@ -317,9 +301,6 @@ def main() -> int:
         lines.append(f"  {gate['id']}  [{status}]  approver: {gate.get('approver')}")
         for state, rel, why in detail:
             if state in ("unchanged", "draft"):
-                continue
-            if state == "grand":
-                lines.append(f"    GRAND {rel}  -- {why}")
                 continue
             mark = {"covered": "ok   ", "stale": "STALE", "open": "OPEN "}[state]
             lines.append(f"    {mark} {rel}  -- {why}")
@@ -338,6 +319,12 @@ def main() -> int:
         if lines:
             print(f"Gates triggered by {len(changed)} changed file(s) against {args.base}:\n")
             print("\n".join(lines))
+        elif quiet_paths:
+            # Not the same as nothing matching. Saying "no gate matches" when gated paths
+            # were touched and skipped would let a reader conclude the change went nowhere
+            # near a gate, which is the overclaim this check exists to avoid making.
+            print(f"{quiet_paths} gated path(s) touched, none counted: front matter only, "
+                  f"or draft under a gate scoped `authoritative`.")
         else:
             print(f"No path-triggered gate matches the {len(changed)} changed file(s).")
         if unverified:
@@ -357,15 +344,8 @@ def main() -> int:
               f"written to {APPROVALS.relative_to(ROOT)}/ before this merges.")
         return 1 if args.strict else 0
 
-    if grand_count:
-        # Saying "every gate is closed" while something was waved through is the kind of
-        # overclaim this check exists to catch.
-        print(f"\nWARNING: {grand_count} path(s) passed as grandfathered, not approved. "
-              f"They predate approval records and cannot carry one, so nothing here "
-              f"verifies them; ADR-016 attestation (WI-0005) is what would.")
     if lines:
-        print("\nOK: every triggered gate is closed by a current approval record"
-              + (", except the grandfathered path(s) above." if grand_count else "."))
+        print("\nOK: every triggered gate is closed by a current approval record.")
     else:
         print("\nOK: this change crosses no human gate.")
     return 0
