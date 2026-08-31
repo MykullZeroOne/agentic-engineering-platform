@@ -1,0 +1,61 @@
+# Approval record, per ADR-013 as superseded by ADR-019.
+#
+# Second closure of constitutional_change. APR-0005 closed it first, over four specs;
+# two of those -- SPEC-LIFECYCLE and SPEC-REGISTRIES -- were materially changed
+# afterwards and lapsed to `proposed`, exactly as APR-0005's own scope_note predicted.
+# This re-approves them at v2 and approves SPEC-CAPABILITIES for the first time.
+
+id: APR-0007
+gate: constitutional_change
+surface: chat
+session: session_015ipWtR28BoQtwZYCBh6BfM
+
+approver: MykullZeroOne
+approved_on: 2026-08-31
+recorded_on: 2026-08-31
+
+hash_scheme: legacy/truncated-32
+
+artifacts:
+  - id: SPEC-CAPABILITIES
+    path: docs/spec/CAPABILITIES.md
+    title: Capabilities
+    content_hash: legacy/truncated-32:sha256:21dd30dce7be6cde1f0c443df56f54b7
+  - id: SPEC-LIFECYCLE
+    path: docs/spec/DOCUMENT_LIFECYCLE.md
+    title: Document Lifecycle and Front Matter
+    content_hash: legacy/truncated-32:sha256:48e093a573a40130bf9f36935be67ed0
+  - id: SPEC-REGISTRIES
+    path: docs/spec/REGISTRIES.md
+    title: Registries
+    content_hash: legacy/truncated-32:sha256:57b699806bb230d8aeea63c33ca11909
+
+request: >
+  Reported that scripts/check_gates.py, replayed against the merged PR #5, found
+  constitutional_change open over three tier-0 artifacts, and audited every gated path on
+  main to establish the full scope. Asked which of them the record should approve, offering
+  all three, only the two v2 specs, or all three plus SPEC-LOCAL-WORK-STORE. Named
+  SPEC-CAPABILITIES as the one never reviewed at any version.
+
+statement: >
+  settings are squash only now, close the gates
+
+  -- with scope confirmed by selecting "All three": SPEC-CAPABILITIES, SPEC-LIFECYCLE and
+  SPEC-REGISTRIES.
+
+scope_note: >
+  Approves SPEC-CAPABILITIES (draft v1 -> approved), SPEC-LIFECYCLE (proposed v2 ->
+  approved) and SPEC-REGISTRIES (proposed v2 -> approved). Nothing else.
+
+  Deliberately NOT approved, all of which the audit found uncovered under
+  constitutional_change: SPEC-CONTENT-HASHING (draft v2), SPEC-ENTITY-MODEL and
+  entity-model.yaml (draft, 17 open questions), SPEC-LOCAL-WORK-STORE (draft) and
+  PRODUCT-VISION (draft). APR-0005 held the first three back for reasons that still hold.
+
+  PRINCIPLES is uncovered and stays uncovered: it is in the validator's
+  PRE_RECORD_APPROVALS set, which requires approval_record: null. It predates approval
+  records and needs the ADR-016 attestation route (WI-0005), not a record.
+
+  The instruction naming the gates was not treated as naming the artifacts. The scope
+  above came from an explicit question and an explicit answer, because "close the gates"
+  identifies no version and the closure rule requires one.

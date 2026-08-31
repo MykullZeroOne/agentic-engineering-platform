@@ -1,0 +1,58 @@
+id: WI-0014
+store: local
+project: PRJ-mykullzeroone/agentic-engineering-platform
+type: spec
+work_state: review
+priority: high
+title: Close constitutional_change and platform_config
+description: |
+  Record the human closure of the two gates check_gates.py found open on main, and fix
+  the two tooling defects that made closing them impossible.
+
+  APR-0007 closes constitutional_change over SPEC-CAPABILITIES (draft v1 -> approved),
+  SPEC-LIFECYCLE (proposed v2) and SPEC-REGISTRIES (proposed v2). Scope came from an
+  explicit question and answer, not from the instruction naming the gates: "close the
+  gates" identifies no version, and the closure rule requires one.
+
+  APR-0008 closes platform_config over six config artifacts. Earlier reports named three;
+  an audit of every gated path on main found hooks.yaml, hook-points.yaml and states.yaml
+  had never been covered either.
+
+  Two defects, both found by trying to write the records rather than by reading the code:
+
+  1. platform_config was unclosable. Approval records validate artifacts against the
+     document index, which scans only docs/ and examples/, so a record naming a registry
+     failed as an unknown artifact -- and every trigger path on that gate is YAML under
+     .agentic/. Records now take `kind: config`, approved by path, skipping the
+     front-matter checks that only apply to documents. legacy/file-32 was added to
+     vocabularies.yaml because truncated-32 is defined over a markdown body and a config
+     artifact has none.
+
+  2. Nothing could be approved twice. The validator enforced approved_by/approval_record
+     agreement against every record naming an artifact, but front matter points at one
+     record, so re-approving SPEC-LIFECYCLE at v2 made APR-0005 fail. A record the
+     artifact no longer names approved an earlier version: history, not a disagreement.
+     It warns now. A dangling approval_record pointer, previously a warning, is now an
+     error -- claiming provenance that does not exist is worse than claiming none.
+
+  3. A config artifact's approval could never go stale. check_gates.py only knew how to
+     hash a markdown body, so it accepted any record naming a YAML path and said so as
+     "currency unverifiable" -- permanent coverage however the file changed afterwards.
+     With legacy/file-32 defined it recomputes the whole-file digest and the approval
+     re-opens on edit, verified by editing vocabularies.yaml and watching platform_config
+     go STALE. Which digest to recompute is read off the record's `kind`, not guessed
+     from the extension, so the two cannot drift apart.
+
+  Deliberately not approved and still uncovered: SPEC-CONTENT-HASHING, SPEC-ENTITY-MODEL,
+  entity-model.yaml, SPEC-LOCAL-WORK-STORE, PRODUCT-VISION, GOVERNANCE, and all ten
+  PRD/ADS drafts. PRINCIPLES and ADR-001..008 cannot take a record at all -- they are in
+  PRE_RECORD_APPROVALS, which requires approval_record: null -- and need the ADR-016
+  attestation route in WI-0005.
+
+  Follow-up found here, not fixed here: platform_config's `.agentic/roles/**` trigger
+  matches .agentic/roles/.gitkeep, an empty placeholder. Approving a zero-byte file to
+  close a gate would be theatre, so the trigger needs narrowing to real role definitions.
+required_gates:
+- constitutional_change
+- platform_config
+branch: feat/14-close-gates

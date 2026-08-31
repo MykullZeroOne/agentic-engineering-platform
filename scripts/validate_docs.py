@@ -242,6 +242,22 @@ def check_hooks(points):
                     err(rel, f"hook id {hid!r} is outside the closed domain namespace")
 
 
+def check_hash(rel, aid, h):
+    """A content hash must name its scheme and carry that scheme's digest length."""
+    if h.startswith(LEGACY_BARE_PREFIX):
+        # Pre-ADR-016 form: no scheme prefix, so the computation is ambiguous.
+        warnings.append(f"{rel}: {aid} carries a bare {LEGACY_BARE_PREFIX} hash; "
+                        f"needs re-anchoring by attestation (ADR-016)")
+        return
+    scheme, sep, digest = h.partition(":sha256:")
+    if not sep or scheme not in HASH_SCHEMES:
+        err(rel, f"artifact {aid} hash {h!r} names no known scheme "
+                 f"(expected one of {sorted(HASH_SCHEMES)})")
+    elif len(digest) != HASH_SCHEMES[scheme]:
+        err(rel, f"artifact {aid} scheme {scheme!r} requires a "
+                 f"{HASH_SCHEMES[scheme]}-character digest, got {len(digest)}")
+
+
 def check_approvals(gates, by_id, fms):
     """Approval records are the provenance behind every closed gate (ADR-013)."""
     known_gates = {g["id"] for g in gates["gates"]}
@@ -263,22 +279,25 @@ def check_approvals(gates, by_id, fms):
 
         for art in rec.get("artifacts", []) or []:
             aid = art.get("id")
+
+            # A config artifact is approved by path, not as a document. platform_config's
+            # triggers are all YAML under .agentic/, which collect() never scans, so
+            # before this the highest-traffic gate in the repository was unclosable: any
+            # record naming a registry failed here as an unknown artifact.
+            config = art.get("kind") == "config"
+            if config:
+                cpath = art.get("path")
+                if not cpath or not (ROOT / cpath).is_file():
+                    err(rel, f"config artifact {aid!r} names missing path {cpath!r}")
+                elif str(cpath).startswith("docs/"):
+                    err(rel, f"{aid!r} is under docs/ and is a document, not kind: config")
+                check_hash(rel, aid, str(art.get("content_hash", "")))
+                continue
+
             if aid not in by_id:
                 err(rel, f"approves unknown artifact {aid!r}")
                 continue
-            h = str(art.get("content_hash", ""))
-            if h.startswith(LEGACY_BARE_PREFIX):
-                # Pre-ADR-016 form: no scheme prefix, so the computation is ambiguous.
-                warnings.append(f"{rel}: {aid} carries a bare {LEGACY_BARE_PREFIX} hash; "
-                                f"needs re-anchoring by attestation (ADR-016)")
-            else:
-                scheme, sep, digest = h.partition(":sha256:")
-                if not sep or scheme not in HASH_SCHEMES:
-                    err(rel, f"artifact {aid} hash {h!r} names no known scheme "
-                             f"(expected one of {sorted(HASH_SCHEMES)})")
-                elif len(digest) != HASH_SCHEMES[scheme]:
-                    err(rel, f"artifact {aid} scheme {scheme!r} requires a "
-                             f"{HASH_SCHEMES[scheme]}-character digest, got {len(digest)}")
+            check_hash(rel, aid, str(art.get("content_hash", "")))
             # A record naming an artifact that has since left `approved` is history:
             # it approved an earlier version, and a material change re-opened the gate
             # (ADR-016 clause 5). Surface it, but do not enforce agreement against it.
@@ -287,16 +306,24 @@ def check_approvals(gates, by_id, fms):
                                 f"(now {fms[aid]['status']!r})")
                 continue
 
+            # An artifact may be approved more than once across its life: APR-0005
+            # approved SPEC-LIFECYCLE at v1 and APR-0007 at v2, after a material change
+            # lapsed it. Front matter points at one record -- the one granting authority
+            # now -- so a record the artifact does not name approved an earlier version.
+            # That is history, not a disagreement, and erroring on it made the second
+            # approval of anything impossible.
+            pointer = fms[aid].get("approval_record")
+            if pointer != rec["id"]:
+                warnings.append(f"{rel}: {aid} now carries {pointer}; this record "
+                                f"approved an earlier version")
+                continue
+
             # ADR-019: approved_by is the identity, approval_record the pointer. Both
             # must agree with the record, or the provenance chain is decorative.
             claimed = fms[aid].get("approved_by")
             if claimed != rec.get("approver"):
                 err(by_id[aid], f"approved_by {claimed!r} does not match "
                                 f"{rec['id']} approver {rec.get('approver')!r}")
-            pointer = fms[aid].get("approval_record")
-            if pointer != rec["id"]:
-                err(by_id[aid], f"approval_record {pointer!r} does not name "
-                                f"{rec['id']}, which approves this artifact")
             approved_ids.add(aid)
 
     # An artifact carrying authority should be able to name the approval that granted it.
@@ -312,7 +339,13 @@ def check_approvals(gates, by_id, fms):
                 err(by_id[fid], "predates approval records; approval_record must be null")
             continue
         if fid not in approved_ids:
-            warnings.append(f"{by_id[fid]}: {fm['status']} with no approval record (ADR-019)")
+            # A dangling pointer is worse than a missing one: it claims provenance that
+            # does not exist. Only the absence of any claim is the tolerated interim state.
+            if fm.get("approval_record"):
+                err(by_id[fid], f"names approval_record {fm['approval_record']!r}, "
+                                f"which does not approve it")
+            else:
+                warnings.append(f"{by_id[fid]}: {fm['status']} with no approval record (ADR-019)")
         elif not fm.get("approval_record"):
             err(by_id[fid], "approved artifact does not name its approval_record (ADR-019)")
 
