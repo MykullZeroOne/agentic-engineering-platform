@@ -1,0 +1,43 @@
+id: WI-0026
+store: local
+project: PRJ-mykullzeroone/agentic-engineering-platform
+type: spec
+work_state: review
+priority: normal
+title: Define the evidence package schema
+description: |
+  Half of WI-0010, and the half that was blocking something real. SPEC-REGISTRIES records the
+  evidence package as a known gap: it has a SHAPE, .github/pull_request_template.md, and no
+  SCHEMA. Under ADR-017 the package is structured data of which the pull request body is one
+  projection, so the template is an interim human-facing form. CLAUDE.md merge requirement 3
+  has demanded an evidence package on every pull request while nothing said what one is.
+
+  The four rules are adapted from Kairo's docs/v2/27-traceability/acceptance-criteria-
+  convention.md (same owner, MIT), found while surveying Kairo for WI-0025. It solved the same
+  problem for the same reason, and its rules are the load-bearing part: automate first; manual
+  only when necessary and then as Given/When/Then; preconditions explicit; ONE PROOF PER CLAIM
+  citing exactly one command, test path or scenario id. The schema is AEP's.
+
+  Three design points that are not in the Kairo original:
+
+    - head_commit is required. A proof that does not name the commit it ran on proves nothing
+      about the head, and a package assembled across a rebase is exactly the failure this
+      catches.
+
+    - `open` is required to be present even when empty. An absent section and an empty one read
+      identically and only one of them is a claim. This is where a suspended requirement lives,
+      and AEP already has one: independent review has been recorded as suspended rather than
+      satisfied on every pull request since PR #15.
+
+    - gates may be `crossed` with approval_record: null. Merging closes no gate (ADR-019), so
+      that is a valid and blocking entry rather than an error in the package.
+
+  Enforcement is `prose`. Nothing validates a package because none exists yet; claiming `check`
+  before a check exists would make the document assert a stage the pipeline is not at.
+
+  Deliberately not done: the skill schema, which is WI-0010's other half; where packages are
+  stored, which is a platform_config change; and tier 3, which is WI-0006. This is a tier 0 spec
+  describing a data shape, not a Rule about how work is done.
+required_gates: []
+dependencies: []
+branch: spec/26-evidence-package-schema
