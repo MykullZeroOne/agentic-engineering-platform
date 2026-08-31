@@ -1,0 +1,64 @@
+# Approval record, per ADR-013 as superseded by ADR-019.
+#
+# Third closure of platform_config. APR-0008 closed it first, APR-0009 re-closed it after
+# risk tiers landed, and this re-closes it after gate scoping. Three closures in a day is
+# not churn in the mechanism -- it is the mechanism working: each material change to the
+# registries re-opened the gate on its own, which is what binding an approval to a content
+# hash is for.
+
+id: APR-0010
+gate: platform_config
+surface: chat
+session: session_015ipWtR28BoQtwZYCBh6BfM
+
+approver: MykullZeroOne
+approved_on: 2026-08-31
+recorded_on: 2026-08-31
+
+hash_scheme: legacy/file-32
+
+artifacts:
+  - id: CFG-GATES
+    kind: config
+    path: .agentic/registries/gates.yaml
+    title: Gate registry
+    content_hash: legacy/file-32:sha256:7afc2433c18a960262dffbaac87a95ee
+  - id: CFG-VOCABULARIES
+    kind: config
+    path: .agentic/registries/vocabularies.yaml
+    title: Controlled vocabulary registry
+    content_hash: legacy/file-32:sha256:0763942849bb148bb015eacac403bfe2
+
+request: >
+  Reported that constitutional_change fired on any docs/spec/ path regardless of status, so
+  editing a draft opened a gate with nothing to approve, and proposed resolving WI-0018 by
+  the first of its three options: make the path trigger status-aware. Presented the scope
+  assignment as a table and asked for approval of that table specifically -- which gates take
+  `authoritative` and that security_policy deliberately does not.
+
+statement: >
+  approve the scope table, write APR-0010
+
+  -- the table being: `authoritative` for constitutional_change, architecture_decision and
+  product_spec; `always` for the other nine, security_policy deliberately included.
+
+scope_note: >
+  Approves gates.yaml and vocabularies.yaml at the content they carry in this change: the
+  gate_scope vocabulary, and the twelve applies_when assignments drawn from it.
+
+  The three narrowed gates hold artifacts with a lifecycle, so a draft edit changes nothing
+  binding. The nine left at `always` include security_policy on purpose: it fires on
+  docs/security/GOVERNANCE.md while that document is draft, and over-firing there is the
+  cheaper error. That is a live consequence, not a hypothetical -- expect a finding with
+  nothing to approve until GOVERNANCE is approved or the gate is rescoped.
+
+  What this does NOT approve, because it is a code change rather than a registry one and
+  crosses no gate: check_gates.py no longer treats a change in authority as an unchanged
+  body. That fix matters more than the scoping -- the check had never fired on an actual
+  approval, since approving a document touches only front matter. It is recorded here for
+  provenance because a reader of this record should know the checker's behaviour changed in
+  the same commit, not only its configuration.
+
+  Approving a scope narrowing is approving less enforcement. The offsetting fix in the same
+  change makes the gate fire on the one case it had always missed, so the net is more
+  coverage, not less -- but the two are separable and only the narrowing is approved here.
