@@ -1,0 +1,50 @@
+id: WI-0028
+store: local
+project: PRJ-mykullzeroone/agentic-engineering-platform
+type: spec
+work_state: review
+priority: normal
+title: Absorb Kairo's memory typology, context budget, and retrieval telemetry
+description: |
+  First of the ADR-022 absorptions, and the three that cross no gate: PRD-004, PRD-006 and
+  PRD-007 are all `draft`, and product_spec is scoped `authoritative`.
+
+  PRD-004 gains three memory layers and the entire operational half it was missing. Kairo's
+  typology has six types where AEP had five and neither was a superset -- AEP had performance
+  memory Kairo lacks, Kairo had working, sensory and organizational memory AEP lacked. The union
+  is the better model, so the union is what landed.
+
+  More consequentially, PRD-004 said nothing about decay, importance, pinning, retention or
+  archival. It required provenance, confidence, validity and supersession -- what a memory IS --
+  and nothing about how retrieval weight changes over time. Five mechanisms now specified, with
+  the note that supersession is not one of them: a superseded memory is wrong, not old.
+
+  The lifecycle is Observe -> Filter -> Capture -> Summarize -> Index -> Retrieve -> Refresh ->
+  Retain/Delete. Filter precedes capture deliberately, because a secret that is captured and then
+  redacted has already been written down.
+
+  PRD-006 gains the strongest single idea in the Kairo corpus: a context packet states what it
+  LEFT OUT. A packet listing only its contents is indistinguishable from a packet that found
+  nothing else, so an agent cannot tell "there is no prior attempt at this" from "prior attempts
+  were dropped for budget". The first is a fact about the work, the second a fact about the
+  retriever, and only one should change what the agent does. Same discipline as the evidence
+  package's required `open` block: absence stated, never implied.
+
+  It also gains the reconstruction-not-replay distinction (Kairo's "resume is not restore") and
+  an explicit context budget, requested and estimated.
+
+  PRD-007 gains retrieval quality telemetry. Everything it measured was whether a RUN was good;
+  nothing measured whether the CONTEXT was, and a bad packet and a bad model fail identically
+  from the outside. PRD-007 already required regression of retrieval changes, which was
+  unsatisfiable without these signals.
+
+  Each addition cites its Kairo source per ADR-022's translation rule. Nothing is copied; the
+  ideas carry and the artifacts are AEP's.
+
+  Two absorptions from the same ADR are deliberately NOT here because they are gated:
+  SPEC-CAPABILITIES is approved, so the principal model fires constitutional_change, and the
+  graph node and edge vocabularies land in .agentic/registries/, which fires platform_config
+  under a trigger scoped `always`.
+required_gates: []
+dependencies: []
+branch: spec/28-absorb-memory-context-model
