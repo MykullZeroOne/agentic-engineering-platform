@@ -15,22 +15,25 @@ recorded_on: 2026-08-29T19:41:00+00:00
 # Sub-day precision was not captured at the time: no mechanism existed to capture it.
 # recorded_on is the commit that applied the approval and is a verifiable upper bound.
 
+# Re-anchored by ATT-0001: recomputed under legacy/truncated-32 and byte-identical.
+hash_scheme: legacy/truncated-32
+
 artifacts:
   - id: DES-COMPONENTS
     path: docs/architecture/COMPONENTS.md
-    content_hash: sha256:ff9287c38d479fb8d9bd1798357eb233
+    content_hash: legacy/truncated-32:sha256:ff9287c38d479fb8d9bd1798357eb233
   - id: DES-DATA-MODEL
     path: docs/architecture/DATA_MODEL.md
-    content_hash: sha256:9204d729de06346f8158be49d97f7fcd
+    content_hash: legacy/truncated-32:sha256:9204d729de06346f8158be49d97f7fcd
   - id: DES-DEPLOYMENT
     path: docs/architecture/DEPLOYMENT.md
-    content_hash: sha256:bb3ad49c04653469cb9d731e3efac27e
+    content_hash: legacy/truncated-32:sha256:bb3ad49c04653469cb9d731e3efac27e
   - id: DES-SYSTEM-ARCHITECTURE
     path: docs/architecture/SYSTEM_ARCHITECTURE.md
-    content_hash: sha256:77b14f31f74c40ca068d325be757ace9
+    content_hash: legacy/truncated-32:sha256:77b14f31f74c40ca068d325be757ace9
   - id: DES-TECHNOLOGY-STACK
     path: docs/architecture/TECHNOLOGY_STACK.md
-    content_hash: sha256:d37e3855032df41bfd7f253dcfc5f197
+    content_hash: legacy/truncated-32:sha256:d37e3855032df41bfd7f253dcfc5f197
 
 request: >
   Asked whether the architecture and agent-loop documents should be promoted out of draft,

@@ -9,15 +9,18 @@ approver: MykullZeroOne
 approved_on: 2026-08-29
 recorded_on: 2026-08-29
 
+# Re-anchored by ATT-0001: recomputed under legacy/truncated-32 and byte-identical.
+hash_scheme: legacy/truncated-32
+
 artifacts:
   - id: ADR-012
     path: docs/adr/ADR-012-WORK-STORE-SINGLE-SOURCE.md
     title: ADR-012 — One Authoritative Work Store, Configurable Per Project
-    content_hash: sha256:3ac6161acdad4bff4257c3647ed519ac
+    content_hash: legacy/truncated-32:sha256:3ac6161acdad4bff4257c3647ed519ac
   - id: ADR-014
     path: docs/adr/ADR-014-SUPERVISORY-CONTROL-DELIVERY.md
     title: ADR-014 — Supervisory-Control Delivery Model
-    content_hash: sha256:3a6221f7b4ccbc97e96676ff1d02d8b7
+    content_hash: legacy/truncated-32:sha256:3a6221f7b4ccbc97e96676ff1d02d8b7
 
 request: >
   Presented ADR-012 (one authoritative work store, configurable per project) and ADR-014

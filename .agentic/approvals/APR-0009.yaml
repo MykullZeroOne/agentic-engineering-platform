@@ -1,0 +1,58 @@
+# Approval record, per ADR-013 as superseded by ADR-019.
+#
+# Re-closes platform_config after gates.yaml and vocabularies.yaml changed. APR-0008 closed
+# it at the previous content; a material change re-opened it, which is the mechanism working
+# rather than failing.
+
+id: APR-0009
+gate: platform_config
+surface: chat
+session: session_015ipWtR28BoQtwZYCBh6BfM
+
+approver: MykullZeroOne
+approved_on: 2026-08-31
+recorded_on: 2026-08-31
+
+hash_scheme: legacy/file-32
+
+artifacts:
+  - id: CFG-GATES
+    kind: config
+    path: .agentic/registries/gates.yaml
+    title: Gate registry
+    content_hash: legacy/file-32:sha256:c4464164ec8bf8aaf989a11ee487a68a
+  - id: CFG-VOCABULARIES
+    kind: config
+    path: .agentic/registries/vocabularies.yaml
+    title: Controlled vocabulary registry
+    content_hash: legacy/file-32:sha256:07f17c89a80d5691eaf84b21c45d2391
+
+request: >
+  Proposed a risk tier for each of the twelve gates on one stated test -- whether a git revert
+  undoes the effect -- and offered three variants: the assignment as proposed, a version moving
+  production_release and security_policy down to consequential, and a version promoting
+  architecture_decision. Separately reported that platform_config's `.agentic/roles/**` trigger
+  matched .gitkeep, an empty placeholder, and that CLAUDE.md carried the merge requirements and
+  branching strategy with no gate over it at all.
+
+statement: >
+  lets do theses real quick -- WI-0004 gate risk tiers, the `.agentic/roles/**` trigger matching
+  `.gitkeep`, CLAUDE.md as ungated tier-3 policy
+
+  -- with the tier assignment confirmed by selecting "Accept as proposed".
+
+scope_note: >
+  Approves gates.yaml and vocabularies.yaml at the content they carry in this change: the twelve
+  risk_tier assignments, the risk_tier vocabulary those tokens come from, the roles trigger
+  narrowed from `.agentic/roles/**` to `.agentic/roles/*.yaml`, and CLAUDE.md added as a
+  platform_config trigger path.
+
+  The tier assignment was explicitly chosen from three offered variants. The two trigger changes
+  were named by the instruction as items to resolve, and the mechanism for each was proposed
+  before this change and not separately confirmed -- recorded here so that distinction is visible
+  rather than flattened into a single claim of approval.
+
+  Adding CLAUDE.md to this gate means the next change to the merge requirements or the branching
+  strategy needs an approval record. That is the intent: it was tier-3 policy living in an agent
+  guide with nothing gating it, and WI-0015 recorded that as needing a decision rather than a
+  quiet fix.

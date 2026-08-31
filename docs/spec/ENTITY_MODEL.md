@@ -51,16 +51,22 @@ every `identity_rule` is store-independent and store-minted.
 
 ## Read `open_questions` first
 
-Seventeen questions could not be settled from the corpus and need a human decision. They are not
-polish. Several determine whether parts of the model are correct at all:
+Seventeen questions could not be settled from the corpus. Six are now answered and moved to
+`resolved_questions`, which keeps each one's reasoning rather than deleting it: gate risk
+tiering, the capability namespace, the tier-0 specs' own authority, the local work store
+format, whether a narrative PRD may close `product_spec`, and whether Policy and Standard are
+one entity. Three of those were settled by work landing rather than by a decision.
 
-- Whether Policy and Standard are one entity or two
+Eleven remain, and they are not polish. Several determine whether parts of the model are
+correct at all:
+
 - Which store is authoritative for each plane
-- Whether a narrative PRD with no structured requirements may close the `product_spec` gate —
-  seven of the eight current PRDs are narrative
 - Whether invariants get a predicate language or are agent-judged
 - Whether skills are agent-authorable, which `AUTHORITY_MODEL` and `gates.yaml` currently answer
   differently
+- Whether `design` sub-scopes across nine directories or collapses to one store
+- How `cost_of_delay` is computed, which decides what a human sees first under a bounded
+  attention budget
 
 The model is `draft` and carries no authority. Treating it as settled would be exactly the
 false confidence its own critique pass was built to prevent.

@@ -1,0 +1,36 @@
+# Migration attestation, per ADR-016.
+#
+# Not an approval record: it re-anchors existing approvals to a scheme-qualified hash form
+# without re-approving their content. ADR-016 requires a human attester who names the
+# method, because "trust me" is not a method.
+
+id: ATT-0001
+kind: migration_attestation
+attester: MykullZeroOne
+attested_on: 2026-08-31
+
+from: {store: local, algorithm: "sha256 (bare, unqualified)"}
+to:   {store: local, algorithm: "legacy/truncated-32"}
+
+method: >
+  Recomputation. Every bare `sha256:` digest in APR-0001 through APR-0004 was recomputed
+  from the artifact's current markdown body under legacy/truncated-32 -- sha256 over the
+  body with front matter excluded, truncated to 32 hex characters -- and compared against
+  the recorded value. All fifteen matched byte-for-byte, zero mismatches.
+
+  The re-anchoring therefore changes the prefix and nothing else. No approval is bound to
+  different content after this than before it, which is the equivalence ADR-016 asks the
+  attester to assert. This is verifiable rather than asserted: the same recomputation can
+  be run again against these files and must produce the same fifteen matches.
+
+scope_note: >
+  Re-anchors APR-0001 (5 artifacts), APR-0002 (4), APR-0003 (2) and APR-0004 (4).
+
+  This does NOT move them to canonical/v2, which is what ADR-016 actually wants and which
+  needs structured base data that does not exist yet (ADR-017, WI-0008). legacy/truncated-32
+  remains an interim scheme. What it buys is that every digest in the repository now names
+  the computation that produced it, so no hash is ambiguous between schemes.
+
+  It also does not touch PRINCIPLES or ADR-001..008, which carry no record at all. Those are
+  in the validator's PRE_RECORD_APPROVALS set and need a different remedy: they were
+  approved before approval records existed, so there is no hash to re-anchor.

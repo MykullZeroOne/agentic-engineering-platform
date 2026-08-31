@@ -2,7 +2,7 @@ id: WI-0004
 store: local
 project: PRJ-mykullzeroone/agentic-engineering-platform
 type: chore
-work_state: ready
+work_state: review
 priority: normal
 title: Assign risk tiers to every gate
 description: |
@@ -11,3 +11,4 @@ description: |
   production release from approving a typo. Assign reversible / consequential / irreversible.
 required_gates:
 - platform_config
+branch: spec/18-resolve-open-decisions

@@ -90,6 +90,20 @@ vocabularies:
       # .agentic/. Same interim status as truncated-32: canonical/v2 supersedes both.
       - {token: legacy/file-32,      digest_length: 32, description: Pre-ADR-016 digest over a whole config file}
 
+  risk_tier:
+    description: >
+      How reversible a gate's subject matter is, per ADR-014 clause 7. The test is whether
+      the effect can be undone by a git revert: everything inside the repository can, so
+      irreversible means the effect escapes it -- a secret disclosed, data deleted, a legal
+      commitment made, a release shipped. Without this every gate is blocking with the same
+      approver, which is what ADR-014 argues produces rubber-stamping.
+    applies_to: [Gate.risk_tier]
+    source: docs/adr/ADR-014-SUPERVISORY-CONTROL-DELIVERY.md
+    terms:
+      - {token: reversible,    description: Undone by a revert. Eligible for sampled audit}
+      - {token: consequential, description: Undoable at real cost. Spends the attention budget}
+      - {token: irreversible,  description: Effect escapes the repository. Named human, never batched}
+
   approval_surface:
     description: Where a human may close a gate. Merging a pull request is not a member.
     applies_to: [ApprovalRecord.surface]

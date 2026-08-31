@@ -7,7 +7,14 @@ priority: normal
 title: Create the tier 3 policy and standard layer
 description: |
   docs/policies/ and docs/standards/ do not exist, though five documents depend on tier 3 and the
-  memory promotion ladder in CONSOLIDATION terminates at Standard with nowhere to land. Blocked on
-  resolving whether Policy and Standard are one entity or two.
+  memory promotion ladder in CONSOLIDATION terminates at Standard with nowhere to land. Unblocked: Policy and Standard are ONE entity, Rule with a `kind` field, decided 2026-08-31
+  while tier 3 was still empty and the choice was free. The payload is identical and only
+  enforceability differs. GLOSSARY keeps both as distinct terms, now kind values; DES-DATA-MODEL's
+  policies table follows rather than leads.
+
+  Still to do, and deliberately not done here: create docs/policies/ and docs/standards/, and
+  decide whether one directory or two follows from one entity. The decision removed the blocker;
+  it did not write the artifacts.
 required_gates:
 - constitutional_change
+branch: spec/18-resolve-open-decisions
