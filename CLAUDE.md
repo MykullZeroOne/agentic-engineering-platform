@@ -39,6 +39,8 @@ instance of the schema the first runtime must read unchanged.
 | `docs/roadmap/` | Phased implementation roadmap |
 | `examples/` | Worked idea-to-delivery walkthrough |
 | `.agentic/` | This repository's config, hook bindings, and vocabulary registries |
+| `.agentic/work/` | The local work store — one YAML file per work item |
+| `.agentic/approvals/` | Approval records; the provenance behind every closed gate |
 | `scripts/` | Documentation validator and index generator |
 
 Start with `docs/DOCUMENTATION_INDEX.md`. It is generated from document front matter and lists the
@@ -52,8 +54,10 @@ These come from `docs/vision/PRINCIPLES.md` and constrain every change:
    and release decisions are theirs. Never self-approve a human gate.
 2. **Role != model.** `compliance.primary` is a durable identity; a Claude session is a transient
    runtime. Never write a document that hard-codes a specific model into a role definition.
-3. **GitHub owns work state.** Issues, PRs, checks, and releases are authoritative. Do not create a
-   competing backlog in markdown — no `TODO.md`, no checkbox task lists in docs.
+3. **One store owns work state.** Exactly one store is authoritative, named by `work_store`
+   (ADR-012); this repository uses `local`, at `.agentic/work/`. GitHub remains authoritative for
+   PRs, checks and releases. Do not create a competing backlog in markdown — no `TODO.md`, no
+   checkbox task lists in docs.
 4. **Subscription-first.** Prefer supported CLIs over raw APIs. APIs are adapters, not foundations.
 5. **Hooks make behavior deterministic.** Behavior that must always happen belongs in
    `.agentic/hooks/hooks.yaml`, not in prose asking an agent to remember.
@@ -121,8 +125,12 @@ no long-lived release branches, and no environment branches.
 ### Naming
 
 ```
-<type>/<issue-number>-<kebab-summary>
+<type>/<work-item-number>-<kebab-summary>
 ```
+
+The number is the work item's, from `.agentic/work/` — `WI-0007` gives `7`. `<type>` is the work
+item's own `type` field, so the branch prefix and the item's type are one token, not two that
+drift.
 
 Types: `feat`, `fix`, `docs`, `spec`, `adr`, `chore`, `refactor`, `test`, `ci`.
 
@@ -131,6 +139,9 @@ docs/42-context-packet-provenance
 adr/57-supersede-postgres-first
 feat/103-devctl-doctor
 ```
+
+Work items are structured data, not prose: see `docs/spec/LOCAL_WORK_STORE.md` for the format and
+`.agentic/registries/states.yaml` for the `work_state` axis.
 
 Agent-driven branches may carry the role as a suffix when several roles touch one issue:
 `feat/103-devctl-doctor--backend.engineer`.
@@ -149,7 +160,8 @@ revert a single operation, and makes the post-merge consolidation hooks
 
 A PR may merge only when all of these hold:
 
-1. It links its issue and closes it.
+1. It names its work item and closes it. Work items live in the store named by `work_store`
+   (`.agentic/work/` here); the squash commit body carries `Closes WI-NNNN`.
 2. All required checks pass. Never merge with a red or skipped required check, and never weaken or
    disable a check to make a PR mergeable.
 3. It carries its **evidence package** — what changed, why, and how it was verified. A PR is an

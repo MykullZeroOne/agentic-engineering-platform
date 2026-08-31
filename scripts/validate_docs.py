@@ -44,6 +44,14 @@ ENFORCEMENT_STAGES = {"prose", "check", "hook"}
 HASH_SCHEMES = {"canonical/v2": 64, "legacy/truncated-32": 32}
 LEGACY_BARE_PREFIX = "sha256:"
 
+# Local work store, per docs/spec/LOCAL_WORK_STORE.md. Types are CLAUDE.md's branch types,
+# so a work item's type and its branch prefix are one token rather than two vocabularies
+# that drift. work_state is not enumerated here: states.yaml is its sole source.
+WORK_REQUIRED = ["id", "store", "project", "type", "work_state", "priority",
+                 "title", "description"]
+WORK_TYPES = {"feat", "fix", "docs", "spec", "adr", "chore", "refactor", "test", "ci"}
+WORK_PRIORITIES = {"low", "normal", "high", "urgent"}
+
 # Required ADR sections, per docs/spec/DOCUMENT_LIFECYCLE.md. ADR-001..008 predate the
 # requirement and are accepted and immutable, so they are grandfathered rather than rewritten.
 ADR_SECTIONS = ["## Context", "## Decision", "## Alternatives considered",
@@ -278,6 +286,59 @@ def check_approvals(gates, by_id, fms):
                 warnings.append(f"{by_id[fid]}: {fm['status']} with no approval record (ADR-013)")
 
 
+def check_work_items(states, gates):
+    """Validate the local work store (docs/spec/LOCAL_WORK_STORE.md)."""
+    work_dir = ROOT / ".agentic" / "work"
+    if not work_dir.is_dir():
+        return
+
+    valid_states = {v["token"] for v in states["axes"]["work_state"]["values"]}
+    known_gates = {g["id"] for g in gates["gates"]}
+    items: dict[str, dict] = {}
+
+    for path in sorted(work_dir.glob("WI-*.yaml")):
+        rel = str(path.relative_to(ROOT))
+        item = yaml.safe_load(path.read_text())
+        if not isinstance(item, dict):
+            err(rel, "work item is not a mapping")
+            continue
+
+        for field in WORK_REQUIRED:
+            if field not in item:
+                err(rel, f"work item missing required field {field!r}")
+        wid = str(item.get("id", ""))
+        if not re.match(r"^WI-\d{4}$", wid):
+            err(rel, f"id {wid!r} does not match WI-NNNN")
+        elif path.stem != wid:
+            err(rel, f"filename must match its id {wid!r}")
+        if wid in items:
+            err(rel, f"duplicate work item id {wid}")
+        items[wid] = item
+
+        if item.get("type") not in WORK_TYPES:
+            err(rel, f"type {item.get('type')!r} not in {sorted(WORK_TYPES)}")
+        if item.get("priority") not in WORK_PRIORITIES:
+            err(rel, f"priority {item.get('priority')!r} not in {sorted(WORK_PRIORITIES)}")
+        if item.get("work_state") not in valid_states:
+            err(rel, f"work_state {item.get('work_state')!r} not in states.yaml work_state axis")
+        for gid in item.get("required_gates", []) or []:
+            if gid not in known_gates:
+                err(rel, f"unknown gate id {gid!r}")
+
+    # Links must resolve, or the dependency graph is decorative.
+    for wid, item in items.items():
+        rel = f".agentic/work/{wid}.yaml"
+        for field in ("dependencies", "parent"):
+            refs = item.get(field) or []
+            if isinstance(refs, str):
+                refs = [refs]
+            for ref in refs:
+                if ref not in items:
+                    err(rel, f"{field} references unknown work item {ref!r}")
+                elif ref == wid:
+                    err(rel, f"{field} references itself")
+
+
 def main() -> int:
     quiet = "--quiet" in sys.argv
     states = load_registry("states.yaml")
@@ -290,6 +351,7 @@ def main() -> int:
     check_gates(gates)
     check_hooks(points)
     check_approvals(gates, by_id, fms)
+    check_work_items(states, gates)
 
     for w in warnings:
         print(f"warning: {w}")
@@ -300,9 +362,10 @@ def main() -> int:
         print(f"\n{len(errors)} violation(s) across {len(docs)} documents.")
         return 1
     if not quiet:
+        n_work = len(list((ROOT / ".agentic" / "work").glob("WI-*.yaml")))
         print(f"OK: {len(docs)} documents, {len(gates['gates'])} gates, "
               f"{len(points['hook_points'])} hook points, "
-              f"{len(states['axes'])} state axes.")
+              f"{len(states['axes'])} state axes, {n_work} work items.")
     return 0
 
 

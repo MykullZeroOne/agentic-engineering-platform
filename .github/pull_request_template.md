@@ -61,9 +61,8 @@ $ python3 scripts/validate_docs.py
 
 Per `CLAUDE.md`. A PR may merge only when all of these hold.
 
-- [ ] **1. Links its issue and closes it.** *Currently unsatisfiable: this repository has
-      `work_store: local` (ADR-012) and no local work-store format exists yet. Note this
-      rather than inventing an issue number.*
+- [ ] **1. Names its work item and closes it.** Work items live in `.agentic/work/`
+      (`docs/spec/LOCAL_WORK_STORE.md`). Put `Closes WI-NNNN` in the squash commit body.
 - [ ] **2. All required checks pass.** Never merge on a red or skipped required check, and
       never weaken a check to make a PR mergeable.
 - [ ] **3. Carries its evidence package.** The sections above.

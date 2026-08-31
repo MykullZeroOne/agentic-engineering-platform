@@ -1,0 +1,13 @@
+id: WI-0006
+store: local
+project: PRJ-mykullzeroone/agentic-engineering-platform
+type: spec
+work_state: ready
+priority: normal
+title: Create the tier 3 policy and standard layer
+description: |
+  docs/policies/ and docs/standards/ do not exist, though five documents depend on tier 3 and the
+  memory promotion ladder in CONSOLIDATION terminates at Standard with nowhere to land. Blocked on
+  resolving whether Policy and Standard are one entity or two.
+required_gates:
+- constitutional_change

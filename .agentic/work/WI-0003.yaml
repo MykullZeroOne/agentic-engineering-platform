@@ -1,0 +1,13 @@
+id: WI-0003
+store: local
+project: PRJ-mykullzeroone/agentic-engineering-platform
+type: spec
+work_state: ready
+priority: normal
+title: Add a controlled-vocabulary registry
+description: |
+  ControlledVocabulary is an entity in the model with nowhere to live. states.yaml holds state
+  axes and a type is not a state, so work-item types, priorities and capability tokens have no
+  registry. Surfaced while writing SPEC-LOCAL-WORK-STORE, which had to enumerate types inline.
+required_gates:
+- platform_config

@@ -1,0 +1,11 @@
+id: WI-0007
+store: local
+project: PRJ-mykullzeroone/agentic-engineering-platform
+type: docs
+work_state: ready
+priority: normal
+title: Convert IMPLEMENTATION_ROADMAP phases into work items
+description: |
+  ADR-012 requires it: phases, sequencing and exit criteria are intent and stay in documentation;
+  anything with a status is state and belongs in the work store. The roadmap has been acting as the
+  de facto backlog, which Principle 3 forbids.

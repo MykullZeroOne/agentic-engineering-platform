@@ -170,7 +170,21 @@ gates:
     blocking: true
     triggers:
       - kind: path
-        condition: .agentic/**
+        condition: .agentic/project.yaml
+      - kind: path
+        condition: .agentic/registries/**
+      - kind: path
+        condition: .agentic/hooks/**
+      - kind: path
+        condition: .agentic/roles/**
+    # Narrowed from `.agentic/**`, which was broader than this gate's own description
+    # and produced a circularity: an approval record under .agentic/approvals/ would
+    # itself have required an approval. Records, work items and skills are artifacts
+    # that live under .agentic/; they are not control surfaces. Deliberately excluded:
+    #   .agentic/approvals/**    ApprovalRecord -- gated by whatever it approves
+    #   .agentic/attestations/** Attestation -- same
+    #   .agentic/work/**         WorkItem -- tier 5 execution state, never gated
+    #   .agentic/skills/**       Skill -- tier 4, agent-authorable per AUTHORITY_MODEL
     sources: ["CLAUDE.md"]
     aliases: ["agentic_config", "role_definitions"]
     enforcement: prose
