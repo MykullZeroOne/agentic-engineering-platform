@@ -2,7 +2,7 @@ id: WI-0004
 store: local
 project: PRJ-mykullzeroone/agentic-engineering-platform
 type: chore
-work_state: review
+work_state: done
 priority: normal
 title: Assign risk tiers to every gate
 description: |

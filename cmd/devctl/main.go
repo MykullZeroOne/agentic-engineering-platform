@@ -12,6 +12,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/MykullZeroOne/agentic-engineering-platform/internal/approvals"
 	"github.com/MykullZeroOne/agentic-engineering-platform/internal/config"
 	"github.com/MykullZeroOne/agentic-engineering-platform/internal/doctor"
 	"github.com/MykullZeroOne/agentic-engineering-platform/internal/work"
@@ -23,12 +24,17 @@ usage:
   devctl doctor [--root DIR] [--quiet]
   devctl work list [--state S] [--type T] [--priority P] [--root DIR]
   devctl work show WI-NNNN [--root DIR]
+  devctl work advance [--dry-run] [--ref REF] [--root DIR]
 
 commands:
   doctor   Report whether a project's .agentic/ configuration is coherent.
            Read-only. Exits 1 when a finding would break a runtime.
-  work     Read the local work store. Read-only: advancing state is what the
-           work.advance_state hook binding is for, not a command.
+  work     Read the local work store, and derive the state of merged items.
+           list and show are read-only. advance writes, and is the only command
+           that does -- it executes the work.advance_state rule from
+           .agentic/hooks/hooks.yaml, which has been bound and inert since
+           WI-0013. --dry-run reports drift without writing and exits 1 when
+           there is any, which is the shape a CI check needs.
 `
 
 func main() {
@@ -52,7 +58,7 @@ func main() {
 
 func runWork(args []string) int {
 	if len(args) == 0 {
-		fmt.Fprint(os.Stderr, "devctl work: expected `list` or `show`\n\n"+usage)
+		fmt.Fprint(os.Stderr, "devctl work: expected `list`, `show` or `advance`\n\n"+usage)
 		return 2
 	}
 	sub, rest := args[0], args[1:]
@@ -64,6 +70,12 @@ func runWork(args []string) int {
 		fs.StringVar(&f.State, "state", "", "only this work_state")
 		fs.StringVar(&f.Type, "type", "", "only this type")
 		fs.StringVar(&f.Priority, "priority", "", "only this priority")
+	}
+	var dryRun *bool
+	var ref *string
+	if sub == "advance" {
+		dryRun = fs.Bool("dry-run", false, "report drift without writing; exit 1 if any")
+		ref = fs.String("ref", "origin/main", "the trunk ref whose merge commits are read")
 	}
 
 	switch sub {
@@ -88,12 +100,70 @@ func runWork(args []string) int {
 			return 1
 		}
 		fmt.Print(work.FormatItem(w))
+	case "advance":
+		_ = fs.Parse(rest)
+		return runAdvance(*root, *ref, *dryRun)
 	default:
 		fmt.Fprintf(os.Stderr, "devctl work: unknown subcommand %q\n\n%s", sub, usage)
 		return 2
 	}
 	return 0
 }
+
+// runAdvance executes the work.advance_state rule.
+//
+// Exit codes carry meaning, because this is meant to be usable as a check: --dry-run
+// exits 1 on drift so CI can fail on a stale store, while a write exits 0 because it
+// fixed what it found. Both exit 2 on an error, which is a different thing from drift.
+func runAdvance(root, ref string, dryRun bool) int {
+	items, err := config.LoadWorkItems(config.Root(root))
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "devctl work advance: %v\n", err)
+		return 2
+	}
+	merged, err := work.MergedItems(root, ref)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "devctl work advance: %v\n", err)
+		return 2
+	}
+	records, err := approvals.Load(root)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "devctl work advance: %v\n", err)
+		return 2
+	}
+
+	changes := work.Plan(root, items, merged, records)
+	fmt.Print(work.FormatPlan(changes, !dryRun && len(changes) > 0))
+
+	// Which items have no merge record at all. Named rather than left implicit: an item
+	// this command never considered looks identical, in its output, to one it considered
+	// and found correct. PRs #8 and #9 merged without a Closes trailer, so their items
+	// are permanently in this set and nothing here can derive their state.
+	var unmerged []string
+	for _, it := range items {
+		if _, ok := merged[it.ID]; !ok && !isTerminal(it.WorkState) {
+			unmerged = append(unmerged, it.ID)
+		}
+	}
+	if len(unmerged) > 0 {
+		fmt.Printf("\n%d item(s) have no `Closes` trailer on %s and were not evaluated: %s\n",
+			len(unmerged), ref, strings.Join(unmerged, " "))
+	}
+
+	if len(changes) == 0 {
+		return 0
+	}
+	if dryRun {
+		return 1
+	}
+	if err := work.Apply(root, changes); err != nil {
+		fmt.Fprintf(os.Stderr, "devctl work advance: %v\n", err)
+		return 2
+	}
+	return 0
+}
+
+func isTerminal(s string) bool { return s == "done" || s == "cancelled" }
 
 func runDoctor(args []string) int {
 	fs := flag.NewFlagSet("doctor", flag.ExitOnError)

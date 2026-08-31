@@ -1,0 +1,50 @@
+id: WI-0023
+store: local
+project: PRJ-mykullzeroone/agentic-engineering-platform
+type: feat
+work_state: review
+priority: high
+title: Derive work state from the merge record instead of hand-editing it
+description: |
+  `work.advance_state` has been bound under `after_merge` since WI-0013 and nothing
+  executes it. WI-0021 made the cost visible rather than fixing it: `devctl work list`
+  showed twelve of twenty rows stale on its first run, and two more merges have gone by
+  since. Ten of twenty-two rows are wrong as of `9999e32`.
+
+  Every bookkeeping PR in this repository exists because of this. PR #6 moved three items
+  to `awaiting_human`, PR #8 moved one to `done`, and each of those PRs was itself work
+  that needed a work item. The crank turns once per merge and never stops, because a work
+  item cannot record its own completion inside the pull request that completes it.
+
+  This adds `devctl work advance`, which derives the state instead of asking someone to
+  remember it. Two sources, deliberately separated:
+
+  MERGE FACTS come from `git log` on main, not the GitHub API. The squash commit body
+  carries `Closes WI-NNNN` -- the convention CLAUDE.md hardened after PRs #8 and #9 lost
+  it -- so the fact is already in the repository. Offline, deterministic, and unit-testable
+  against a fixture repository, where an API call is none of those. The cost is honest and
+  bounded: PRs #8 and #9 merged without the line, so their items are reported as having no
+  merge record rather than guessed at.
+
+  GATE COVERAGE comes from the approval records, verified by hash. An item advances to
+  `done` only when every gate in `required_gates` is closed by a record whose artifacts are
+  all still at the hash they were approved at; otherwise `awaiting_human`. That is the
+  binding's own rule, and it means a stale record cannot advance an item.
+
+  The hash schemes are implemented a second time, in Go, which is a real duplication of a
+  rule that already lives in check_gates.py. It is made self-detecting rather than silent:
+  TestGoAgreesWithRecordedHashes recomputes every artifact in every record on disk and
+  requires the Go digest to equal the recorded one. validate_docs.py asserts the same thing
+  in Python against the same corpus, so the two implementations cannot disagree without a
+  test going red. Duplication checked against a shared corpus is a different risk from
+  duplication left to drift.
+
+  Not in scope: the hook engine. This is the `check` rung of the enforcement ladder, not
+  the `hook` rung -- the derivation lives in a package the engine can call unchanged when
+  it exists, and `advance` is the command that proves the derivation works before anything
+  depends on it.
+required_gates: []
+dependencies:
+- WI-0013
+- WI-0021
+branch: feat/23-devctl-work-advance
