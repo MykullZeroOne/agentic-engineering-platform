@@ -2,7 +2,7 @@ id: WI-0003
 store: local
 project: PRJ-mykullzeroone/agentic-engineering-platform
 type: spec
-work_state: review
+work_state: awaiting_human
 priority: normal
 title: Add a controlled-vocabulary registry
 description: |
