@@ -166,10 +166,15 @@ A PR may merge only when all of these hold:
    disable a check to make a PR mergeable.
 3. It carries its **evidence package** — what changed, why, and how it was verified. A PR is an
    evidence artifact, not just a diff (`docs/workflows/END_TO_END_SDLC.md`, Phase 5–6).
-4. It has an independent review. The agent that wrote the change never approves it.
-5. Every **human gate** the change triggers has explicit human approval. Per
-   `.agentic/project.yaml`: product specification, high-risk architecture, legal, and production
-   release. **An agent must never merge a PR that crosses a human gate.**
+4. It has an independent review — **suspended, not satisfied.** This repository has one human
+   identity, and agents act as that identity, so GitHub cannot tell author from reviewer and no
+   branch protection setting enforces this. Never cite this requirement as met, and never treat a
+   self-approval as independent. It is an open risk, alongside the bus factor ADR-014 already
+   accepts, until `WI-0016` substitutes a reviewing agent or a second identity exists.
+5. Every **human gate** the change triggers has explicit human approval. The gates in force are
+   `human_gates` in `.agentic/project.yaml`, defined in `.agentic/registries/gates.yaml`; read
+   them there rather than from any list restated in prose. **An agent must never merge a PR that
+   crosses a human gate**, and merging closes no gate (ADR-019) — only an approval record does.
 6. It is up to date with `main` (rebased, not merged).
 
 ### Change classes that always require human approval
@@ -180,7 +185,7 @@ approvers, and prior aliases for each.
 | Change | Gate |
 | --- | --- |
 | Any new or superseding ADR (`docs/adr/**`) | `architecture_decision` |
-| Anything under `.agentic/**` — config, hooks, registries, roles | `platform_config` |
+| `.agentic/project.yaml`, `registries/**`, `hooks/**`, `roles/**` | `platform_config` |
 | Anything under `docs/security/**` | `security_policy` |
 | Approving a PRD or ADS (`docs/prd/**`, `docs/ads/**`) | `product_spec` |
 | Anything altering a gate, policy, or required check | `platform_config` |

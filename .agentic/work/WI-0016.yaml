@@ -1,0 +1,39 @@
+id: WI-0016
+store: local
+project: PRJ-mykullzeroone/agentic-engineering-platform
+type: ci
+work_state: intake
+priority: normal
+title: Substitute a reviewing agent for the suspended independent review
+description: |
+  Merge requirement 4 is suspended per WI-0015: one human identity means GitHub can never
+  distinguish author from reviewer. A second identity would restore it properly and is the
+  faithful fix, but it is setup this project does not need yet.
+
+  The partial substitute is a review pass by an agent that did not write the change,
+  reading the diff and posting findings on the pull request. It is not independent human
+  review and must never be recorded as closing a gate or satisfying requirement 4 -- a
+  gate closes only on an explicit human instruction naming what is approved (ADR-019).
+  What it does give is a second read by something that was not the author, which is more
+  than the repository has today.
+
+  Design questions to settle before building:
+
+  - Where it runs. A CI job on pull_request is the obvious home and puts it on the same
+    enforcement rung as check_gates.py, but a reviewing agent in CI needs a runtime and
+    credentials, which is the first time this repository would need either.
+  - What it blocks. Advisory first, matching how the gate check landed: findings posted,
+    build green. Whether it ever becomes blocking is a separate decision, because a
+    reviewer that can block is a reviewer that can be wrong and stop all work.
+  - What it reads. The context packet the change belongs to (PRD-006), not just the diff,
+    or it reviews syntax rather than intent.
+  - How its findings are recorded. communication.record_finding exists as a capability
+    token and question_severity has a `finding` axis, but nothing defines where a finding
+    is stored or how it is resolved. The evidence package has no defined structure either
+    -- both are recorded known gaps.
+
+  Depends on nothing in the repository today; it is blocked on the runtime decision above,
+  not on other work items.
+required_gates: []
+dependencies:
+- WI-0015
