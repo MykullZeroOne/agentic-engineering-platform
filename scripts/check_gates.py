@@ -98,6 +98,51 @@ def at_ref(rel: str, ref: str) -> str | None:
     return proc.stdout if proc.returncode == 0 else None
 
 
+# An artifact carries authority only at these statuses (AUTHORITY_MODEL precedence rule 2).
+AUTHORITATIVE = {"approved", "accepted"}
+
+
+def status_at(rel: str, ref: str) -> str | None:
+    """The artifact's `status` at `ref`, or None if it has no readable front matter.
+
+    None is deliberately treated as authoritative by the caller: a file with no lifecycle
+    -- a registry, a migration -- is always in force, so the conservative reading is that
+    the gate applies.
+    """
+    raw = at_ref(rel, ref)
+    if raw is None:
+        return None
+    fm = raw
+    if rel.endswith(".md"):
+        if not raw.startswith("---\n"):
+            return None
+        end = raw.find("\n---\n", 4)
+        if end == -1:
+            return None
+        fm = raw[4:end]
+    try:
+        data = yaml.safe_load(fm)
+    except yaml.YAMLError:
+        return None
+    return data.get("status") if isinstance(data, dict) else None
+
+
+def authority(rel: str, base: str) -> tuple[bool, bool]:
+    """Whether this path carries authority at base, and at HEAD.
+
+    A file with no readable front matter -- a registry, a migration -- counts as
+    authoritative: it has no draft state, so it is always in force.
+    """
+    out = []
+    for ref in (base, "HEAD"):
+        if at_ref(rel, ref) is None:
+            out.append(False)  # absent here; the other side decides
+            continue
+        st = status_at(rel, ref)
+        out.append(st is None or st in AUTHORITATIVE)
+    return out[0], out[1]
+
+
 def content_only(rel: str, raw: str | None):
     """Everything but the front matter -- the part an approval is actually about.
 
@@ -190,9 +235,33 @@ def main() -> int:
         if not matched:
             continue
 
+        # A gate scoped `authoritative` does not fire on drafts: the document asserts the
+        # same nothing before and after, so there is no version for a human to approve.
+        # The moment that does matter -- a tier-0 artifact reaching `approved` -- is the
+        # gate's artifact_status trigger, and carries_authority() sees it as the head side.
+        scope = gate.get("applies_when", "always")
+
         gate_open = False
         detail = []
         for rel in matched:
+            was, now = authority(rel, args.base)
+
+            if scope == "authoritative" and not (was or now):
+                detail.append(("draft", rel, "carries no authority on either side"))
+                continue
+
+            # Granting or removing authority is the change this gate exists for, and it is
+            # always front-matter-only -- `status: draft` to `approved` touches no body.
+            # The unchanged-body rule below would therefore skip the single most important
+            # case, and did: PR #9 approved three tier-0 specs and this check reported no
+            # gate. A transition is never "unchanged", whatever the body says.
+            if was != now:
+                state, why = cover(gate["id"], rel, records)
+                if state != "covered":
+                    gate_open = True
+                verb = "granted" if now else "removed"
+                detail.append((state, rel, f"authority {verb}; {why}"))
+                continue
             # An approval binds to content, not to a filename (ADR-016). If the content
             # is identical on both sides, this diff moved metadata only: whatever approval
             # state the path had, it still has, so the gate does not re-open.
@@ -214,7 +283,7 @@ def main() -> int:
                 gate_open = True
             detail.append((state, rel, why))
 
-        if not any(s != "unchanged" for s, _, _ in detail):
+        if not any(s not in ("unchanged", "draft") for s, _, _ in detail):
             continue
 
         status = "OPEN" if gate_open else "closed"
@@ -222,13 +291,17 @@ def main() -> int:
             open_gates += 1
         lines.append(f"  {gate['id']}  [{status}]  approver: {gate.get('approver')}")
         for state, rel, why in detail:
-            if state == "unchanged":
+            if state in ("unchanged", "draft"):
                 continue
             mark = {"covered": "ok   ", "stale": "STALE", "open": "OPEN "}[state]
             lines.append(f"    {mark} {rel}  -- {why}")
         skipped = sum(1 for s, _, _ in detail if s == "unchanged")
         if skipped:
             lines.append(f"    ({skipped} path(s) touched with an unchanged body, not counted)")
+        drafts = sum(1 for s, _, _ in detail if s == "draft")
+        if drafts:
+            lines.append(f"    ({drafts} draft path(s) not counted; this gate is scoped "
+                         f"`authoritative`)")
         if others:
             lines.append(f"    note: {', '.join(others)} triggers on this gate are not evaluated")
         lines.append("")

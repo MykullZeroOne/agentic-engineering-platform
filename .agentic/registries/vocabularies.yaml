@@ -104,6 +104,20 @@ vocabularies:
       - {token: consequential, description: Undoable at real cost. Spends the attention budget}
       - {token: irreversible,  description: Effect escapes the repository. Named human, never batched}
 
+  gate_scope:
+    description: >
+      When a path trigger actually fires. `always` is the default and the safe one. A gate
+      scoped `authoritative` fires only when the artifact carries authority on one side of
+      the change or the other, because editing a draft alters nothing binding -- the
+      document asserts the same nothing before and after, so there is no version for a
+      human to approve. The moment that matters is already covered by the gate's
+      artifact_status trigger. See WI-0018.
+    applies_to: [Gate.applies_when]
+    source: docs/spec/AUTHORITY_MODEL.md
+    terms:
+      - {token: always,         description: Any change to a matching path fires the gate}
+      - {token: authoritative,  description: Fires only when the artifact is approved or accepted on either side}
+
   approval_surface:
     description: Where a human may close a gate. Merging a pull request is not a member.
     applies_to: [ApprovalRecord.surface]
