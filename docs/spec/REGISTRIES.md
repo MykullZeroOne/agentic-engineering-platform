@@ -2,16 +2,16 @@
 id: SPEC-REGISTRIES
 type: spec
 tier: 0
-status: proposed
+status: approved
 version: 2
 owner: human.cto
-human_approved: false
-approved_by: null
-approved_on: null
-approval_record: null
+human_approved: true
+approved_by: MykullZeroOne
+approved_on: 2026-08-31
+approval_record: APR-0007
 supersedes: null
 superseded_by: null
-last_reviewed: 2026-08-29
+last_reviewed: 2026-08-31
 enforcement: check
 ---
 
