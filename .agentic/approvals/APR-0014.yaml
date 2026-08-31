@@ -1,0 +1,57 @@
+# Approval record, per ADR-019.
+#
+# Second closure of constitutional_change over SPEC-CAPABILITIES. APR-0007 closed it when the
+# document was written; this re-closes it after the principal model was added. The gate re-opened
+# on its own when the body hash moved, which is what binding an approval to a content hash is for.
+
+id: APR-0014
+gate: constitutional_change
+surface: chat
+session: 17687d1e-330e-45d9-9ebb-5dbc42dc2dcf
+
+approver: MykullZeroOne
+approved_on: 2026-08-31
+recorded_on: 2026-08-31
+
+hash_scheme: legacy/truncated-32
+
+artifacts:
+  - id: SPEC-CAPABILITIES
+    kind: spec
+    path: docs/spec/CAPABILITIES.md
+    title: Capabilities and Grant Semantics
+    content_hash: legacy/truncated-32:sha256:7e6cc1de4eb7f41f286801c3a3065510
+
+request: >
+  Presented PR #24 as one of two open gates, naming the change precisely: a principal model of
+  User, Team and Token; an agent as a token of kind `agent` rather than a principal type;
+  `on_behalf_of` carried on events for audit and never for authorization; one known limit closed
+  (cross-namespace memory reads need scope, not a new capability) and two new limits recorded.
+  Asked for explicit approval before writing any record.
+
+statement: >
+  Approve — write the record
+
+  -- selected against a question naming SPEC-CAPABILITIES, the gate constitutional_change, and
+  each element of the change listed above.
+
+scope_note: >
+  Approves docs/spec/CAPABILITIES.md at the content it carries in PR #24. The substance is the
+  Principals section: three principal types, the rule that an agent is a token rather than a
+  principal type, `on_behalf_of` as audit-only attribution, and scope as the mechanism by which
+  the most specific assignment wins.
+
+  What this does NOT approve, stated because a reader of this record should not infer it:
+
+  - It does not resolve WI-0016. The document says so explicitly: a principal model lets AEP's
+    own records distinguish author from reviewer, and ADR-018's App is what would make GitHub
+    see a distinct actor. Independent review remains suspended.
+  - It approves a specification with no implementation. No user, team or token record exists
+    anywhere in .agentic/, which the document records as a known limit.
+  - It does not add the role kinds to the vocabulary registry. `agent` and `mcp` are named in
+    prose here and are not registry tokens, which is a separate platform_config change.
+
+  Narrowing risk worth recording: Kairo's source model carried six roles and a full permission
+  matrix built for multi-tenant hosting. The principal model was taken and the role tiers were
+  declined, because AEP has no tenancy. If AEP later needs role tiers, this is where they were
+  left out.
