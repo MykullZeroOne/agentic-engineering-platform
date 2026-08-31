@@ -41,6 +41,7 @@ Constitutional and meta-specification. Tier 0.
 | --- | --- | --- | --- |
 | `SPEC-GLOSSARY` | Glossary | `approved` | [docs/GLOSSARY.md](docs/GLOSSARY.md) |
 | `SPEC-AUTHORITY` | Authority Model | `approved` | [docs/spec/AUTHORITY_MODEL.md](docs/spec/AUTHORITY_MODEL.md) |
+| `SPEC-CAPABILITIES` | Capabilities and Grant Semantics | `draft` | [docs/spec/CAPABILITIES.md](docs/spec/CAPABILITIES.md) |
 | `SPEC-CONTENT-HASHING` | Canonical Content Hashing | `draft` | [docs/spec/CONTENT_HASHING.md](docs/spec/CONTENT_HASHING.md) |
 | `SPEC-LIFECYCLE` | Document Lifecycle and Front Matter | `proposed` | [docs/spec/DOCUMENT_LIFECYCLE.md](docs/spec/DOCUMENT_LIFECYCLE.md) |
 | `SPEC-ENTITY-MODEL-GUIDE` | Entity Model — How to Read It | `draft` | [docs/spec/ENTITY_MODEL.md](docs/spec/ENTITY_MODEL.md) |

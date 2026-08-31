@@ -77,5 +77,4 @@ Recorded rather than invented. Each needs a decision before it can be added:
   provenance manifest, since stale library knowledge is a common cause of the "stale context"
   failure `CONTEXT_PROVENANCE.md` exists to distinguish. Distinct from ADR-015, which governs where
   *our* documents live.
-- **Capability namespace.** `agent-role.example.yaml` grants `github.read`, `repository.write`,
-  `deployment.*`. The namespace, wildcard semantics, and deny-precedence rules are unspecified.
+

@@ -317,6 +317,36 @@ def check_approvals(gates, by_id, fms):
             err(by_id[fid], "approved artifact does not name its approval_record (ADR-019)")
 
 
+def check_capabilities(gates):
+    """Capability tokens are closed, and gated_by must name a real gate (SPEC-CAPABILITIES)."""
+    caps = _vocab("capability")
+    known_gates = {g["id"] for g in gates["gates"]}
+    rel = ".agentic/registries/vocabularies.yaml"
+
+    for token, term in caps.items():
+        if "." not in token:
+            err(rel, f"capability {token!r} is not <domain>.<action>")
+        gate = term.get("gated_by")
+        if gate and gate not in known_gates:
+            err(rel, f"capability {token!r} is gated_by unknown gate {gate!r}")
+
+    # Every grant in a role definition must name a capability that exists. A wildcard is
+    # expanded here the same way a grant would be: against the registry as it stands.
+    for path in sorted(ROOT.glob("docs/schemas/*.yaml")):
+        data = yaml.safe_load(path.read_text())
+        if not isinstance(data, dict) or "tools" not in data:
+            continue
+        srel = str(path.relative_to(ROOT))
+        for kind in ("allow", "deny"):
+            for grant in (data["tools"].get(kind) or []):
+                if grant.endswith(".*"):
+                    domain = grant[:-2]
+                    if not any(c.startswith(domain + ".") for c in caps):
+                        err(srel, f"{kind} grant {grant!r} expands to no capability")
+                elif grant not in caps:
+                    err(srel, f"{kind} grant {grant!r} is not a known capability")
+
+
 def check_work_items(states, gates):
     """Validate the local work store (docs/spec/LOCAL_WORK_STORE.md)."""
     work_dir = ROOT / ".agentic" / "work"
@@ -383,6 +413,7 @@ def main() -> int:
     check_hooks(points)
     check_approvals(gates, by_id, fms)
     check_work_items(states, gates)
+    check_capabilities(gates)
 
     for w in warnings:
         print(f"warning: {w}")

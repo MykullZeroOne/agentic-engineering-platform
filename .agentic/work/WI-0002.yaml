@@ -2,7 +2,7 @@ id: WI-0002
 store: local
 project: PRJ-mykullzeroone/agentic-engineering-platform
 type: spec
-work_state: ready
+work_state: review
 priority: high
 title: Define the agent capability namespace and grant semantics
 description: |
@@ -14,3 +14,4 @@ required_gates:
 - platform_config
 dependencies:
 - WI-0003
+branch: claude/docs-processes-review-4vyl8q

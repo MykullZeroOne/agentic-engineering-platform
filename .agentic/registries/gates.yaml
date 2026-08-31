@@ -208,7 +208,7 @@ gates:
     description: Any read, rotation, or modification of production secrets.
     triggers:
       - kind: capability
-        condition: an agent requests a production secret capability
+        condition: secrets.read, secrets.write
     sources: ["docs/security/GOVERNANCE.md"]
     aliases: []
     enforcement: prose
@@ -232,7 +232,7 @@ gates:
     blocking: true
     triggers:
       - kind: capability
-        condition: an agent requests a billing or payment capability
+        condition: billing.read, billing.write
     sources: ["docs/security/GOVERNANCE.md"]
     aliases: ["billing_payment_configuration"]
     enforcement: prose

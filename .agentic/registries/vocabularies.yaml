@@ -94,3 +94,52 @@ vocabularies:
       - {token: chat,          description: An explicit instruction in conversation with an agent}
       - {token: github_review, description: A pull request review naming what it approves}
       - {token: ui,            description: The agent workspace. Not implemented}
+
+  capability:
+    description: >
+      What an agent may do. The namespace is CLOSED: a grant naming a token that is not
+      here is an error, never a silently ignored no-op. `gated_by` is what makes the
+      security gates evaluable -- production_secrets and billing_configuration previously
+      triggered on "an agent requests a capability" against a namespace with no defined
+      membership, so neither could fire.
+    applies_to: [AgentIdentity.tools.allow, AgentIdentity.tools.deny, WorkUnit.required_capabilities]
+    source: docs/spec/CAPABILITIES.md
+    terms:
+      # Source control and the control plane
+      - {token: github.read,               description: Read issues, pull requests, checks, releases}
+      - {token: github.write_issue,        description: Create and update work items in the github store}
+      - {token: github.write_pr,           description: Open and update pull requests}
+      - {token: github.review,             description: Submit a pull request review}
+      - {token: repository.read,           description: Read repository contents}
+      - {token: repository.write,          description: Commit and push to a branch}
+
+      # Workspace and runtime
+      - {token: workspace.create,          description: Create an isolated worktree}
+      - {token: workspace.remove,          description: Destroy a worktree}
+      - {token: runtime.start,             description: Start a provider session}
+      - {token: runtime.control,           description: Message, pause, resume, cancel a session}
+      - {token: runtime.handoff,           description: Move a run to another runtime}
+
+      # Knowledge and memory
+      - {token: knowledge.search,          description: Search canonical knowledge}
+      - {token: knowledge.context,         description: Request a context packet}
+      - {token: knowledge.write,           description: Author or amend a canonical artifact}
+      - {token: memory.read,               description: Read consolidated memory}
+      - {token: memory.write,              description: Record a memory candidate}
+      - {token: memory.promote,            description: Promote a memory up the ladder}
+      - {token: reference.lookup,          description: Retrieve external documentation. Not project knowledge}
+
+      # Communication
+      - {token: communication.ask_parent,  description: Ask the owning parent agent a question}
+      - {token: communication.escalate,    description: Escalate to a human}
+      - {token: communication.record_finding, description: Record a QA or review finding}
+      - {token: communication.notify,      description: Send a notification}
+
+      # Gated. Each names the gate that must be closed before it may be exercised.
+      - {token: deployment.deploy,         description: Deploy a release,        gated_by: production_release}
+      - {token: deployment.rollback,       description: Roll back a release,     gated_by: production_release}
+      - {token: secrets.read,              description: Read a production secret, gated_by: production_secrets}
+      - {token: secrets.write,             description: Create or rotate a production secret, gated_by: production_secrets}
+      - {token: billing.read,              description: Read billing configuration, gated_by: billing_configuration}
+      - {token: billing.write,             description: Change billing or spend configuration, gated_by: billing_configuration}
+      - {token: data.destructive,          description: Irreversible data change, gated_by: destructive_data_change}
