@@ -204,10 +204,16 @@ def check_gates(gates):
     # tier is indistinguishable from a reversible one, and the whole point of the clause is
     # that treating every gate alike is what produces rubber-stamping.
     tiers = set(_vocab("risk_tier"))
+    scopes = set(_vocab("gate_scope"))
     for g in gates["gates"]:
         if g.get("risk_tier") not in tiers:
             err(".agentic/registries/gates.yaml",
                 f"gate {g['id']!r} risk_tier {g.get('risk_tier')!r} not in {sorted(tiers)}")
+        # applies_when decides whether a path trigger fires on a draft (WI-0018). Required
+        # rather than defaulted, so narrowing a gate is always a visible edit to it.
+        if g.get("applies_when") not in scopes:
+            err(".agentic/registries/gates.yaml",
+                f"gate {g['id']!r} applies_when {g.get('applies_when')!r} not in {sorted(scopes)}")
 
     for name in ("project.yaml",):
         path = ROOT / ".agentic" / name

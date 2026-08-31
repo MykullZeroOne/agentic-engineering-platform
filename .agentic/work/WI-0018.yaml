@@ -2,7 +2,7 @@ id: WI-0018
 store: local
 project: PRJ-mykullzeroone/agentic-engineering-platform
 type: spec
-work_state: intake
+work_state: review
 priority: normal
 title: Decide whether a gate should trigger on edits to draft artifacts
 description: |
@@ -28,8 +28,30 @@ description: |
   - Accept the noise and rely on the reviewer to notice status. Cheapest, and exactly the
     "prose asking someone to remember" this repository keeps replacing with checks.
 
-  Not urgent while the check is advisory. It becomes urgent the moment WI-0013 adds
-  --strict, because then every edit to a draft specification blocks its own pull request.
-required_gates: []
-dependencies:
-- WI-0013
+  Resolved by making the path trigger status-aware, the first option. gates.yaml gains
+  `applies_when`, drawn from a new gate_scope vocabulary: `always` is the default, and
+  `authoritative` fires only when the artifact carries authority at the base or the head.
+  Three gates take the narrower scope -- constitutional_change, architecture_decision and
+  product_spec -- because their paths hold artifacts with a lifecycle. Config has no draft
+  state, and security_policy stays `always` deliberately: over-firing on one draft file is
+  the cheaper error there.
+
+  The rule lives in the registry rather than in the checker, so narrowing a gate is a
+  visible edit to that gate. validate_docs.py and devctl doctor both reject an unknown
+  token, which is what stops the field from silently widening a gate.
+
+  A WORSE BUG SURFACED WHILE TESTING IT, and it is older than this work item. Approving a
+  document is a front-matter-only change -- `status: draft` becomes `approved` and no body
+  moves -- so the unchanged-body rule added in PR #7 skipped it. Replaying PR #9, which
+  approved three tier-0 specs, produced no constitutional_change finding at all. The check
+  had never once fired on an actual approval, which is the single case the gate exists
+  for; it only ever fired on edits to already-approved content. PR #9's own body called
+  that behaviour correct, and it was not.
+
+  Fixed by treating a change in authority as never "unchanged": if the artifact is
+  authoritative on exactly one side, the gate evaluates regardless of the body. Verified
+  by replaying both PRs against the new checker -- #9 now reports all three specs as
+  "authority granted" and finds APR-0007 covering them, #12's draft edits stay silent.
+required_gates:
+- platform_config
+branch: fix/18-gate-status-scope

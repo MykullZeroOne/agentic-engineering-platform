@@ -55,6 +55,7 @@ gates:
     approver: human.cto
     blocking: true
     risk_tier: reversible
+    applies_when: authoritative
     triggers:
       - kind: artifact_status
         condition: PRD or ADS transitions to `approved`
@@ -77,6 +78,7 @@ gates:
     approver: human.cto
     blocking: true
     risk_tier: reversible
+    applies_when: authoritative
     triggers:
       - kind: path
         condition: docs/vision/**
@@ -96,6 +98,7 @@ gates:
     approver: human.cto
     blocking: true
     risk_tier: reversible
+    applies_when: authoritative
     triggers:
       - kind: path
         condition: docs/adr/**
@@ -118,6 +121,7 @@ gates:
     approver: human.cto
     blocking: true
     risk_tier: consequential
+    applies_when: always
     triggers:
       - kind: classification
         condition: architecture impact assessed as high by the Architecture Lead
@@ -131,6 +135,7 @@ gates:
     approver: human.cto
     blocking: true
     risk_tier: consequential
+    applies_when: always
     triggers:
       - kind: path
         condition: docs/security/**
@@ -147,6 +152,7 @@ gates:
     approver: human.cto
     blocking: true
     risk_tier: irreversible
+    applies_when: always
     triggers:
       - kind: finding
         condition: a Legal Preflight Analyst raises a material finding
@@ -160,6 +166,7 @@ gates:
     approver: human.cto
     blocking: true
     risk_tier: irreversible
+    applies_when: always
     triggers:
       - kind: finding
         condition: a Privacy Analyst raises a material finding
@@ -176,6 +183,7 @@ gates:
     approver: human.cto
     blocking: true
     risk_tier: reversible
+    applies_when: always
     triggers:
       - kind: path
         condition: .agentic/project.yaml
@@ -205,6 +213,7 @@ gates:
     approver: human.cto
     blocking: true
     risk_tier: irreversible
+    applies_when: always
     triggers:
       - kind: lifecycle
         condition: release candidate reaches the human release gate (SDLC phase 8)
@@ -217,6 +226,7 @@ gates:
     approver: human.cto
     blocking: true
     risk_tier: irreversible
+    applies_when: always
     description: Any read, rotation, or modification of production secrets.
     triggers:
       - kind: capability
@@ -231,6 +241,7 @@ gates:
     approver: human.cto
     blocking: true
     risk_tier: irreversible
+    applies_when: always
     triggers:
       - kind: path
         condition: migrations/**
@@ -244,6 +255,7 @@ gates:
     approver: human.cto
     blocking: true
     risk_tier: consequential
+    applies_when: always
     triggers:
       - kind: capability
         condition: billing.read, billing.write

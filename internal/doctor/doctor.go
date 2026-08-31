@@ -143,11 +143,14 @@ func (r *run) checkRegistries(proj *config.Project) *config.Gates {
 func (r *run) checkGateRegistry(proj *config.Project, gates *config.Gates) {
 	rel := proj.Registries["gates"]
 	vocRel, hasVoc := proj.Registries["vocabularies"]
-	tiers := map[string]bool{}
+	tiers, scopes := map[string]bool{}, map[string]bool{}
 	if hasVoc {
 		if v, err := config.LoadVocabularies(r.root, vocRel); err == nil {
 			if t, ok := v.Tokens("risk_tier"); ok {
 				tiers = t
+			}
+			if s, ok := v.Tokens("gate_scope"); ok {
+				scopes = s
 			}
 		}
 	}
@@ -164,13 +167,17 @@ func (r *run) checkGateRegistry(proj *config.Project, gates *config.Gates) {
 		}
 		seen[g.ID] = true
 
-		if len(tiers) == 0 {
-			continue // no vocabulary to check against; already reported above
+		if len(tiers) > 0 {
+			if g.RiskTier == "" {
+				r.err(rel, "gate %q has no risk_tier (ADR-014 clause 7)", g.ID)
+			} else if !tiers[g.RiskTier] {
+				r.err(rel, "gate %q risk_tier %q is not in the risk_tier vocabulary", g.ID, g.RiskTier)
+			}
 		}
-		if g.RiskTier == "" {
-			r.err(rel, "gate %q has no risk_tier (ADR-014 clause 7)", g.ID)
-		} else if !tiers[g.RiskTier] {
-			r.err(rel, "gate %q risk_tier %q is not in the risk_tier vocabulary", g.ID, g.RiskTier)
+		// applies_when decides whether a path trigger fires on a draft artifact (WI-0018).
+		// An unrecognised value would silently widen or narrow the gate.
+		if len(scopes) > 0 && g.AppliesWhen != "" && !scopes[g.AppliesWhen] {
+			r.err(rel, "gate %q applies_when %q is not in the gate_scope vocabulary", g.ID, g.AppliesWhen)
 		}
 	}
 }

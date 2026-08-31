@@ -30,6 +30,7 @@ type Gate struct {
 	Title       string `yaml:"title"`
 	Blocking    bool   `yaml:"blocking"`
 	RiskTier    string `yaml:"risk_tier"`
+	AppliesWhen string `yaml:"applies_when"`
 	Enforcement string `yaml:"enforcement"`
 }
 
