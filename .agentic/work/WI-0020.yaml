@@ -1,0 +1,35 @@
+id: WI-0020
+store: local
+project: PRJ-mykullzeroone/agentic-engineering-platform
+type: spec
+work_state: intake
+priority: normal
+title: Move the merge and branching policy out of CLAUDE.md into tier 3
+description: |
+  CLAUDE.md carries the merge requirements, the branching strategy and the merge strategy.
+  That is tier-3 policy with real force living in an agent guide, which WI-0015 recorded as
+  a defect and did not fix.
+
+  It was briefly gated: WI-0014 added CLAUDE.md as a platform_config trigger path. Under
+  --strict that made every edit to it require an approval record, including wording fixes --
+  three pull requests touched it in one day. The trigger has been removed again, so the
+  policy is ungated once more. That is the state to fix, not to leave.
+
+  Gate the policy, not the guide. Extract the merge requirements, the branching rules and
+  the merge strategy into docs/policies/ as tier-3 artifacts, which constitutional_change or
+  a tier-3 trigger then covers on their own paths. CLAUDE.md keeps agent guidance and points
+  at them, so a wording fix to the guide is not an approval event and a change to the merge
+  rules is.
+
+  Blocked on WI-0006: docs/policies/ does not exist, and the Policy-and-Standard decision --
+  one Rule entity with a kind field -- is made but has produced no artifacts. This is the
+  first real thing that layer would hold, which makes it a better forcing function for
+  WI-0006 than the abstract question was.
+
+  Note the ordering trap. Creating the first tier-3 artifacts is itself a gated change under
+  the new blocking check, and the gate covering tier 3 has not been decided -- no gate
+  triggers on docs/policies/ at all today. Deciding that trigger is part of this work, not a
+  prerequisite discovered halfway through it.
+required_gates: []
+dependencies:
+- WI-0006

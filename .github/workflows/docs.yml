@@ -39,12 +39,12 @@ jobs:
             exit 1
           fi
 
-      # Human gates, per .agentic/registries/gates.yaml. Advisory for now: it reports
-      # which gates a change opens without failing the build, so the gate debt already
-      # on `main` can be cleared before the rule starts blocking. Add `--strict` to
-      # enforce, and move the six path-triggered gates to enforcement `check` in the
-      # same change -- the registry should not claim a stage the pipeline is not at.
+      # Human gates, per .agentic/registries/gates.yaml. Blocking as of WI-0013: the gate
+      # debt on `main` was cleared by APR-0007..0010, and the six path-triggered gates now
+      # carry enforcement `check` to match. An open gate fails the build, which is the
+      # point -- merging is not a closure surface (ADR-019), so without this nothing in
+      # the pipeline can stop an unapproved gated change.
       - name: Check human gates
         if: github.event_name == 'pull_request'
         run: |
-          python3 scripts/check_gates.py --base "origin/${{ github.base_ref }}"
+          python3 scripts/check_gates.py --strict --base "origin/${{ github.base_ref }}"

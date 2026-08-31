@@ -52,6 +52,16 @@ bindings:
 
   after_merge:
     soft:
+      - id: work.advance_state
+        description: >
+          Advance each work item the merged pull request closed: to `done` when every
+          entry in its required_gates is covered by an approval record, to
+          `awaiting_human` when any is not. `done` means "merged and consolidated", and a
+          merge happens after a pull request's content is frozen, so no work item can
+          record its own completion inside the pull request that completes it -- every one
+          needs a trailing bookkeeping change, and that change is itself work needing a
+          record. Reads the merge event for which items closed; git cannot say, because
+          squash means the branch tip is never an ancestor of main.
       - id: memory.consolidate
         description: Promote run outcomes to memory candidates (CONSOLIDATION.md).
       - id: graph.refresh

@@ -1,0 +1,65 @@
+# Approval record, per ADR-013 as superseded by ADR-019.
+#
+# The change that makes the gate check blocking. Fourth closure of platform_config today,
+# and the last one that will be advisory: from here an open gate fails the build, so a
+# record like this one is a precondition for merging rather than a thing recorded after.
+
+id: APR-0011
+gate: platform_config
+surface: chat
+session: session_015ipWtR28BoQtwZYCBh6BfM
+
+approver: MykullZeroOne
+approved_on: 2026-08-31
+recorded_on: 2026-08-31
+
+hash_scheme: legacy/file-32
+
+artifacts:
+  - id: CFG-GATES
+    kind: config
+    path: .agentic/registries/gates.yaml
+    title: Gate registry
+    content_hash: legacy/file-32:sha256:7eca523e7f5526df7945514f32b4d7af
+  - id: CFG-HOOKS
+    kind: config
+    path: .agentic/hooks/hooks.yaml
+    title: Hook bindings
+    content_hash: legacy/file-32:sha256:7b30ff20845f9bec1330dcaeeb217e0f
+
+request: >
+  Asked two questions before pushing, because --strict makes the answer decide whether CI is
+  red. First, whether to approve the platform_config change: six path-triggered gates moving
+  from enforcement `prose` to `check`, and a work.advance_state binding under after_merge.
+  Second, whether to keep CLAUDE.md gated, having reported that under a blocking check every
+  edit to it -- three pull requests touched it today -- would require an approval record.
+
+statement: >
+  do WI-0013 next
+
+  -- with "Approve both" selected for the enforcement bump and the hook binding, and
+  "Ungate it, move the policy instead" selected for CLAUDE.md.
+
+scope_note: >
+  Approves gates.yaml and hooks.yaml at the content they carry in this change:
+
+    - enforcement `prose` -> `check` on the six path-triggered gates. The other six stay
+      `prose`; they trigger on classification, finding, lifecycle or capability, and
+      claiming `check` for them would make the registry assert a stage no check reaches.
+    - CLAUDE.md removed as a platform_config trigger path, added by WI-0014 one change ago.
+      Gating the agent guide made every wording fix an approval event. The policy inside it
+      still needs a gate, which is WI-0020, blocked on tier 3 existing at all.
+    - work.advance_state bound under after_merge, class soft, matching the three bindings
+      already there. Declarative until a hook engine exists.
+
+  What this approval does NOT cover, because it is code rather than configuration:
+  check_gates.py gaining --strict behaviour in CI, and its new handling of artifacts that
+  predate approval records. That handling matters enough to state here. PRINCIPLES and
+  ADR-001..008 are approved or accepted and cannot carry a record -- the validator requires
+  approval_record: null on them -- so under a blocking check they would have been
+  permanently unmergeable. They are now reported as GRAND and do not block, and the summary
+  says a path was waved through rather than claiming every gate is closed.
+
+  That is a deliberate hole, sized and named: nine artifacts at tiers 0 and 1 whose content
+  no record verifies. ADR-016 attestation (WI-0005) is what closes it. Approving this change
+  is approving that hole staying open in exchange for the check being enforceable at all.
