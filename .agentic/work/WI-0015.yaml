@@ -1,0 +1,41 @@
+id: WI-0015
+store: local
+project: PRJ-mykullzeroone/agentic-engineering-platform
+type: docs
+work_state: review
+priority: high
+title: Record independent review as suspended rather than satisfied
+description: |
+  Merge requirement 4 read "It has an independent review. The agent that wrote the change
+  never approves it." In this repository that is unsatisfiable, not merely unenforced:
+  there is one human identity, agents act as that identity, and GitHub cannot distinguish
+  author from reviewer. No branch protection or ruleset configuration makes it true. A
+  required-approval rule only blocks the owner from merging their own pull request; it
+  never produces a second reader.
+
+  Discovered while diagnosing why pull requests stayed mergeable_state: blocked after the
+  approver ruleset was removed. The setting was the visible symptom; the requirement being
+  undeliverable was the cause underneath it.
+
+  Requirement 4 now says suspended, names the reason, and forbids citing it as met or
+  treating a self-approval as independent. That is honest rather than weaker: the control
+  was never in force, and a document claiming a control that does not exist is worse than
+  one that records the gap. WI-0016 proposes the partial substitute.
+
+  Two stale statements in the same section, both wrong because of earlier changes in this
+  branch of work, are corrected with it:
+
+  - Requirement 5 listed four human gates from an era when there were four. project.yaml
+    now names eight and gates.yaml defines twelve. It points at the registry instead of
+    restating a list that drifts, and states that merging closes no gate (ADR-019).
+  - The change-class table said platform_config covers "anything under .agentic/**". It
+    was narrowed to four paths when the gate registry was reconciled, so the table has
+    been overstating the gate since.
+
+  Follow-up found here, not fixed here: CLAUDE.md carries the merge requirements and the
+  branching strategy, and no gate covers it. It is tier-3 policy living in an agent guide,
+  and docs/policies/ is one of the recorded known gaps with no artifacts in it. Either
+  CLAUDE.md becomes a gate trigger path or the policy moves to where its tier says it
+  belongs; that needs a decision, so it is not taken here.
+required_gates: []
+branch: docs/15-independent-review
