@@ -1,0 +1,42 @@
+id: WI-0022
+store: local
+project: PRJ-mykullzeroone/agentic-engineering-platform
+type: spec
+work_state: review
+priority: high
+title: Write retroactive approval records for the pre-record artifacts
+description: |
+  PRINCIPLES and ADR-001..008 were approved on 2026-08-29, before ADR-013 established
+  approval records. Their approvals lived in front matter and nowhere else, and
+  validate_docs.py required approval_record to stay null on them -- so they could not carry
+  a record even in principle.
+
+  That was tolerable while the gate check was advisory. WI-0013 made it blocking, and these
+  nine became the only artifacts that could neither be verified nor blocked: blocking them
+  would have made them permanently unmergeable, so check_gates.py passed them through as
+  GRAND. Nine artifacts at tiers 0 and 1 -- the highest authority in the system -- had the
+  weakest provenance in it, and a bypass in an otherwise blocking check.
+
+  ATT-0002 attests they still hold the content that was approved. The method is recomputation
+  across full git history: every commit that ever touched each artifact was checked out and
+  its body hashed, and each yielded exactly ONE distinct body across its whole history --
+  three commits each, all front-matter-only. So a record binding them at their current hash
+  records a real approval rather than constructing one, and anyone can re-run the walk.
+
+  APR-0012 covers PRINCIPLES under constitutional_change; APR-0013 covers the eight ADRs
+  under architecture_decision. Both carry approved_on: 2026-08-29 -- the date in the front
+  matter, not today. The approvals happened then; only their records are written now, and
+  dating them today would claim an approval that did not occur on that date.
+
+  The special case is removed from validate_docs.py and the GRAND bypass from
+  check_gates.py. Dead bypass code in a blocking check is a liability: a future artifact
+  added to a grandfathered set would inherit the bypass rather than being noticed.
+
+  Consequence worth stating: editing any of these nine now re-opens its gate, because the
+  hash moves. ADRs are immutable once merged, so that detects the edit that should never
+  happen rather than obstructing one that should.
+
+  Not fixed: everything remains legacy/truncated-32. canonical/v2 needs structured base data
+  that does not exist (ADR-017, WI-0008).
+required_gates: []
+branch: fix/22-retroactive-records

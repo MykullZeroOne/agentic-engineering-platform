@@ -1,0 +1,75 @@
+# Approval record, per ADR-013 as superseded by ADR-019.
+#
+# Retroactive, and the largest single record in the repository: the eight decisions this
+# project was founded on. All were accepted on 2026-08-29, before ADR-013 established
+# approval records, so each approval lived in its artifact's front matter and nowhere else.
+# ATT-0002 establishes the bodies are unchanged since then.
+
+id: APR-0013
+gate: architecture_decision
+surface: chat
+session: session_015ipWtR28BoQtwZYCBh6BfM
+
+approver: MykullZeroOne
+approved_on: 2026-08-29
+recorded_on: 2026-08-31
+attestation: ATT-0002
+
+hash_scheme: legacy/truncated-32
+
+artifacts:
+  - id: ADR-001
+    path: docs/adr/ADR-001-GITHUB-CONTROL-PLANE.md
+    title: ADR-001
+    content_hash: legacy/truncated-32:sha256:52170e2c3dc477fee9487aeea7dbcb5f
+  - id: ADR-002
+    path: docs/adr/ADR-002-ROLE-NOT-MODEL.md
+    title: ADR-002
+    content_hash: legacy/truncated-32:sha256:b3408f3ef2b4a7abd7d1ca4205577fe5
+  - id: ADR-003
+    path: docs/adr/ADR-003-POSTGRES-MEMORY-EVENT-STORE.md
+    title: ADR-003
+    content_hash: legacy/truncated-32:sha256:a71619e526f91b0345116fb16853f536
+  - id: ADR-004
+    path: docs/adr/ADR-004-EVENT-SOURCED-EVALUATION.md
+    title: ADR-004
+    content_hash: legacy/truncated-32:sha256:ed0addecc8deb98efba815efd4ddf9f4
+  - id: ADR-005
+    path: docs/adr/ADR-005-HIERARCHICAL-COMMUNICATION.md
+    title: ADR-005
+    content_hash: legacy/truncated-32:sha256:a392ca451753eb7a0a0341343d5b1db6
+  - id: ADR-006
+    path: docs/adr/ADR-006-ADS-AS-MACHINE-SPEC.md
+    title: ADR-006
+    content_hash: legacy/truncated-32:sha256:597390510ce4333c3d2b685af69e9ec2
+  - id: ADR-007
+    path: docs/adr/ADR-007-HOOKS-FOR-DETERMINISM.md
+    title: ADR-007
+    content_hash: legacy/truncated-32:sha256:10b67ca79e02d0d2c3bec040fd011abf
+  - id: ADR-008
+    path: docs/adr/ADR-008-SUBSCRIPTION-FIRST-ADAPTERS.md
+    title: ADR-008
+    content_hash: legacy/truncated-32:sha256:3367521af858f9449036534ceabffbf7
+
+request: >
+  Reported that nine artifacts at tiers 0 and 1 were passing the now-blocking gate check
+  unverified, because they are approved or accepted but could not carry an approval record:
+  the validator required approval_record: null on them, so writing one failed the build.
+  Verified by walking full git history that every one has had exactly one body since
+  introduction, and proposed retroactive records on that basis.
+
+statement: >
+  do WI-0005 -- re-anchor by attestation. It's no longer tidying: nine tier-0/tier-1
+  artifacts, including every original ADR, now pass a blocking check unverified.
+
+  -- with "Attest, write the records" selected.
+
+scope_note: >
+  approved_on is 2026-08-29, the date in each artifact's front matter, not today. The
+  decisions were accepted then; only their records are written now.
+
+  These eight predate the ADR structure requirement (Context, Decision, Alternatives
+  considered, Consequences, Risks), which the validator applies from ADR-009 onward. That
+  grandfathering is unaffected: this record binds their content, not their shape, and
+  ADR-009's structural rule was never retroactive. ADRs are immutable once merged, so
+  binding them by hash costs nothing and detects the edit that should never happen.

@@ -1,0 +1,43 @@
+# Approval record, per ADR-013 as superseded by ADR-019.
+#
+# Retroactive. PRINCIPLES was approved on 2026-08-29, before ADR-013 established approval
+# records, so the approval exists in the artifact's front matter and nowhere else. ATT-0002
+# establishes that the body is unchanged since then, which is what lets this record bind a
+# real approval rather than construct one.
+
+id: APR-0012
+gate: constitutional_change
+surface: chat
+session: session_015ipWtR28BoQtwZYCBh6BfM
+
+approver: MykullZeroOne
+approved_on: 2026-08-29
+recorded_on: 2026-08-31
+attestation: ATT-0002
+
+hash_scheme: legacy/truncated-32
+
+artifacts:
+  - id: PRINCIPLES
+    path: docs/vision/PRINCIPLES.md
+    title: Core Principles
+    content_hash: legacy/truncated-32:sha256:5e014726be136def12b925ce9b721f42
+
+request: >
+  Reported that nine artifacts at tiers 0 and 1 were passing the now-blocking gate check
+  unverified, because they are approved but could not carry an approval record: the
+  validator required approval_record: null on them, so writing one failed the build. Verified
+  by walking full git history that every one of the nine has had exactly one body since
+  introduction, and proposed retroactive records on that basis.
+
+statement: >
+  do WI-0005 -- re-anchor by attestation. It's no longer tidying: nine tier-0/tier-1
+  artifacts, including every original ADR, now pass a blocking check unverified.
+
+  -- with "Attest, write the records" selected.
+
+scope_note: >
+  approved_on is 2026-08-29, the date in the artifact's front matter, not today. The
+  approval happened then; only its record is written now. Dating it today would make the
+  record claim an approval that did not occur on that date, which is the fiction this
+  mechanism exists to prevent.
