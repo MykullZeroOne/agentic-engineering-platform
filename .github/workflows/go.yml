@@ -1,0 +1,44 @@
+name: go
+
+# Builds and tests devctl, the first product code in this repository (Phase 1 of
+# docs/roadmap/IMPLEMENTATION_ROADMAP.md). Separate from the `docs` workflow because it
+# answers a different question: `docs` validates the documentation corpus, this compiles
+# and tests the binary that reads .agentic/ as a schema.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache: true
+
+      - name: Verify formatting
+        run: |
+          unformatted=$(gofmt -l .)
+          if [ -n "$unformatted" ]; then
+            echo "::error::gofmt would change these files:"
+            echo "$unformatted"
+            exit 1
+          fi
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Test
+        run: go test ./...
+
+      # devctl must be able to read this repository's own .agentic/. If it cannot, the
+      # claim that .agentic/ is a schema a runtime reads unchanged is false, and this is
+      # the only place that claim gets tested against something other than a script
+      # written for this repository.
+      - name: Run doctor against this repository
+        run: go run ./cmd/devctl doctor

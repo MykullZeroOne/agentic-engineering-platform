@@ -1,0 +1,39 @@
+id: WI-0019
+store: local
+project: PRJ-mykullzeroone/agentic-engineering-platform
+type: feat
+work_state: review
+priority: high
+title: devctl doctor, the first Phase 1 slice
+description: |
+  First product code in the repository. Until now the only executable was scripts/, which
+  validates the documentation corpus and was written against this repository's layout --
+  so `.agentic/` being "the reference instance of the schema the first runtime must read
+  unchanged" was an untested claim. devctl reads it from a separate module, which is what
+  makes the claim falsifiable, and CI runs doctor against this repository so a regression
+  in either the schema or the reader fails the build.
+
+  doctor answers whether a project's configuration is coherent with itself: every registry
+  project.yaml points at exists and parses; every gate has a risk_tier drawn from the
+  vocabulary (ADR-014 clause 7); every human_gates entry names a gate that exists; the
+  work_store is one devctl knows; every work item's type, work_state and priority are
+  registry tokens and its dependencies resolve.
+
+  Deliberately NOT the same question as validate_docs.py, which validates front matter,
+  tiers, supersession and the index. The two coexist: a project can have coherent
+  configuration and a broken corpus, or the reverse, and merging them would mean neither
+  answer stands alone. No Python was ported.
+
+  Read-only by design. A doctor that repairs is one whose report cannot be trusted,
+  because afterwards you cannot tell what was already true.
+
+  Scope held to one subcommand. The roadmap also lists `init` and `adopt`; stubbing them
+  now would commit to a command shape before any of it has been used, and a stub that
+  errors is worse than an absent command.
+
+  Verification beyond "tests pass": the risk_tier check was deliberately removed and two
+  tests failed, then restored and they passed. A suite that catches nothing is the failure
+  mode worth guarding against, and asserting on finding text rather than finding counts is
+  what makes it catch things.
+required_gates: []
+branch: feat/19-devctl-doctor
