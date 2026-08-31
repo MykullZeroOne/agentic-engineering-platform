@@ -118,8 +118,12 @@ no long-lived release branches, and no environment branches.
 5. **Isolated worktrees.** Agents implement in a dedicated git worktree per branch
    (`git worktree add ../aep-<issue> -b <branch> origin/main`), so parallel agents never share a
    working directory. Remove the worktree when the PR merges.
-6. **Rebase to update, never merge `main` into a branch.** `git fetch origin && git rebase
-   origin/main`. This keeps history linear and keeps the PR diff honest.
+6. **Update a branch either way — rebase, or merge `main` into it.** Squash collapses the branch
+   to one commit, so neither choice reaches `main`: PR #9 merged carrying a `main` merge commit
+   and landed as a single-parent squash anyway. The old rule was rebase-only "to keep history
+   linear", which is an argument for a merge-commit workflow this repository does not use. Prefer
+   rebase on a branch only you hold, because it keeps the PR diff easier to read; merge `main` in
+   on a branch someone else has checked out, because rewriting theirs is the greater harm.
 7. **Force-push is allowed on your own feature branch only**, and only with `--force-with-lease`.
 
 ### Naming
@@ -153,15 +157,24 @@ revert a single operation, and makes the post-merge consolidation hooks
 (`.agentic/hooks/hooks.yaml`) reason about one coherent unit of change.
 
 - Merge commits: disabled. Rebase-merge: disabled.
-- The squash commit subject is the PR title; the body must contain `Closes #<issue>`.
-- Delete the branch on merge.
+- The squash commit subject is the PR title. **Put `Closes WI-NNNN` in the branch's commit
+  message, not only in the PR body.** GitHub's squash body defaults to the branch's commit
+  messages, so a line living only in the pull request description never reaches `main` — PRs #8
+  and #9 both merged without one. Setting the repository's squash default to "pull request title
+  and description" also works, but a convention that survives a settings toggle is the sturdier
+  half, and this repository holds only one of the two.
+- Delete the branch on merge. No local git test identifies a merged branch here: squash means the
+  branch tip is never an ancestor of `main`, and its tree diverges as soon as `main` moves on.
+  GitHub's merge record is the only authority — which is also what `work.advance_state` will have
+  to read (`WI-0013`).
 
 ### Merge requirements
 
 A PR may merge only when all of these hold:
 
 1. It names its work item and closes it. Work items live in the store named by `work_store`
-   (`.agentic/work/` here); the squash commit body carries `Closes WI-NNNN`.
+   (`.agentic/work/` here), and the branch's commit message carries `Closes WI-NNNN` so that the
+   squash body carries it onto `main`.
 2. All required checks pass. Never merge with a red or skipped required check, and never weaken or
    disable a check to make a PR mergeable.
 3. It carries its **evidence package** — what changed, why, and how it was verified. A PR is an
@@ -175,7 +188,7 @@ A PR may merge only when all of these hold:
    `human_gates` in `.agentic/project.yaml`, defined in `.agentic/registries/gates.yaml`; read
    them there rather than from any list restated in prose. **An agent must never merge a PR that
    crosses a human gate**, and merging closes no gate (ADR-019) — only an approval record does.
-6. It is up to date with `main` (rebased, not merged).
+6. It is up to date with `main`. How it got there does not matter — see branching rule 6.
 
 ### Change classes that always require human approval
 

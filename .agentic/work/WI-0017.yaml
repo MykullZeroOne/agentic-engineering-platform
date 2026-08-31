@@ -1,0 +1,38 @@
+id: WI-0017
+store: local
+project: PRJ-mykullzeroone/agentic-engineering-platform
+type: docs
+work_state: review
+priority: normal
+title: Correct the merge conventions that squash-only merging invalidated
+description: |
+  Three statements in CLAUDE.md were wrong or obsolete once the repository moved to
+  squash-only merging. All three were found by watching real merges rather than by reading.
+
+  1. `Closes WI-NNNN` never reached main. The rule said the squash commit body carries it,
+     but GitHub's squash body defaults to the branch's commit messages, and the line lived
+     only in the pull request description. PRs #8 and #9 both merged without it -- `git log
+     -1 --format=%B origin/main | grep -c "Closes WI"` returns 0 for each. The convention is
+     now to put it in the commit message, which survives the repository setting being
+     toggled back. Changing the squash default to "pull request title and description" is
+     the other half and is a repository setting, not something this file can enforce.
+
+  2. The same bullet still said `Closes #<issue>`, referring to GitHub issues. ADR-012 made
+     the work store configurable and this repository uses `local`, so the issue reference
+     had been wrong since that decision.
+
+  3. Rule 6 required rebase and forbade merging main into a branch, "to keep history
+     linear". Squash makes that unreachable either way: PR #9 was updated by merging main in
+     and still landed on main as a single-parent squash. The rule now prefers rebase on a
+     branch only one person holds and permits merging on a shared one, where rewriting
+     someone else's checkout is the greater harm. Merge requirement 6 said "rebased, not
+     merged" and would have contradicted it, so it defers to the rule instead of restating
+     it.
+
+  Recorded alongside: no local git test identifies a merged branch under squash. The tip is
+  never an ancestor of main and the tree diverges once main moves on -- both naive tests
+  were tried and both gave wrong answers on branches GitHub had already merged. The merge
+  record is the only authority, which is a constraint on WI-0013's work.advance_state hook,
+  not merely a cleanup annoyance.
+required_gates: []
+branch: docs/17-merge-conventions
