@@ -1,0 +1,123 @@
+id: WI-0027
+store: local
+project: PRJ-mykullzeroone/agentic-engineering-platform
+type: adr
+work_state: review
+priority: normal
+title: Decide how to absorb Kairo's V2 corpus
+description: |
+  ADR-021 ports Kairo's provenance code and marks docs/v2 reference-only. That was right for a
+  code port and wrong for the corpus: docs/v2 is the part of Kairo that most directly IS AEP's
+  premise. 29 numbered sections plus changes/, 63 files, ~38000 words, written by the same person about the same
+  problem, several of its conclusions reached independently of AEP's.
+
+  It cannot be copied, for three reasons in increasing seriousness. No front matter, so all 63
+  files fail validate_docs.py. Colliding identifiers: docs/v2/25-adrs runs ADR-0001..0014 on its
+  own sequence with its own PRD-01..12 and FR/NFR numbering, and two ADR-0006s in one repository
+  is two authority hierarchies, not a naming problem. And three imported contradictions with
+  accepted AEP decisions, with no supersession declared either way.
+
+  ADR-022 decides: absorb by TRANSLATION, never by copy. Every section is triaged into exactly
+  one of absorb, reference, or out of scope. Where the corpora disagree, AEP's decision governs
+  -- the same rule ADR-021 set for code.
+
+  THREE CONFLICTS NAMED:
+
+    1. Law 2 would move authority. 01-philosophy says Kairo owns "prompts, decisions, agent
+       sessions, HUMAN APPROVALS, external snapshots". AEP's approvals live in
+       .agentic/approvals/ and are closed only by a human (Principle 1, ADR-019). Absorbed
+       narrowed: the knowledge layer INDEXES approvals and never owns them. This is the single
+       most dangerous line in the corpus precisely because copying it looks harmless.
+
+    2. Hosted-primary contradicts ADR-011. The v2 PRD names the product "Hosted Ambient Memory
+       Platform" and v2 ADR-0001 makes hosted the primary architecture with the CLI as one
+       client. ADR-011 is a single deployable modular monolith. Out of scope: whether AEP should
+       be a hosted platform is a product decision with its own ADR and gate, not something to
+       acquire by absorbing a corpus.
+
+    3. v2 ADR-0013 decides a Go-core-as-WASM plus TypeScript-handlers runtime. ADR-011 decides
+       Go for the control service with TypeScript confined to the UI. Out of scope, and the
+       clearest evidence the v2 corpus is answering a different question -- it is a serverless
+       deployment decision and AEP has no serverless.
+
+  FIVE CORROBORATIONS, absorbed as citation rather than as new decisions: Kairo's non-negotiable
+  4 ("must not rely on agents manually remembering to snapshot") is near-identical to AEP
+  Principle 5; Law 5 ("context is reconstructed, not replayed") is the distinction PRD-006 rests
+  on; Law 4 and v2 ADR-0004 (disposable indexes) are already in PRD-009; Law 3 and v2 ADR-0003
+  (event-driven knowledge) match ADR-004; v2 ADR-0006 (Postgres-first, specialized backends later
+  behind the same interfaces) independently reaches ADR-003.
+
+  Roughly 40% absorbs, 25% references, 35% is out of scope -- and every line of that 35% is
+  hosted, multi-tenant or serverless. Two absorptions unblock things AEP is actually stuck on:
+  04-domain feeds WI-0009's 17 open entity-model questions with a second independent model, and
+  17-security feeds a GOVERNANCE.md still in draft. 27-traceability is already absorbed as
+  SPEC-EVIDENCE-PACKAGE (WI-0026).
+
+  REVIEWED AND REWRITTEN. An independent Codex review found SIXTEEN defects in the first draft,
+  four of them authority-model errors. All were verified against the repository before acting and
+  all held. The four that mattered most:
+
+    - It instructed later work to absorb content into ADR-003, ADR-004, ADR-010 and ADR-018, all
+      ACCEPTED and therefore immutable. DOCUMENT_LIFECYCLE allows change only by supersession.
+      The table now targets lower-tier design artifacts, or names the superseding ADR and its
+      architecture_decision gate.
+
+    - It misapplied AUTHORITY_MODEL precedence rule 3, saying imported Kairo decisions would
+      "lose" to AEP's. Rule 3 leaves same-tier conflicts UNRESOLVED until supersession and calls
+      that an error; front-matterless or draft, they carry no authority at all. The original
+      rationale taught the opposite of the rule it cited.
+
+    - It said ADR-021 "established" a governing rule while ADR-021 is draft, and called draft
+      PRD-006 and PRD-009 conclusions AEP holds. Rule 2 gives drafts no authority. The rule is now
+      scoped to approved and accepted artifacts, and the drafts are named as proposals.
+
+    - It enumerated only constitutional_change and product_spec as the gates the translations
+      trigger, omitting security_policy for docs/security/** and architecture_decision for any
+      supersession. Both are now listed.
+
+  It also called hosted-primary a CONTRADICTION of ADR-011. It is not: ADR-011 decides language,
+  storage and a single-deployable shape and does not forbid hosting that deployable, and
+  DEPLOYMENT.md already specifies an AEP server with local workers. Hosted-primary remains out of
+  scope as new product scope, which is a weaker and truer claim.
+
+  Corrected facts: 29 numbered sections, not 28. ADR-0006 does not duplicate AEP's ADR-006, it
+  violates the three-digit ADR-NNN format validate_docs.py enforces. FR/NFR identifiers collide
+  with nothing, since AEP uses REQ-<spec>-NNN; they are a second hierarchy, not a clash.
+  ENTITY_MODEL.md is a reading guide and entity-model.yaml is canonical per ADR-017, with ELEVEN
+  open questions remaining, not seventeen. "Principle 5" is CLAUDE.md's numbering; PRINCIPLES.md
+  numbers nothing and the principle is Deterministic boundaries. The 40/25/35 percentages did not
+  survive arithmetic and are replaced by word counts. All fourteen v2 ADRs are now classified;
+  three were unaccounted for.
+
+  SECOND REVIEW ROUND, two more findings, both held:
+
+    - 17-security was marked wholly unabsorbed, but WI-0029 already took its auth-rbac.md into
+      CAPABILITIES.md, which is now APPROVED under APR-0014. A row sending later work to
+      re-translate approved content is worse than a merely stale one: it invites a contradiction
+      against an artifact carrying authority, and it assigned security_policy to a portion that no
+      longer needs it. The row is now split -- auth-rbac.md absorbed, security-architecture.md
+      remaining, and only that half triggers security_policy.
+
+    - The corpus was cited with no revision. Kairo's docs/v2 lives on a moving branch tip, and
+      ADR-021's v1.5.0 reference does not identify what this survey read: 56 commits separate
+      them. Every path, word count, quotation and disposition now resolves against
+      17cdd4565f93dabb3c0cf9285383cbffe9c0c7fa (branch feat/217-projection-drain, 2026-07-08).
+      REGISTRIES.md records that external reference has no authority tier and that its retrieval
+      must reach the provenance manifest; a corpus cited without a revision cannot.
+
+  Six triage rows were already STALE one day after being written, because WI-0028, WI-0030 and
+  WI-0026 had landed those absorptions -- and two of them landed in different targets than the
+  table named. Those rows now say so.
+
+  Honest limit: 63 files triaged from reading twelve in full. The Absorb rows remain the likeliest
+  to be wrong and each should be confirmed when its translation is written.
+
+  Worth recording: the defects were found by an independent reviewer, not by writing more
+  carefully. That is the strongest available argument for the review requirement WI-0016 tracks as
+  suspended.
+
+  Nothing here changes PRINCIPLES. Absorbing Kairo's non-negotiables as citation is not amending
+  AEP's principles, which is tier 0 and gated.
+required_gates: []
+dependencies: []
+branch: adr/27-absorb-kairo-v2-corpus
