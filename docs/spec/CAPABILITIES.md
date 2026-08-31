@@ -3,12 +3,12 @@ id: SPEC-CAPABILITIES
 type: spec
 tier: 0
 status: approved
-version: 1
+version: 2
 owner: human.cto
 human_approved: true
 approved_by: MykullZeroOne
 approved_on: 2026-08-31
-approval_record: APR-0007
+approval_record: APR-0014
 supersedes: null
 superseded_by: null
 last_reviewed: 2026-08-31
