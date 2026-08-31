@@ -21,7 +21,7 @@ EXEMPT_FILES = {"README.md", "CLAUDE.md", "examples/project.yaml"}
 EXEMPT_DIRS = {"docs/schemas", "scripts", ".github"}
 
 REQUIRED = ["id", "type", "tier", "status", "version", "owner",
-            "human_approved", "approved_by", "approved_on",
+            "human_approved", "approved_by", "approved_on", "approval_record",
             "supersedes", "superseded_by", "last_reviewed"]
 
 TYPE_TIER = {"principle": 0, "spec": 0, "adr": 1, "prd": 2, "ads": 2, "design": 2,
@@ -272,18 +272,42 @@ def check_approvals(gates, by_id, fms):
                 elif len(digest) != HASH_SCHEMES[scheme]:
                     err(rel, f"artifact {aid} scheme {scheme!r} requires a "
                              f"{HASH_SCHEMES[scheme]}-character digest, got {len(digest)}")
-            # The artifact must point back at the identity that actually approved it.
+            # A record naming an artifact that has since left `approved` is history:
+            # it approved an earlier version, and a material change re-opened the gate
+            # (ADR-016 clause 5). Surface it, but do not enforce agreement against it.
+            if fms[aid]["status"] not in AUTHORITATIVE:
+                warnings.append(f"{rel}: approves {aid}, whose approval has since lapsed "
+                                f"(now {fms[aid]['status']!r})")
+                continue
+
+            # ADR-019: approved_by is the identity, approval_record the pointer. Both
+            # must agree with the record, or the provenance chain is decorative.
             claimed = fms[aid].get("approved_by")
             if claimed != rec.get("approver"):
                 err(by_id[aid], f"approved_by {claimed!r} does not match "
                                 f"{rec['id']} approver {rec.get('approver')!r}")
+            pointer = fms[aid].get("approval_record")
+            if pointer != rec["id"]:
+                err(by_id[aid], f"approval_record {pointer!r} does not name "
+                                f"{rec['id']}, which approves this artifact")
             approved_ids.add(aid)
 
     # An artifact carrying authority should be able to name the approval that granted it.
     for fid, fm in fms.items():
-        if fm["status"] in AUTHORITATIVE and fid not in approved_ids:
-            if fid not in PRE_RECORD_APPROVALS:
-                warnings.append(f"{by_id[fid]}: {fm['status']} with no approval record (ADR-013)")
+        if fm["status"] not in AUTHORITATIVE:
+            # A retired artifact keeps its provenance for the same reason it keeps
+            # human_approved: supersession ends its force, not the fact of its approval.
+            if fm.get("approval_record") and fm["status"] not in RETIRED:
+                err(by_id[fid], f"approval_record set on a {fm['status']!r} artifact")
+            continue
+        if fid in PRE_RECORD_APPROVALS:
+            if fm.get("approval_record"):
+                err(by_id[fid], "predates approval records; approval_record must be null")
+            continue
+        if fid not in approved_ids:
+            warnings.append(f"{by_id[fid]}: {fm['status']} with no approval record (ADR-019)")
+        elif not fm.get("approval_record"):
+            err(by_id[fid], "approved artifact does not name its approval_record (ADR-019)")
 
 
 def check_work_items(states, gates):

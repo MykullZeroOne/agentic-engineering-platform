@@ -2,12 +2,13 @@
 id: SPEC-LIFECYCLE
 type: spec
 tier: 0
-status: approved
-version: 1
+status: proposed
+version: 2
 owner: human.cto
-human_approved: true
-approved_by: MykullZeroOne
-approved_on: 2026-08-30
+human_approved: false
+approved_by: null
+approved_on: null
+approval_record: null
 supersedes: null
 superseded_by: null
 last_reviewed: 2026-08-29
@@ -38,8 +39,9 @@ status: draft               # see states.yaml, document_status
 version: 1                  # increments on material change
 owner: human.cto            # durable identity accountable for it
 human_approved: false       # true only when its gate has been closed
-approved_by: null           # identity that closed the gate
+approved_by: null           # the authenticated identity that closed the gate
 approved_on: null           # ISO date
+approval_record: null       # APR-NNNN -- the record that is the provenance
 supersedes: null            # id, or null
 superseded_by: null         # id, or null
 last_reviewed: 2026-08-29   # ISO date
@@ -110,8 +112,27 @@ draft ──> proposed ──> approved ──> superseded
 
 - `draft` and `proposed` carry **no authority**. An agent may read them for direction but must not
   cite them as binding, and must not treat a drafted requirement as approved intent.
-- `approved` / `accepted` require the artifact's gate to be closed. `human_approved` and
-  `approved_by` record it. An agent must never set these itself — Principle 1.
+- `approved` / `accepted` require the artifact's gate to be closed. `human_approved`,
+  `approved_by` and `approval_record` record it. An agent must never set these itself —
+  Principle 1.
+
+### `approved_by` and `approval_record` are different things
+
+ADR-019 separates them, because the original formulation conflated identity with provenance and
+the pointer was never actually added.
+
+| Field | Holds | Answers |
+| --- | --- | --- |
+| `approved_by` | The authenticated identity, never a role | "Who approved this?" — without a second lookup |
+| `approval_record` | `APR-NNNN` under `.agentic/approvals/` | "On what basis?" — the verbatim statement, method and hashes |
+
+The **record** is the provenance. `approved_by` is a denormalised convenience, and the validator
+enforces that it agrees with the record it points at.
+
+`PRINCIPLES` and ADR-001 through ADR-008 carry `approval_record: null`: they were approved before
+ADR-013 established records at all. That is a gap in provenance, not a defect in the artifacts, and
+it is recorded rather than backfilled — inventing a record for an approval nobody witnessed would
+be worse than admitting there isn't one.
 - ADRs use `accepted` and are **immutable** thereafter. Reverse one by adding a new ADR with
   `supersedes: ADR-NNN` and setting the original's `superseded_by`. Never edit an accepted
   decision.

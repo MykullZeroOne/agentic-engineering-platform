@@ -8,6 +8,7 @@ owner: human.cto
 human_approved: true
 approved_by: MykullZeroOne
 approved_on: 2026-08-29
+approval_record: APR-0001
 supersedes: null
 superseded_by: null
 last_reviewed: 2026-08-29
