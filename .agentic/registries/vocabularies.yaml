@@ -175,3 +175,91 @@ vocabularies:
       - {token: billing.read,              description: Read billing configuration, gated_by: billing_configuration}
       - {token: billing.write,             description: Change billing or spend configuration, gated_by: billing_configuration}
       - {token: data.destructive,          description: Irreversible data change, gated_by: destructive_data_change}
+
+  graph_node_type:
+    description: >
+      Node types in the knowledge graph. CLOSED, for the same reason the capability namespace
+      is: an edge naming an unknown node type is an error, not a silently tolerated one.
+      Intent nodes were specified first; the provenance nodes were absorbed from Kairo's
+      docs/v2/10-graph per ADR-022, because the original set could express what was decided
+      and not what an agent actually held or produced.
+    applies_to: [KnowledgeNode.type]
+    source: docs/memory/KNOWLEDGE_GRAPH.md
+    terms:
+      - {token: ProductIntent}
+      - {token: PRD}
+      - {token: ADS}
+      - {token: Capability}
+      - {token: Requirement}
+      - {token: AcceptanceCriterion}
+      - {token: ADR}
+      - {token: Policy}
+      - {token: Standard}
+      - {token: Component}
+      - {token: API}
+      - {token: DataEntity}
+      - {token: Issue}
+      - {token: WorkUnit}
+      - {token: Branch}
+      - {token: Commit}
+      - {token: PullRequest}
+      - {token: Test}
+      - {token: Check}
+      - {token: Release}
+      - {token: AgentIdentity}
+      - {token: AgentRun}
+      - {token: Session}
+      - {token: Question}
+      - {token: Answer}
+      - {token: Decision}
+      - {token: Finding}
+      - {token: HumanIntervention}
+      - {token: Memory}
+      - {token: Pattern}
+      - {token: Procedure}
+      - {token: AntiPattern}
+      - {token: RegressionCase}
+      - {token: Repository}
+      - {token: File}
+      - {token: GitBlob}
+      - {token: ContextManifest}
+      - {token: Checkpoint}
+      - {token: Prompt}
+      - {token: ToolCall}
+      - {token: TestRun}
+      - {token: ExternalSnapshot}
+      - {token: Model}
+
+  graph_edge_type:
+    description: >
+      Typed relationships between knowledge graph nodes. CLOSED. Where Kairo named an edge AEP
+      already had -- PRODUCED, VALIDATED, FAILED -- the AEP name is kept, because two names for
+      one edge is exactly the drift a registry prevents.
+    applies_to: [KnowledgeEdge.type]
+    source: docs/memory/KNOWLEDGE_GRAPH.md
+    terms:
+      - {token: DEFINES}
+      - {token: IMPLEMENTS}
+      - {token: GOVERNED_BY}
+      - {token: DEPENDS_ON}
+      - {token: BLOCKS}
+      - {token: VERIFIED_BY}
+      - {token: PRODUCED_BY}
+      - {token: REVIEWED_BY}
+      - {token: FAILED_BECAUSE}
+      - {token: FIXED_BY}
+      - {token: LEARNED_FROM}
+      - {token: USES_PATTERN}
+      - {token: VIOLATES}
+      - {token: SUPERSEDES}
+      - {token: ANSWERS}
+      - {token: ESCALATED_TO}
+      - {token: RETRIEVED_FOR}
+      - {token: RELATED_TO}
+      - {token: AFFECTS}
+      - {token: REFERENCES, description: a manifest or checkpoint points at an artifact}
+      - {token: READ, description: a run consumed this as context}
+      - {token: MODIFIED, description: a run changed this}
+      - {token: MOTIVATED, description: this is why the work started}
+      - {token: EXPLAINS, description: this accounts for why a change exists}
+      - {token: RESTORES, description: this returns state to that}
