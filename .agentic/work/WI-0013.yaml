@@ -4,7 +4,7 @@ project: PRJ-mykullzeroone/agentic-engineering-platform
 type: ci
 work_state: intake
 priority: high
-title: Clear gate debt and make the gate check blocking
+title: Clear gate debt, make the gate check blocking, derive work state
 description: |
   Follow-on to WI-0012. Replaying PR #5 through check_gates.py finds two gates that
   merged open, and both are still open on `main`:
@@ -20,6 +20,25 @@ description: |
   before: `check` means a check enforces the rule, and while the step is advisory it
   does not, so bumping the stage early would make the registry claim a stage the
   pipeline is not at.
+
+  Also bind `after_merge` so work state stops being hand-copied. `work_state: done` means
+  "merged and consolidated", but a merge happens after a pull request's content is frozen,
+  so no work item can record its own completion inside the pull request that completes it.
+  Every item needs a trailing bookkeeping PR, and that PR is itself work that needs
+  recording -- PR #6 was the first turn of that crank and WI-0012 the second. Nothing
+  computes work_state; the validator checks the token is valid, never that it is true.
+
+  Add a `work.advance_state` binding under `after_merge` in .agentic/hooks/hooks.yaml,
+  class `soft`: advance each work item the merged pull request closed, to `done` when its
+  required_gates are all covered by an approval record and to `awaiting_human` when they
+  are not. `soft` matches the three bindings already there -- after a merge there is no
+  lifecycle progression left for a hard failure to block. Both `after_merge` and the
+  `work` hook-ID domain already exist in hook-points.yaml, so this coins no vocabulary.
+
+  That binding is declarative until a hook engine exists, so this change should also give
+  check_gates.py the same derivation as a CI check, which is the `check` rung under it on
+  the enforcement ladder. Touching hooks.yaml crosses platform_config, which this work
+  item already has to close.
 
   Note also that platform_config's three paths are YAML, where legacy/truncated-32 is
   undefined -- it is specified over a markdown body. Their records can name the path but
