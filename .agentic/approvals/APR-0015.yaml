@@ -1,0 +1,59 @@
+# Approval record, per ADR-019.
+#
+# Fifth closure of platform_config over the registries. APR-0008, APR-0009, APR-0010 and
+# APR-0011 each re-closed it as gates.yaml and vocabularies.yaml changed. That is not churn in
+# the mechanism -- each material change to a registry re-opens the gate on its own, which is the
+# point of binding an approval to a content hash.
+
+id: APR-0015
+gate: platform_config
+surface: chat
+session: 17687d1e-330e-45d9-9ebb-5dbc42dc2dcf
+
+approver: MykullZeroOne
+approved_on: 2026-08-31
+recorded_on: 2026-08-31
+
+hash_scheme: legacy/file-32
+
+artifacts:
+  - id: CFG-VOCABULARIES
+    kind: config
+    path: .agentic/registries/vocabularies.yaml
+    title: Controlled vocabulary registry
+    content_hash: legacy/file-32:sha256:f19b7ebd16445ec427178a41d0017238
+
+request: >
+  Presented PR #25 as one of two open gates, naming what lands: two closed vocabularies,
+  `graph_node_type` with 43 tokens including ten new provenance nodes, and `graph_edge_type` with
+  25 tokens including READ, MODIFIED, REFERENCES, MOTIVATED, EXPLAINS and RESTORES. Stated
+  explicitly that closed means an edge naming an unknown type is an error. Offered three options
+  including splitting the registry change out; asked for explicit approval before writing any
+  record.
+
+statement: >
+  Approve — write the record
+
+  -- selected against a question naming vocabularies.yaml, the gate platform_config, both
+  vocabulary names, both token counts, and the closed-namespace consequence.
+
+scope_note: >
+  Approves .agentic/registries/vocabularies.yaml at the whole-file content it carries in PR #25.
+  The substance is two new closed vocabularies sourced from docs/memory/KNOWLEDGE_GRAPH.md, and
+  no change to any existing vocabulary.
+
+  Approving a CLOSED namespace is approving a constraint, not a list. The consequence was stated
+  before approval and is restated here: the first artifact that does not fit a listed node type
+  becomes an error rather than a new type. That is the intended behaviour and it will be
+  inconvenient at some point.
+
+  What this does NOT approve:
+
+  - It does not approve the ten new node types or six new edge types as CORRECT. Nothing
+    consumes them; no graph exists. This approves adding them to the registry, and being wrong
+    about a type costs another platform_config change per correction.
+  - It does not adopt Kairo's PRODUCED, VALIDATED or FAILED edges. Those were judged synonyms of
+    PRODUCED_BY, VERIFIED_BY and FAILED_BECAUSE and dropped. If Kairo meant something narrower
+    by any of them, that meaning is lost and the loss is recorded here.
+  - It does not register the role kinds (`agent`, `mcp`) that SPEC-CAPABILITIES names in prose.
+    That remains an open limit recorded in that document.
