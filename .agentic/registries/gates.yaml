@@ -65,7 +65,7 @@ gates:
         condition: docs/ads/**
     sources: [".agentic/project.yaml", "docs/prd/PRD-002-PRODUCT-INTENT-BA.md", "docs/agents/BA_LOOP.md"]
     aliases: []
-    enforcement: prose
+    enforcement: check
 
   - id: constitutional_change
     title: Constitutional change approval
@@ -88,7 +88,7 @@ gates:
         condition: a tier-0 artifact transitions to `approved`
     sources: ["docs/spec/AUTHORITY_MODEL.md"]
     aliases: []
-    enforcement: prose
+    enforcement: check
 
   - id: architecture_decision
     title: Architecture decision approval
@@ -110,7 +110,7 @@ gates:
         condition: a `design` artifact under docs/architecture/ transitions to `approved`
     sources: ["CLAUDE.md", "docs/agents/ARCHITECTURE_LOOP.md"]
     aliases: []
-    enforcement: prose
+    enforcement: check
 
   - id: architecture_high_risk
     title: High-risk architecture approval
@@ -141,7 +141,7 @@ gates:
         condition: docs/security/**
     sources: ["CLAUDE.md", "docs/security/GOVERNANCE.md"]
     aliases: ["security_policy_changes"]
-    enforcement: prose
+    enforcement: check
 
   - id: legal
     title: Legal approval
@@ -193,8 +193,6 @@ gates:
         condition: .agentic/hooks/**
       - kind: path
         condition: .agentic/roles/*.yaml
-      - kind: path
-        condition: CLAUDE.md
     # Narrowed from `.agentic/**`, which was broader than this gate's own description
     # and produced a circularity: an approval record under .agentic/approvals/ would
     # itself have required an approval. Records, work items and skills are artifacts
@@ -205,7 +203,7 @@ gates:
     #   .agentic/skills/**       Skill -- tier 4, agent-authorable per AUTHORITY_MODEL
     sources: ["CLAUDE.md"]
     aliases: ["agentic_config", "role_definitions"]
-    enforcement: prose
+    enforcement: check
 
   - id: production_release
     title: Production release approval
@@ -247,7 +245,7 @@ gates:
         condition: migrations/**
     sources: ["docs/security/GOVERNANCE.md", "CLAUDE.md", "docs/workflows/POLICY_MODEL.md"]
     aliases: ["destructive_data_changes"]
-    enforcement: prose
+    enforcement: check
 
   - id: billing_configuration
     title: Billing and payment configuration

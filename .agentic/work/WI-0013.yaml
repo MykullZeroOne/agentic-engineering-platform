@@ -2,7 +2,7 @@ id: WI-0013
 store: local
 project: PRJ-mykullzeroone/agentic-engineering-platform
 type: ci
-work_state: intake
+work_state: review
 priority: high
 title: Clear gate debt, make the gate check blocking, derive work state
 description: |
@@ -43,8 +43,24 @@ description: |
   Note also that platform_config's three paths are YAML, where legacy/truncated-32 is
   undefined -- it is specified over a markdown body. Their records can name the path but
   their currency cannot be verified until canonical/v2 exists (ADR-016, WI-0005).
+  DONE. The gate debt cleared first, by APR-0007 through APR-0010, so --strict had
+  something to enforce rather than a backlog to trip over. The six path-triggered gates
+  moved to enforcement `check` in the same change; the other six stay `prose` because they
+  trigger on classification, finding, lifecycle or capability, none of which a check can
+  read. work.advance_state is bound under after_merge, class soft, and stays declarative
+  until a hook engine exists.
+  Auditing what --strict would actually block turned up an exposure worth naming: PRINCIPLES
+  and ADR-001..008 are approved or accepted and CANNOT carry an approval record, because
+  validate_docs.py requires approval_record: null on them. Under a blocking check they would
+  have been permanently unmergeable -- enforcement turning into a wall rather than a gate.
+  check_gates.py now recognises them from the same PRE_RECORD_APPROVALS set the validator
+  uses, reports them as GRAND, and does not block. The summary says so rather than claiming
+  every gate is closed, because waving something through and calling it approved is the
+  overclaim this check exists to catch. ADR-016 attestation (WI-0005) is the real fix.
+
 required_gates:
-- constitutional_change
 - platform_config
 dependencies:
 - WI-0012
+- WI-0018
+branch: ci/13-strict-gates
