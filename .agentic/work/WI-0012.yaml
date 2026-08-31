@@ -2,7 +2,7 @@ id: WI-0012
 store: local
 project: PRJ-mykullzeroone/agentic-engineering-platform
 type: ci
-work_state: review
+work_state: done
 priority: high
 title: Enforce human gates in CI, advisory first
 description: |
