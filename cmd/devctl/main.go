@@ -10,19 +10,25 @@ import (
 	"fmt"
 	"os"
 	"sort"
+	"strings"
 
 	"github.com/MykullZeroOne/agentic-engineering-platform/internal/config"
 	"github.com/MykullZeroOne/agentic-engineering-platform/internal/doctor"
+	"github.com/MykullZeroOne/agentic-engineering-platform/internal/work"
 )
 
 const usage = `devctl - the Agentic Engineering Platform command line
 
 usage:
   devctl doctor [--root DIR] [--quiet]
+  devctl work list [--state S] [--type T] [--priority P] [--root DIR]
+  devctl work show WI-NNNN [--root DIR]
 
 commands:
   doctor   Report whether a project's .agentic/ configuration is coherent.
            Read-only. Exits 1 when a finding would break a runtime.
+  work     Read the local work store. Read-only: advancing state is what the
+           work.advance_state hook binding is for, not a command.
 `
 
 func main() {
@@ -33,6 +39,8 @@ func main() {
 	switch os.Args[1] {
 	case "doctor":
 		os.Exit(runDoctor(os.Args[2:]))
+	case "work":
+		os.Exit(runWork(os.Args[2:]))
 	case "-h", "--help", "help":
 		fmt.Print(usage)
 		os.Exit(0)
@@ -40,6 +48,51 @@ func main() {
 		fmt.Fprintf(os.Stderr, "devctl: unknown command %q\n\n%s", os.Args[1], usage)
 		os.Exit(2)
 	}
+}
+
+func runWork(args []string) int {
+	if len(args) == 0 {
+		fmt.Fprint(os.Stderr, "devctl work: expected `list` or `show`\n\n"+usage)
+		return 2
+	}
+	sub, rest := args[0], args[1:]
+
+	fs := flag.NewFlagSet("work "+sub, flag.ExitOnError)
+	root := fs.String("root", ".", "project root: the directory holding .agentic/")
+	var f work.Filter
+	if sub == "list" {
+		fs.StringVar(&f.State, "state", "", "only this work_state")
+		fs.StringVar(&f.Type, "type", "", "only this type")
+		fs.StringVar(&f.Priority, "priority", "", "only this priority")
+	}
+
+	switch sub {
+	case "list":
+		_ = fs.Parse(rest)
+		items, err := work.List(config.Root(*root), f)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "devctl work list: %v\n", err)
+			return 2
+		}
+		fmt.Print(work.FormatList(items))
+	case "show":
+		if len(rest) == 0 || strings.HasPrefix(rest[0], "-") {
+			fmt.Fprint(os.Stderr, "devctl work show: expected a work item id, e.g. WI-0001\n")
+			return 2
+		}
+		id := rest[0]
+		_ = fs.Parse(rest[1:])
+		w, err := work.Find(config.Root(*root), id)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "devctl work show: %v\n", err)
+			return 1
+		}
+		fmt.Print(work.FormatItem(w))
+	default:
+		fmt.Fprintf(os.Stderr, "devctl work: unknown subcommand %q\n\n%s", sub, usage)
+		return 2
+	}
+	return 0
 }
 
 func runDoctor(args []string) int {
