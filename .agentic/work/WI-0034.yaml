@@ -1,0 +1,40 @@
+id: WI-0034
+store: local
+project: PRJ-mykullzeroone/agentic-engineering-platform
+type: adr
+work_state: review
+priority: high
+title: Accept ADR-021, the Kairo provenance port
+description: |
+  Item 3 of the five-document acceptance walk, and the load-bearing one: PRD-009 was HELD pending
+  it, and ADR-022's governing rule was citing it while it was still a draft carrying no authority.
+
+  Approval given explicitly against a question naming the ADR, the port-versus-depend decision,
+  the exclusions, the Postgres condition that keeps ADR-003 and ADR-011 intact, and the
+  consequence that AEP's 1229 lines of Go plus 930 of test become roughly 10% of a codebase that
+  is otherwise Kairo-derived. Four options were offered including narrowing the scope first and
+  denying in favour of building it in AEP. APR-0017 records it.
+
+  Status moves draft to ACCEPTED. The ADR is now immutable and reversible only by supersession,
+  which is a materially different state from the other four documents in this walk.
+
+  The record states four things it does not approve, and the first matters most: it does not
+  approve a SEQUENCE. The ADR says the disposition tables are an upper bound rather than a plan
+  and that porting should follow demonstrated need. Nothing authorises porting a package with no
+  AEP caller, and that remains an open decision. It also does not adopt corehash as AEP's document
+  content_hash, does not wire pkg/plugin to anything, and does not resolve the ADR-020 tension in
+  either direction.
+
+  Risks accepted knowingly. The sharpest: divergence from Kairo becomes CERTAIN rather than
+  possible and produces no signal. Under a dependency, drift is a version mismatch a build
+  catches; under a port there is nothing to compare and nothing to fail. The others are the 90%
+  inversion, a Postgres backend that Kairo's own tests do not exercise, and a bus factor doubled
+  rather than diversified.
+
+  Unblocks: PRD-009 can now be taken on its own merits, and ADR-022's rule cites an accepted
+  artifact rather than a proposal.
+required_gates:
+- architecture_decision
+dependencies:
+- WI-0025
+branch: adr/34-accept-kairo-port

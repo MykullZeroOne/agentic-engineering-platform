@@ -1,0 +1,73 @@
+# Approval record, per ADR-019.
+#
+# Acceptance of ADR-021. An ADR moves to `accepted` rather than `approved` and is immutable
+# thereafter; reversing this decision requires a superseding ADR, not an edit.
+
+id: APR-0017
+gate: architecture_decision
+surface: chat
+session: 17687d1e-330e-45d9-9ebb-5dbc42dc2dcf
+
+approver: MykullZeroOne
+approved_on: 2026-09-01
+recorded_on: 2026-09-01
+
+hash_scheme: legacy/truncated-32
+
+artifacts:
+  - id: ADR-021
+    kind: adr
+    path: docs/adr/ADR-021-KAIRO-PROVENANCE-PORT.md
+    title: Port Kairo's Provenance and Knowledge-Index Layer
+    content_hash: legacy/truncated-32:sha256:5bf475ced6bfddb59fd4f674355c0b1e
+
+request: >
+  Item 3 of a five-document acceptance walk. Presented the decision as a port of roughly 11,000
+  lines of selected Kairo packages into AEP's own module rather than a dependency; the exclusions
+  (config, doctor, and the ~2,600-line hosted family); the clause-5 condition that keeps ADR-003
+  and ADR-011 intact by consuming knowledge.Engine as an interface with a Postgres backend; the
+  three claimed overlaps that did not survive reading the code; and that acceptance makes the ADR
+  immutable. Stated the number that matters: AEP is 1229 lines of Go plus 930 of test, so this
+  makes roughly 90% of the codebase Kairo-derived. Offered accept, accept-with-narrower-scope,
+  hold, and deny-and-build-in-AEP.
+
+statement: >
+  Accept — write the record
+
+  -- selected against a question naming the ADR, the port-versus-depend decision, the exclusions,
+  the Postgres condition, and the 90% consequence.
+
+scope_note: >
+  Accepts docs/adr/ADR-021-KAIRO-PROVENANCE-PORT.md at the content it carries on `main` at
+  3f5559d. Status moves draft to accepted; the ADR is immutable and reversible only by
+  supersession.
+
+  What is decided: port rather than depend, into AEP's own module, at the scope the disposition
+  tables name. The port is selective and stated per package; a package not listed is not ported.
+  kairo.*.v1 schemas are adopted as-is rather than re-modelled, because a translation layer is
+  where schema drift lives. .kairo/ configuration is not ported. Postgres is the index backend
+  per clause 5, which is the condition under which ADR-003 and ADR-011 remain intact.
+
+  What this does NOT approve:
+
+  - It does not approve a sequence. The ADR says the disposition tables are an upper bound rather
+    than a plan, and that porting should follow demonstrated need. Nothing here schedules the
+    port or authorises porting a package with no AEP caller.
+  - It does not adopt corehash as AEP's document content_hash. It is ported for provenance
+    artifacts only; ADR-016 governs documents and corehash is not RFC 8785 conformant.
+  - It does not wire pkg/plugin to anything. The plugin host is ported unwired, because whether
+    hooks may execute external commands is ADR-020's question.
+  - It does not resolve the ADR-020 tension the port surfaces, in either direction.
+
+  Risks accepted knowingly, all stated in the ADR:
+
+  - Divergence from Kairo becomes CERTAIN rather than possible, and produces no signal. Under a
+    dependency a drift is a version mismatch a build catches; under a port there is nothing to
+    compare and nothing to fail.
+  - Roughly 90% of the codebase becomes Kairo-derived, inverting what AEP is. The mitigation is
+    sequencing, which this record explicitly does not approve and which therefore remains an open
+    decision.
+  - AEP runs a Postgres backend that Kairo's 14 knowledge tests do not exercise. A conformance
+    suite across both would mitigate it and does not exist.
+  - Bus factor is doubled rather than diversified: same owner, more surface, the failure mode
+    ADR-014 already accepts.
