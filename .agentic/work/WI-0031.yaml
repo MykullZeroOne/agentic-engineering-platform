@@ -2,7 +2,7 @@ id: WI-0031
 store: local
 project: PRJ-mykullzeroone/agentic-engineering-platform
 type: fix
-work_state: review
+work_state: done
 priority: high
 title: Fix the hash agreement test, which failed on every gated edit
 description: |

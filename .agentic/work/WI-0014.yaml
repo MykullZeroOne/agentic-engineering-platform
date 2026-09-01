@@ -2,7 +2,7 @@ id: WI-0014
 store: local
 project: PRJ-mykullzeroone/agentic-engineering-platform
 type: spec
-work_state: review
+work_state: done
 priority: high
 title: Close constitutional_change and platform_config
 description: |

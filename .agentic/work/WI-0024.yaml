@@ -2,7 +2,7 @@ id: WI-0024
 store: local
 project: PRJ-mykullzeroone/agentic-engineering-platform
 type: adr
-work_state: review
+work_state: done
 priority: high
 title: Decide the hook engine's execution model
 description: |

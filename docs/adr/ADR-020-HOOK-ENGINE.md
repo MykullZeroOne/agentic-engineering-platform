@@ -155,7 +155,9 @@ So a hook **may** attach provenance to a merge commit by writing a note, and doi
 no rule. This is not a loophole being exploited; it is the mechanism git provides for exactly
 this problem, which is attaching information to a commit you must not rewrite. AEP needs it
 more than most: squash merge means the branch tip is never an ancestor of `main`, so the
-`Closes WI-NNNN` trailer is the only surviving link and PRs #8 and #9 both merged without one.
+`Closes WI-NNNN` trailer is the only surviving link a human controls, and it has now failed
+eight times on this trunk. GitHub's own pull request number is the second, and it is the more
+reliable one (WI-0032).
 A trailer must be written before the merge; a note can be written after.
 
 An earlier draft of this ADR concluded the engine could record nothing after a merge, and

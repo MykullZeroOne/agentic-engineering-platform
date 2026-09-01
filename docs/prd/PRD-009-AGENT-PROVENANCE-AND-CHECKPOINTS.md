@@ -36,8 +36,10 @@ shapes unchanged. AEP owns them after the port; they are not a dependency.
   and where applicable `repo`, `commit`, `path`, `pointer` (`kairo pkg/manifest/manifest.go:24`).
 - A checkpoint names its base commit, so provenance survives independently of the agent runtime.
 - Provenance attaches to a commit without rewriting it. Squash merge discards the branch, so a
-  trailer written before the merge is the only record that survives, and PRs #8 and #9 show that
-  convention failing. Git notes in a dedicated ref (`kairo pkg/gitref/notes.go:8`) can be
+  trailer written before the merge is the only record a *human* controls, and the convention has
+  now failed eight times on this trunk. GitHub writes the pull request number into every squash
+  subject itself, which is a second surviving link that depends on nobody remembering anything;
+  `devctl work advance` uses it when the trailer is absent (WI-0032). Git notes in a dedicated ref (`kairo pkg/gitref/notes.go:8`) can be
   attached after the fact; commit trailers (`pkg/gitref/trailers.go:8-12`) carry the same
   identifiers when they are written in time. Both are required, because neither alone is
   reliable.
