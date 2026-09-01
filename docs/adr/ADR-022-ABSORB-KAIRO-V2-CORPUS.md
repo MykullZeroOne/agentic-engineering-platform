@@ -2,16 +2,16 @@
 id: ADR-022
 type: adr
 tier: 1
-status: draft
+status: accepted
 version: 1
 owner: human.cto
-human_approved: false
-approved_by: null
-approved_on: null
-approval_record: null
+human_approved: true
+approved_by: MykullZeroOne
+approved_on: 2026-09-01
+approval_record: APR-0018
 supersedes: null
 superseded_by: null
-last_reviewed: 2026-08-31
+last_reviewed: 2026-09-01
 ---
 
 # ADR-022 — Absorb Kairo's V2 Corpus by Translation

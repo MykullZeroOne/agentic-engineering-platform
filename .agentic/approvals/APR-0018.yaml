@@ -1,0 +1,75 @@
+# Approval record, per ADR-019.
+#
+# Acceptance of ADR-022. An ADR moves to `accepted` and is immutable thereafter; reversing this
+# requires a superseding ADR, not an edit. That matters more here than usual, because this
+# document's own risk section argues its triage table will decay.
+
+id: APR-0018
+gate: architecture_decision
+surface: chat
+session: 17687d1e-330e-45d9-9ebb-5dbc42dc2dcf
+
+approver: MykullZeroOne
+approved_on: 2026-09-01
+recorded_on: 2026-09-01
+
+hash_scheme: legacy/truncated-32
+
+artifacts:
+  - id: ADR-022
+    kind: adr
+    path: docs/adr/ADR-022-ABSORB-KAIRO-V2-CORPUS.md
+    title: Absorb Kairo's V2 Corpus by Translation
+    content_hash: legacy/truncated-32:sha256:d7a0673ddc5b6f46dbed1b4b3f67363c
+
+request: >
+  Item 4 of a five-document acceptance walk. Presented the decision as absorption by translation
+  rather than copy, with each section triaged into absorb, reference or out of scope against
+  pinned Kairo revision 17cdd456; the two named conflicts, Law 2 moving authority over human
+  approvals and the WASM/TypeScript runtime against ADR-011; and the explicit finding that
+  hosted-primary is NOT a contradiction of ADR-011, only out of scope. Stated plainly that the
+  document was rewritten after an independent review found eighteen defects, four of them
+  authority-model errors including instructions to edit immutable accepted ADRs, and that six
+  triage rows went stale within a day. Offered accept, accept-without-the-table, hold, and deny.
+
+statement: >
+  Accept — write the record
+
+  -- selected against a question naming the ADR, the translation rule, the pinned revision, both
+  conflicts, the hosted-primary correction, and the review history.
+
+scope_note: >
+  Accepts docs/adr/ADR-022-ABSORB-KAIRO-V2-CORPUS.md at the content it carries on `main` at
+  3f5559d. Status moves draft to accepted; immutable, reversible only by supersession.
+
+  What is decided and now binding:
+
+  - Nothing is copied. Absorption is translation into AEP's schema and authority model.
+  - Nothing hosted, multi-tenant or serverless enters AEP by absorption. That refusal is the
+    load-bearing half of the decision.
+  - Where an APPROVED OR ACCEPTED AEP artifact disagrees with the corpus, the AEP artifact
+    governs. Scoped to approved and accepted deliberately: a draft governs nothing.
+  - Absorption never edits an accepted ADR. Where the table names one as a target, the material
+    lands in a lower-tier artifact or requires a superseding ADR and its gate.
+  - Law 2 is absorbed narrowed: the knowledge layer INDEXES approvals and never owns them.
+  - The corpus is pinned to Kairo 17cdd4565f93dabb3c0cf9285383cbffe9c0c7fa, so every path, word
+    count, quotation and disposition resolves against one revision.
+
+  What this does NOT approve:
+
+  - It does not approve the triage table as CURRENT. Six rows were stale within a day of being
+    written, one of them pointing at content since approved under APR-0014. The table is a
+    snapshot; the dispositions are the decision.
+  - It does not authorise any individual translation. Each carries its own gate, and the ADR
+    enumerates four: constitutional_change, product_spec, security_policy, architecture_decision.
+  - It does not accept the Kairo corpus as an AEP artifact in any form. It has no authority tier
+    and never acquires one.
+
+  Risk accepted knowingly, and it is unusual: this document's own risk section argues that the
+  triage table decays faster than the work executes, and acceptance freezes that table in an
+  immutable artifact. The stated mitigation is to replace it with work items if the absorptions
+  run over weeks -- which, once accepted, is itself a superseding ADR rather than an edit. That
+  cost was visible before approval and is recorded here rather than discovered later.
+
+  Second risk: translation is where meaning is lost and there is no test for it. One word,
+  "owns", would have moved authority, and it was caught by reading.
