@@ -1,0 +1,67 @@
+id: WI-0040
+store: local
+project: PRJ-mykullzeroone/agentic-engineering-platform
+type: fix
+work_state: intake
+priority: high
+title: Gate coverage in work advance ignores the change, so any current record closes a gate
+description: |
+  `devctl work advance --dry-run` reports WI-0038 as `platform_config: covered (APR-0011)` and
+  would advance it straight to `done`. APR-0011 is a record from 2026-08-31 approving
+  gates.yaml and hooks.yaml, and its scope_note is about a different change entirely. It has
+  nothing to do with WI-0038, and it closed WI-0038's declared gate anyway.
+
+  THE DEFECT
+
+  internal/approvals.Cover takes (root, gateID, records). It has no idea what changed. It walks
+  the records, keeps those whose `gate` field matches, and then verifies only that the record's
+  OWN artifacts still hash to their recorded digests. A record that is internally current is
+  reported as `Covered` regardless of whether it approved anything in the change that closed the
+  work item.
+
+  So the rule is effectively: a declared gate is closed by the existence of any current record
+  for that gate. An item can essentially never land `awaiting_human` for a gate that has one,
+  and platform_config already carries four records. Declaring required_gates on a work item is
+  close to decorative today.
+
+  The doc comment above Plan reads as though the check is stronger than it is: "Coverage is
+  verified by hash, so a record that approved an earlier version of its artifact does not advance
+  anything -- which is the point of binding an approval to a content hash (ADR-019)." True, and
+  insufficient. It verifies that the record's artifacts are current. It never asks whether they
+  are the change's artifacts.
+
+  THE CONTRAST THAT MAKES THE FIX OBVIOUS
+
+  scripts/check_gates.py already gets this right, and does it in nineteen lines. Its cover() takes
+  (gate_id, rel, records) -- gate AND changed path -- and requires a record with an artifact whose
+  `path` equals the changed path and whose recorded digest equals the file's current digest. Per
+  path, per change.
+
+  Two implementations of "is this gate closed" now disagree, and the Go one is the weaker. That
+  divergence is the deeper problem: the rule should have one implementation, and the CI check and
+  the post-merge advance should be reading the same answer.
+
+  WHY IT MATTERS BEYOND THE BUG
+
+  This is the mechanism WI-0038 relied on. That item declared platform_config specifically so it
+  would land `awaiting_human` and put a question in front of the principal instead of resolving it
+  silently at merge. The declaration was made for exactly the right reason and the mechanism did
+  not honour it. A gate that closes itself is worse than an ungated change, because the ungated
+  change does not claim a human looked.
+
+  SHAPE OF THE FIX, not yet decided
+
+    - Cover needs the change: the set of paths the merged pull request touched, or the work item's
+      own artifacts, or both. Which one is the right key is a real design question and should be
+      settled before code.
+    - Prefer one implementation over two. Whether Go absorbs check_gates.py's rule or the Python
+      becomes a shim over the Go is open, and probably wants an ADR given that both CI and the
+      post-merge path depend on it.
+    - Whatever lands needs a test that fails today: a work item declaring a gate, an unrelated
+      current record for that gate, and an assertion of `awaiting_human` rather than `done`.
+
+  Not in scope: whether CLAUDE.md is a platform_config trigger at all. APR-0011 already ruled it
+  is not, and WI-0039 covers making that ruling findable.
+required_gates: []
+dependencies: []
+branch: fix/40-gate-coverage-ignores-the-change
