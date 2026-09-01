@@ -2,7 +2,7 @@ id: WI-0040
 store: local
 project: PRJ-mykullzeroone/agentic-engineering-platform
 type: fix
-work_state: intake
+work_state: in_progress
 priority: high
 title: Gate coverage in work advance ignores the change, so any current record closes a gate
 description: |
@@ -60,8 +60,17 @@ description: |
     - Whatever lands needs a test that fails today: a work item declaring a gate, an unrelated
       current record for that gate, and an assertion of `awaiting_human` rather than `done`.
 
+  CORRECTION, made while implementing: this item said "two implementations of one rule now
+  disagree". That overstates it. approvals.go's package comment already declares the hash-scheme
+  duplication with check_gates.py deliberate and pins it with TestGoAgreesWithRecordedHashes, so
+  the two are checked against one corpus rather than left to drift. And the two answer different
+  questions: check_gates asks "this changed path triggers gate G -- is that path approved?", which
+  is the right question before a merge; advance asks "this item declared gate G -- is it closed?",
+  which is the right question after one. The defect was never that advance duplicated the rule.
+  It was that advance had no key at all. Consolidation is therefore not part of the fix.
+
   Not in scope: whether CLAUDE.md is a platform_config trigger at all. APR-0011 already ruled it
   is not, and WI-0039 covers making that ruling findable.
 required_gates: []
 dependencies: []
-branch: fix/40-gate-coverage-ignores-the-change
+branch: fix/40-gate-coverage-keyed-to-change

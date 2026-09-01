@@ -189,10 +189,17 @@ func fixture(t *testing.T) (root string, doc Artifact) {
 	return root, art
 }
 
+// touching is the change under evaluation: one work item, and the paths it changed. Before
+// WI-0040 Cover took no change at all, which is why every record below had to be assumed
+// relevant to whatever was being advanced.
+func touching(paths ...string) Change {
+	return Change{WorkItem: "WI-0001", Paths: paths}
+}
+
 func TestCoverReportsCoveredWhenHashMatches(t *testing.T) {
 	root, art := fixture(t)
 	recs := []Record{{ID: "APR-0001", Gate: "g", Artifacts: []Artifact{art}}}
-	got := Cover(root, "g", recs)
+	got := Cover(root, "g", recs, touching(art.Path))
 	if got.Coverage != Covered {
 		t.Fatalf("got %q (%s), want covered", got.Coverage, got.Detail)
 	}
@@ -208,7 +215,7 @@ func TestCoverReportsStaleWhenBodyChanges(t *testing.T) {
 		[]byte("---\nid: X\n---\ndifferent body\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	got := Cover(root, "g", recs)
+	got := Cover(root, "g", recs, touching(art.Path))
 	if got.Coverage != Stale {
 		t.Fatalf("got %q, want stale", got.Coverage)
 	}
@@ -226,7 +233,7 @@ func TestCoverIgnoresFrontMatterEdits(t *testing.T) {
 		[]byte("---\nid: X\nstatus: approved\n---\nbody text\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if got := Cover(root, "g", recs); got.Coverage != Covered {
+	if got := Cover(root, "g", recs, touching(art.Path)); got.Coverage != Covered {
 		t.Fatalf("got %q (%s), want covered: front matter is not part of the hash",
 			got.Coverage, got.Detail)
 	}
@@ -235,7 +242,7 @@ func TestCoverIgnoresFrontMatterEdits(t *testing.T) {
 func TestCoverReportsOpenWhenNoRecordNamesTheGate(t *testing.T) {
 	root, art := fixture(t)
 	recs := []Record{{ID: "APR-0001", Gate: "other", Artifacts: []Artifact{art}}}
-	if got := Cover(root, "g", recs); got.Coverage != Open {
+	if got := Cover(root, "g", recs, touching(art.Path)); got.Coverage != Open {
 		t.Fatalf("got %q, want open", got.Coverage)
 	}
 }
@@ -251,7 +258,7 @@ func TestCoverPrefersACurrentRecordOverAnEarlierStaleOne(t *testing.T) {
 		{ID: "APR-0001", Gate: "g", Artifacts: []Artifact{old}},
 		{ID: "APR-0002", Gate: "g", Artifacts: []Artifact{art}},
 	}
-	got := Cover(root, "g", recs)
+	got := Cover(root, "g", recs, touching(art.Path))
 	if got.Coverage != Covered || got.RecordID != "APR-0002" {
 		t.Fatalf("got %q from %s, want covered from APR-0002", got.Coverage, got.RecordID)
 	}
@@ -270,13 +277,13 @@ func TestCoverIsStaleWhenOnlyOneArtifactOfASetChanges(t *testing.T) {
 	b.ContentHash = "legacy/truncated-32:sha256:" + sum
 
 	recs := []Record{{ID: "APR-0001", Gate: "g", Artifacts: []Artifact{a, b}}}
-	if got := Cover(root, "g", recs); got.Coverage != Covered {
+	if got := Cover(root, "g", recs, touching(a.Path)); got.Coverage != Covered {
 		t.Fatalf("baseline: got %q, want covered", got.Coverage)
 	}
 	if err := os.WriteFile(bPath, []byte("---\nid: Y\n---\nedited\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if got := Cover(root, "g", recs); got.Coverage != Stale {
+	if got := Cover(root, "g", recs, touching(a.Path)); got.Coverage != Stale {
 		t.Fatalf("got %q, want stale: one changed artifact invalidates the set", got.Coverage)
 	}
 }
@@ -300,5 +307,75 @@ func TestConfigKindHashesTheWholeFileIncludingFrontMatter(t *testing.T) {
 	after, _ := Digest(root, art)
 	if before == after {
 		t.Fatal("front-matter edit did not change the digest; config hashed as a document")
+	}
+}
+
+// The defect WI-0040 names. APR-0011 approved two registry files on 2026-08-31 and was
+// reported as closing platform_config for a 2026-09-01 change to CLAUDE.md, because the
+// only thing matched was the gate id. A current record for the gate is not an approval of
+// this change.
+func TestCoverReportsUnrelatedWhenTheRecordIsForAnotherChange(t *testing.T) {
+	root, art := fixture(t)
+	recs := []Record{{ID: "APR-0011", Gate: "g", Artifacts: []Artifact{art}}}
+
+	got := Cover(root, "g", recs, touching("CLAUDE.md"))
+	if got.Coverage != Unrelated {
+		t.Fatalf("got %q (%s), want unrelated: the record names neither the work item nor a changed path",
+			got.Coverage, got.Detail)
+	}
+	if got.RecordID != "APR-0011" {
+		t.Errorf("record %q, want APR-0011 named so the operator knows why it did not count", got.RecordID)
+	}
+}
+
+// The second key, and the one that makes non-path gates workable: six of the twelve gates
+// trigger on classification, finding, lifecycle or capability, so there is no path to match.
+func TestCoverAcceptsARecordThatNamesTheWorkItem(t *testing.T) {
+	root, art := fixture(t)
+	recs := []Record{{ID: "APR-0011", Gate: "g", Artifacts: []Artifact{art}, WorkItems: []string{"WI-0001"}}}
+
+	got := Cover(root, "g", recs, touching("some/other/file.md"))
+	if got.Coverage != Covered {
+		t.Fatalf("got %q (%s), want covered: the record names WI-0001", got.Coverage, got.Detail)
+	}
+	if !strings.Contains(got.Detail, "WI-0001") {
+		t.Errorf("detail %q does not say why the record counted", got.Detail)
+	}
+}
+
+// Naming a different work item is not naming this one.
+func TestCoverIgnoresARecordNamingAnotherWorkItem(t *testing.T) {
+	root, art := fixture(t)
+	recs := []Record{{ID: "APR-0011", Gate: "g", Artifacts: []Artifact{art}, WorkItems: []string{"WI-9999"}}}
+
+	if got := Cover(root, "g", recs, touching("CLAUDE.md")); got.Coverage != Unrelated {
+		t.Fatalf("got %q, want unrelated", got.Coverage)
+	}
+}
+
+// Stale outranks unrelated. A record that was written for this change and has gone out of
+// date is a different problem from a record that was never about this change, and the first
+// is the more useful thing to tell a human: re-approve, rather than approve.
+func TestCoverPrefersARelatedStaleRecordOverAnUnrelatedCurrentOne(t *testing.T) {
+	root, art := fixture(t)
+	stale := art
+	stale.ContentHash = "legacy/truncated-32:sha256:" + strings.Repeat("0", 32)
+
+	// A current record for the same gate, over a file this change never touched.
+	otherPath := filepath.Join(root, "docs", "elsewhere.md")
+	if err := os.WriteFile(otherPath, []byte("---\nid: Z\n---\nelsewhere\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	other := Artifact{ID: "Z", Path: "docs/elsewhere.md"}
+	sum, _ := Digest(root, other)
+	other.ContentHash = "legacy/truncated-32:sha256:" + sum
+
+	recs := []Record{
+		{ID: "APR-0001", Gate: "g", Artifacts: []Artifact{stale}},
+		{ID: "APR-0002", Gate: "g", Artifacts: []Artifact{other}},
+	}
+	got := Cover(root, "g", recs, touching(art.Path))
+	if got.Coverage != Stale || got.RecordID != "APR-0001" {
+		t.Fatalf("got %q from %s, want stale from APR-0001", got.Coverage, got.RecordID)
 	}
 }

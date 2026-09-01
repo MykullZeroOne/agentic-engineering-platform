@@ -44,22 +44,64 @@ type Record struct {
 	ApprovedOn string     `yaml:"approved_on"`
 	HashScheme string     `yaml:"hash_scheme"`
 	Artifacts  []Artifact `yaml:"artifacts"`
+	// WorkItems names the work items this record approves. Optional, and absent from every
+	// record written before WI-0040: a record without it can still close a gate, but only
+	// by naming a path the change touched. It exists because six of the twelve gates trigger
+	// on classification, finding, lifecycle or capability rather than on a path, so for those
+	// there is no path to match and naming the item is the only way to tie an approval to
+	// the change it approved.
+	WorkItems []string `yaml:"work_items"`
 }
 
-// Coverage is how well a gate is closed. The three states are deliberately distinct:
+// Coverage is how well a gate is closed. The four states are deliberately distinct:
 // collapsing Stale into Open would lose the difference between "nobody approved this"
-// and "somebody approved an earlier version of it", which are different problems with
-// different fixes.
+// and "somebody approved an earlier version of it", and collapsing Unrelated into Open
+// would lose the difference between "nobody approved this gate" and "somebody approved
+// this gate, for a different change". Different problems, different fixes.
 type Coverage string
 
 const (
-	// Covered: a record closes the gate and every artifact it names is unchanged.
+	// Covered: a record relates to the change, closes the gate, and every artifact it
+	// names is unchanged.
 	Covered Coverage = "covered"
-	// Stale: a record closes the gate but an artifact has changed since.
+	// Stale: a record relates to the change and closes the gate, but an artifact has
+	// changed since.
 	Stale Coverage = "stale"
+	// Unrelated: a current record closes the gate, but for some other change. It names
+	// neither this work item nor any path this change touched. This is the state WI-0040
+	// added, and the one the old gate-id-only matching reported as Covered.
+	Unrelated Coverage = "unrelated"
 	// Open: no record closes the gate at all.
 	Open Coverage = "open"
 )
+
+// Change is what a record must relate to before it can close a gate for it.
+//
+// Either key is sufficient and both are meaningful. WorkItem is the honest one -- an
+// approval is given for a change, and a work item is how this repository names a change --
+// but records written before WI-0040 carry no work item, so Paths keeps them working:
+// a record naming a file the change touched is plainly about that change.
+type Change struct {
+	WorkItem string
+	Paths    []string
+}
+
+// relates reports whether rec was given for this change, and why.
+func (c Change) relates(rec Record) (bool, string) {
+	for _, id := range rec.WorkItems {
+		if id == c.WorkItem {
+			return true, "names " + c.WorkItem
+		}
+	}
+	for _, art := range rec.Artifacts {
+		for _, p := range c.Paths {
+			if art.Path == p {
+				return true, "names " + p
+			}
+		}
+	}
+	return false, ""
+}
 
 // Result is a coverage verdict with the reason a human needs to act on it.
 type Result struct {
@@ -95,25 +137,45 @@ func Load(root string) ([]Record, error) {
 	return records, nil
 }
 
-// Cover reports the best coverage the records give gateID.
+// Cover reports the best coverage the records give gateID for one change.
 //
 // Best, not first: a gate re-approved after each material change accumulates records, and
 // platform_config already carries four. Reporting the first match would let an early stale
 // record mask the current one that actually closes the gate.
-func Cover(root, gateID string, records []Record) Result {
+//
+// For one change, not in general. Matching on gate id alone -- what this did before
+// WI-0040 -- meant any current record for a gate closed it for every later change, so a
+// 2026-08-31 approval of two registry files closed platform_config for a 2026-09-01 change
+// to CLAUDE.md. The record was internally current, and about something else entirely. A
+// record must now relate to the change before its currency is even asked about.
+func Cover(root, gateID string, records []Record, change Change) Result {
 	var stale *Result
+	var unrelated *Result
 	for _, rec := range records {
 		if rec.Gate != gateID {
 			continue
 		}
+		related, why := change.relates(rec)
+		if !related {
+			// Keep the first one so the operator is told a record exists and why it did
+			// not count. "No approval record closes this gate" would be a lie here, and
+			// the lie points at the wrong fix.
+			if unrelated == nil {
+				unrelated = &Result{Unrelated, rec.ID, fmt.Sprintf(
+					"%s closes this gate for another change; it names neither %s nor any path this change touched",
+					rec.ID, change.WorkItem)}
+			}
+			continue
+		}
 		if len(rec.Artifacts) == 0 {
 			// A record naming no artifact pins nothing, so nothing can verify it. Say so
-			// rather than counting it either way.
-			return Result{Covered, rec.ID, "record names no artifact; currency unverifiable"}
+			// rather than counting it either way. Reachable only by naming the work item,
+			// which is itself a deliberate human act.
+			return Result{Covered, rec.ID, fmt.Sprintf("%s %s; names no artifact, currency unverifiable", rec.ID, why)}
 		}
 		fresh, reason := allCurrent(root, rec)
 		if fresh {
-			return Result{Covered, rec.ID, reason}
+			return Result{Covered, rec.ID, fmt.Sprintf("%s (%s)", reason, why)}
 		}
 		if stale == nil {
 			stale = &Result{Stale, rec.ID, reason}
@@ -121,6 +183,9 @@ func Cover(root, gateID string, records []Record) Result {
 	}
 	if stale != nil {
 		return *stale
+	}
+	if unrelated != nil {
+		return *unrelated
 	}
 	return Result{Open, "", "no approval record closes this gate"}
 }

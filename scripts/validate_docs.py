@@ -294,6 +294,15 @@ def check_approvals(gates, by_id, fms):
         if rec.get("surface") not in set(_vocab("approval_surface")):
             err(rel, f"surface {rec.get('surface')!r} is not a valid closure surface")
 
+        # work_items, per WI-0040. Optional -- no record written before it carries the
+        # field -- but a typo here fails silently in the direction that matters: the
+        # record simply stops covering the item it was written for, and nobody is told.
+        for wid in rec.get("work_items", []) or []:
+            if not re.match(r"^WI-\d{4}$", str(wid)):
+                err(rel, f"work_items entry {wid!r} does not match WI-NNNN")
+            elif not (ROOT / ".agentic" / "work" / f"{wid}.yaml").is_file():
+                err(rel, f"work_items names {wid!r}, which is not in the work store")
+
         for art in rec.get("artifacts", []) or []:
             aid = art.get("id")
 
