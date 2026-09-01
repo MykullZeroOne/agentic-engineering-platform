@@ -11,7 +11,8 @@ approved_on: null
 approval_record: null
 supersedes: null
 superseded_by: null
-last_reviewed: 2026-08-31
+last_reviewed: 2026-09-01
+enforcement: prose
 ---
 
 # ADR-020 — The Hook Engine
@@ -19,12 +20,12 @@ last_reviewed: 2026-08-31
 ## Context
 
 `.agentic/hooks/hooks.yaml` has carried the same header since it was written: *"NOTHING
-EXECUTES THIS FILE YET. There is no hook engine; see the roadmap."* Thirteen bindings are
+EXECUTES THIS FILE YET. There is no hook engine; see the roadmap."* Fourteen bindings are
 declared across four hook points. One of them, `validation.docs`, is honoured by CI running
 `scripts/validate_docs.py` — but CI runs it because a workflow names the script, not because
 anything read the binding. The file has never been executed.
 
-Principle 5 says behaviour that must always happen belongs in `hooks.yaml` rather than in
+the **Deterministic boundaries** principle says behaviour that must always happen belongs in `hooks.yaml` rather than in
 prose asking an agent to remember. A file nothing executes cannot deliver that. It has been
 prose in a different syntax.
 
@@ -72,28 +73,41 @@ that treats `hooks.yaml` as executable configuration rather than documentation.
 **2. `hooks.yaml` gains no field naming a command or path to execute.** A binding is a name;
 the engine holds the mapping from name to behaviour.
 
-**The reason changed under review, and the decision survived it.** Earlier drafts rejected
-executable configuration on security surface — "no mitigation exists". That is now false:
-Kairo ships `pkg/security/plugin.go` with `ValidatePluginSpec`, `AuditPluginSpec`,
-`validatePluginCommand` and `BuildPluginEnvironment`, its `pkg/plugin` host runs an audited
-JSON protocol over `exec.CommandContext`, and its `.claude/hooks/` scripts have been executing
-that pattern in production. Three independent demonstrations that the surface is manageable
-(ADR-021, findings 4 and 8).
+**Two earlier rationales for this clause are dead, and are recorded so nobody revives them.**
 
-The reason that survives is **blast radius, which the mitigation does not address**. In Kairo,
-`.claude/settings.json` is written by a human. In AEP, `.agentic/` is written by agents — that
-is the entire operating model. A field naming a command in an agent-writable file is a path
-from "an agent edited configuration" to "an agent chose what the platform executes", and
-spec validation does not close it, because a validated command is still an arbitrary command.
+The first was security surface — "no mitigation exists". False. Kairo ships
+`pkg/security/plugin.go` with `ValidatePluginSpec`, `AuditPluginSpec`, `validatePluginCommand`
+and `BuildPluginEnvironment`, and its `pkg/plugin` host runs an audited JSON protocol over
+`exec.CommandContext` (ADR-021, findings 4 and 8). Mitigations exist and are portable. Those are
+components in a sibling repository, not evidence of production hardening, and the earlier draft
+overclaimed by calling them that.
 
-`hooks.yaml` is already a `platform_config` trigger, so every such change would need human
-approval before it could run. That is the correct control and it is also the argument that
-this is premature: a mechanism whose safety depends on a human reading every change to it is
-not yet worth having at one implemented hook.
+The second was blast radius, and it was **self-defeating**. The argument was that `.agentic/` is
+agent-writable, so a command field is a path from "an agent edited configuration" to "an agent
+chose what the platform executes". But `platform_config` triggers only on
+`.agentic/project.yaml`, `.agentic/registries/**`, `.agentic/hooks/**` and
+`.agentic/roles/*.yaml` — **no gate touches Go source at all**. So a `run:` field would need a
+human approval record before it could run, while a compiled handler needs only review, which this
+repository records as suspended (WI-0016). The chosen design was *less* controlled than the one
+it rejected on control grounds.
+
+**The reason that survives is containment of the executable set**, and unlike the other two it is
+enforced by the design rather than asserted about it. A compiled handler must exist in this
+repository, be reviewed as source, and be built into the binary. A `run:` command may name any
+executable on the machine — one not in the repository, never reviewed, never built. Spec
+validation checks the *specification*; it cannot check the binary. That distinction holds whatever
+the gates say.
+
+**Containment alone is half a control, so the other half is required here.** The change that
+introduces the handler package MUST add it as a `platform_config` path trigger, so that changing
+what the platform executes needs a human approval record whichever mechanism carries it. Without
+that, this clause chooses a bounded set of executables that anyone may change unreviewed, and the
+finding above stands. That trigger addition is itself a `platform_config` change.
 
 **The door is named, not sealed.** Revisit when a hook must be written in something other than
-Go — Principle 4's vendor neutrality is a real argument against a Go-only registry — and
-revisit with the ported `security` validation in hand rather than as a hypothetical.
+Go: the **Open interfaces** principle (`docs/vision/PRINCIPLES.md`) is a real argument against a
+Go-only registry, and the ported `security` validation would then be in hand rather than
+hypothetical.
 
 **3. Every binding declares its maturity, and the schema requires it.** This is `hooks/v2`.
 
@@ -101,6 +115,12 @@ revisit with the ported `security` validation in hand rather than as a hypotheti
 | --- | --- |
 | `registered` | The engine must find a handler for this ID in its registry. |
 | `declared` | Intent only. No handler is expected. |
+
+These tokens, the four result states below, and the `writes` values are **closed sets that a
+runtime consumes**, so `REGISTRIES.md` requires them in `vocabularies.yaml` rather than only here.
+The `hooks/v2` migration must add `hook_implementation`, `hook_result` and `handler_writes` as
+vocabularies; without that, an implementation either hard-codes tokens against an approved tier-0
+spec or consumes tokens that do not exist.
 
 There is no default. An earlier draft said "absent means `registered`", which makes the
 schema's *interpretation* responsible for a missing field; schema validation is responsible
@@ -119,21 +139,33 @@ configuration is the executable-config problem clause 2 rejects.
 | `registered`, no handler in registry | configuration error | 2 |
 | `registered`, handler declares `writes: external` | configuration error | 2 |
 | Handler failed, class `hard` | blocked | 1 |
-| Handler **errored**, class `soft` | errored | 1 |
+| Handler **errored**, class `soft` | errored | 3 |
 | Handler **reported a finding**, class `soft` | reported | 0 |
 | Engine cannot read or validate `hooks.yaml`, or the event | configuration error | 2 |
 
-**A soft handler erroring is not a soft finding, and the two must not share an exit code.**
+**Three outcomes, three exit codes, because two of them collapsed in an earlier draft.**
+
+A soft handler erroring is not a soft finding, and it is not a hard block either. An earlier
+draft gave it exit 1, the same code as a blocked run, which left a lifecycle caller unable to
+distinguish them: it would have to halt on both, contradicting `soft.on_failure: log_and_continue`
+in the registry, or continue on both and ignore a hard block. **Exit 3 is that distinction.** A
+caller halts on 1 and 2 and continues on 3, and 3 is still not success.
+
+Before that, the same draft gave a soft *error* and a soft *finding* the same exit 0, so a check
+that never ran looked like a check that found nothing.
 An earlier draft collapsed them, so `work.detect_state_drift` failing to read the supplied
 commit looked exactly like it having read the commit and found no drift. The caller saw
 success for a check that never ran, which is the same fail-open shape as clause 4 itself,
 one level down.
 
-The distinction is between *the run* and *the lifecycle*. `hook-points.yaml` defines `soft`
-as `log_and_continue`, and that is honoured: a soft error does not stop later bindings and
-does not block progression. What it does is make the run's exit code say the run did not
-complete its declared work. Exit 0 means every binding executed; findings may still have been
-reported, and drift is a finding, not an error.
+The distinction is between *the run* and *the lifecycle*. `hook-points.yaml` defines `soft` as
+`log_and_continue`, and that is honoured: a soft error does not stop later bindings and does not
+block progression.
+
+**Exit 0 does not mean every binding executed.** A `declared` soft binding is skipped and still
+exits 0, so 0 means "nothing blocked and nothing errored" — not "the point is fully implemented".
+An audit surface reading 0 as completion would mark a partially implemented point done. The
+structured result per binding is what says which ran; the exit code says only whether to proceed.
 
 The second draft got this wrong: it reported `declared` bindings and let the run exit 0, so
 `before_agent_run` could succeed while skipping all four of its `hard` controls. A lifecycle
@@ -164,15 +196,26 @@ An earlier draft of this ADR concluded the engine could record nothing after a m
 built its whole shape around that. That conclusion was wrong, and it was wrong because it read
 rule 1 as broader than it is.
 
-**Scope of the exception, deliberately narrow.** Notes may be written only under a dedicated
-ref, only carrying identifiers that resolve to artifacts stored elsewhere, and never as a
-substitute for a record that belongs in the work store or in `.agentic/approvals/`. A note is
+**Scope of the exception, deliberately narrow.** Notes may be written only under the dedicated ref
+`refs/notes/aep`, only carrying identifiers that resolve to artifacts stored elsewhere, and never
+as a substitute for a record belonging in the work store or in `.agentic/approvals/`.
+
+Transport is part of the contract, not an implementation detail: a note written locally is
+invisible to everyone until pushed, and `refs/notes/*` is not fetched by a default clone. The
+implementing change must specify the push owner and a fetch refspec, or a note written by one
+worker disappears with its checkout. A note is
 a pointer, not a place to put state. Writing one is still a `writes: external` operation under
 clause 5's second paragraph, so it is refused until the atomic claim exists — which means this
 clause opens a door that stays shut at v1, on purpose.
 
-Beyond that, **v1 permits no external writes at all**, unconditionally, and the restriction is
-enforced rather than asked for. Every handler declares `writes: none` or `writes: external` as
+Beyond that, **v1 permits no external writes at all**, unconditionally. What is enforced is the
+DECLARATION, not the behaviour: a handler declaring `external` is refused, and a handler declaring
+`none` that writes to a network service anyway is not detected. Acceptance criteria 8 and 10 do
+not close that, because such a handler can write outside the repository while leaving git state
+untouched. Calling the restriction "enforced" would be false; it is a checked declaration on top
+of an honour system, and it is why v1 registers exactly one handler.
+
+Every handler declares `writes: none` or `writes: external` as
 compiled-in registry metadata, and the engine **refuses any handler declaring `external`** — a
 configuration error, exit 2, raised in the pre-flight validation of execution-contract step 1.
 
@@ -189,8 +232,12 @@ configuration flag. `evaluation.record` (ADR-004) and `memory.consolidate` are b
 
 **6. Derivation produces `effective_state`, a projection. Stored `work_state` remains the
 sole authority.** ADR-012 clause 2 says `work_store` names the authoritative store and never
-two. `effective_state` is a read-time projection: for an item with a merge record it is what
-the record implies, otherwise it is the stored value. It is never persisted and never
+two. `effective_state` is a read-time projection, and the mapping is fixed here rather than left to an
+implementation: for an item with a merge record, it is `done` when every gate in its
+`required_gates` is covered by a current approval record and `awaiting_human` when any is not;
+for an item with no merge record, it is the stored value. That is `work.detect_state_drift`'s own
+rule. Without freezing it, an implementation assigning every merged item `done` would satisfy
+criterion 11, which only checks that two values are displayed. It is never persisted and never
 consulted for dispatch. Where the two disagree, that is **drift** — a reportable condition,
 not a contest over which is true. Any surface showing work state must show which of the two
 it is showing. ADR-012 is neither superseded nor amended, because nothing moves authority.
@@ -219,10 +266,11 @@ and says the opposite twice: clause 3, *"Webhooks are the event source"*, and it
 "for the checks themselves". A hook run is not a check; it is event delivery, which is
 exactly what ADR-018 reserves for the App.
 
-The draft was also unimplementable on its own terms. Actions does not receive the
-`X-GitHub-Delivery` header, so the stable `event_id` the idempotency key depends on cannot be
-constructed there. The conflict with ADR-018 and the broken key are the same mistake seen
-from two directions.
+An earlier draft added a second reason that does not hold: that Actions cannot construct a stable
+`event_id` because it never sees `X-GitHub-Delivery`. Actions exposes `github.run_id` and
+`github.run_attempt`, which is exactly what the `delivery` block models, so a retry-stable identity
+is constructible there. **ADR-018 alone is the reason, and it is sufficient.** An immutable ADR
+carrying a false rationale invites someone to reopen the decision on that ground.
 
 So the trigger is blocked on the App adapter, which is a decision without an implementation.
 Until it exists, the engine is invoked explicitly — `devctl hook run <point> --event <file>` —
@@ -248,10 +296,21 @@ subjects:
   agent_run: null
   workspace: null
 payload: {}
+actor:
+  principal: token                  # user | team | token, per SPEC-CAPABILITIES
+  id: tok_ci
+  on_behalf_of: usr_mykullzeroone   # audit only, never authorization
 delivery:
   run_id: "12345"
   attempt: 2
 ```
+
+**`actor` is required, and an approved artifact requires it.** `docs/spec/CAPABILITIES.md` is
+tier 0 and approved (`APR-0014`): a token may act `on_behalf_of` a user, and that attribution is
+*carried on every event and checked for audit, never for authorization*. An envelope with no
+principal cannot satisfy that, and an earlier draft had none, which would have contradicted a
+tier-0 spec approved the same week. The engine validates that `actor` is present and well-formed;
+it never consults `on_behalf_of` to decide what a handler may do.
 
 Each point validates the subjects it requires, and a missing subject is a configuration error
 (exit 2) rather than a hook that improvises:
@@ -281,12 +340,19 @@ retries on its own. Clause 5's read-only restriction is what makes that safe at 
 3. Stop at the first `blocked` or failed `hard` binding.
 4. Execute `soft` bindings only after every `hard` binding has passed.
 5. No concurrency and no automatic retry in v1.
-6. Emit a structured result per binding: event id, binding id, status, finding, handler
-   version, configuration hash.
+6. Emit a structured result per binding: event id, binding id, status, finding, handler version,
+   configuration hash. **Handler version is omitted for a `skipped` binding**, which by definition
+   has no handler; requiring it there would leave implementations to choose between null, omission
+   and a fabricated value.
 
 ## Acceptance criteria
 
-This decision is not implemented until each of these is demonstrated by a test:
+**These accept the v1 engine component, not "the hook engine".** `AUTHORITY_MODEL.md` makes the
+full set of prose-enforced rules the hook engine's own acceptance criteria, and every one of these
+can pass with a single read-only handler, no lifecycle invoking the engine, and most rules still
+at `prose`. Passing them must never be reported as completing the hook engine.
+
+This decision's v1 component is not implemented until each of these is demonstrated by a test:
 
 1. A `declared` `hard` binding exits 1.
 2. A `declared` `soft` binding is skipped and the run exits 0.
@@ -305,7 +371,10 @@ This decision is not implemented until each of these is demonstrated by a test:
    earlier draft asserted "re-running one event does not duplicate an external effect", which
    passes vacuously: with external writes forbidden there is nothing to duplicate, so it
    would have stayed green right up until the first writable handler double-applied an event.
-9. A `soft` handler that errors exits 1, and a `soft` handler that reports a finding exits 0.
+9. A `soft` handler that errors exits 3, a `soft` handler that reports a finding exits 0, and a
+   blocked `hard` binding exits 1 — three distinguishable outcomes. The soft-error case must also
+   assert that a **later binding still ran**, since an exit code alone cannot tell
+   `log_and_continue` from stopping.
 10. A hook run leaves the working tree, the index, and commit history unchanged. At v1 this
     extends to `refs/notes/*`: the note exception in clause 5 is a `writes: external`
     operation, so it is refused until the atomic claim exists, and a v1 run must write no ref
@@ -316,8 +385,8 @@ This decision is not implemented until each of these is demonstrated by a test:
 ## Alternatives considered
 
 **Bindings name a shell command (`run:` field in `hooks.yaml`).** Maximally general,
-language-neutral, and a better fit for Principle 4's vendor neutrality — a hook would not have
-to be written in Go. **Rejected on blast radius, not on security surface**, per clause 2: the
+language-neutral, and a better fit for the **Open interfaces** principle: a hook would not have to
+be written in Go. **Rejected on blast radius, not on security surface**, per clause 2: the
 mitigation exists and is portable, but `.agentic/` is agent-writable and a validated arbitrary
 command is still an arbitrary command. Acceptance criterion 12 keeps the rejection testable.
 The registry is an internal seam, not a published contract, so this stays cheap to supersede
@@ -327,7 +396,7 @@ the moment a hook must be written in something other than Go.
 and the only option where the store is never stale. Rejected because it requires amending
 CLAUDE.md rule 1, and the carve-out is not small: "bookkeeping only" is a judgement the engine
 would make about its own writes, and an engine deciding which of its writes are exempt from
-review is the shape of problem Principle 1 exists to prevent.
+review is the shape of problem the **Human authority** principle exists to prevent.
 
 **The hook opens a pull request with the bookkeeping diff.** Keeps rule 1 literally true and
 keeps the store current. Rejected because it automates the bookkeeping crank rather than
@@ -335,9 +404,8 @@ removing it: one extra pull request per merge, each itself work needing a work i
 the recursion WI-0013 already described.
 
 **GitHub Actions as the event source.** What an earlier draft specified, and rejected on two
-counts: it contradicts accepted ADR-018 clause 3, and Actions cannot see `X-GitHub-Delivery`,
-so the `event_id` the idempotency key needs is unconstructable there. Actions remains the
-right host for *checks*, which is what ADR-018 already permits and what `docs`/`build` already
+count: it contradicts accepted ADR-018 clause 3, which makes webhooks the event source. Actions
+remains the right host for *checks*, which ADR-018 permits and which `docs` and `build` already
 are.
 
 **`after_merge` reconciles the whole history.** What the second draft specified. Rejected
@@ -346,16 +414,17 @@ has moved would produce a different result, so the replay is not a replay. Moved
 `devctl work reconcile`, where being history-wide is the point rather than a contradiction.
 
 **Do nothing; leave `hooks.yaml` declarative.** The honest option, and the one in force until
-now. Rejected because the ladder's top rung has never been reached and Principle 5 is unbacked
+now. Rejected because the ladder's top rung has never been reached and the **Deterministic boundaries** principle is unbacked
 without it: a platform whose central determinism mechanism has no implementation is specifying
 a claim it cannot make.
 
 ## Consequences
 
-- **`before_agent_run` cannot pass at v1.** Its four `hard` bindings are all `declared`, and
-  clause 4 blocks on those. That is the decision working as intended rather than a defect:
-  the engine refuses to certify a lifecycle boundary it cannot enforce. `after_merge` is the
-  only point that runs clean, and it is the only one with a registered handler.
+- **Three of the four hook points cannot pass at v1**, not one. `before_agent_run` has four
+  `declared` hard bindings, `after_agent_run` has two, and `before_pr` has one: seven in total.
+  Clause 4 blocks on every one of them. That is the decision working rather than a defect: the engine refuses
+  to certify a lifecycle boundary it cannot enforce. `after_merge` is the only point that runs
+  clean, and the only one with a registered handler.
 
 - `hooks.yaml` moves to `hooks/v2`, gains `implementation` on every binding, drops
   `implemented_by`, and renames one binding. Its header stops being true. All of that is a
@@ -380,9 +449,12 @@ a claim it cannot make.
 - Writing a hook now requires writing Go and shipping a `devctl` release. This is the main
   cost the rejected shell-command alternative would have avoided.
 
-- `evaluation.record` and `memory.consolidate` are blocked on a durable event store that no
-  accepted document specifies. This decision names the dependency rather than working around
-  it.
+- `evaluation.record` and `memory.consolidate` are blocked on an **atomic claim-and-replay schema
+  with lease and recovery semantics**, which no document specifies. The *store* is not the gap:
+  ADR-003 already chooses PostgreSQL for the event log and ADR-004 requires immutable history.
+  Naming a missing event store would reopen a settled decision. Recovery is not optional either:
+  a worker that crashes after claiming a key but before recording a result leaves a redelivery
+  holding a claim with no result, unable to tell whether the effect happened.
 
 - **Git notes become the intended mechanism for post-merge provenance**, and the atomic claim
   becomes the thing standing between AEP and having it. That reorders what matters next: the
@@ -408,10 +480,12 @@ not a quiet change to soft semantics.
 the other is never persisted, but every surface showing work state must now say which it is
 showing, and any that forgets will mislead in a way the single-field design could not.
 
-**No external effect is safe under duplicate delivery, and v1 does not make one safe — it
-forbids it.** That is a real capability ceiling: the three `after_merge` bindings that would
-write anywhere (`memory.consolidate`, `graph.refresh`, `evaluation.record`) stay `declared`
-until an atomic claim exists. The engine's useful surface at v1 is one read-only handler.
+**No external effect is safe under duplicate delivery, and v1 does not make one safe — it forbids
+it.** That is a real capability ceiling: **four** `after_merge` bindings that would write stay
+`declared` until an atomic claim exists — `memory.consolidate`, `graph.refresh`,
+`evaluation.record`, and `work.recalculate_ready`, whose description in `hooks.yaml` recomputes
+which items carry the `ready` token and therefore writes the authoritative work store exactly as
+the renamed `work.advance_state` would have. The engine's useful surface at v1 is one read-only handler.
 
 **A handler can still lie about `writes`.** The declaration is checked, so a handler that
 *declares* `external` is refused; one that declares `none` and writes anyway violates the

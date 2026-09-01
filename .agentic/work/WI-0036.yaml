@@ -1,0 +1,66 @@
+id: WI-0036
+store: local
+project: PRJ-mykullzeroone/agentic-engineering-platform
+type: adr
+work_state: review
+priority: high
+title: Reopen ADR-020 clause 2 and fix the pre-acceptance review findings
+description: |
+  Item 5 of the acceptance walk was HELD for an independent review before acceptance, and the hold
+  was right: twenty findings, four of them P1, in a document one step from being frozen immutable.
+
+  CLAUSE 2 REOPENED, on the principal's instruction. Two of its rationales were dead:
+
+    - "No mitigation exists" was false. Kairo ships spec validation, auditing and a controlled
+      environment for exactly this. The draft then overclaimed the other way by calling them
+      production demonstrations; they are components in a sibling repository.
+
+    - "Blast radius" was SELF-DEFEATING. Verified: platform_config triggers only on
+      .agentic/project.yaml, registries/**, hooks/** and roles/*.yaml. NO GATE TOUCHES GO SOURCE.
+      So a `run:` field would need a human approval record before it could run, while a compiled
+      handler needs only review -- which this repository records as suspended. The chosen design
+      was LESS controlled than the one it rejected on control grounds.
+
+  What survives is CONTAINMENT OF THE EXECUTABLE SET, and unlike the other two it is enforced by
+  the design rather than asserted about it: a compiled handler must exist in this repository, be
+  reviewed as source, and be built. A `run:` command may name any executable on the machine. Spec
+  validation checks the specification and cannot check the binary.
+
+  Containment alone is half a control, so the clause now REQUIRES that the change introducing the
+  handler package add it as a platform_config trigger. Without that, the clause chooses a bounded
+  set of executables that anyone may change unreviewed and the finding stands.
+
+  Other P1s fixed:
+
+    - Soft errors and hard blocks both exited 1, leaving a caller unable to distinguish them and
+      forced to either halt on both, contradicting log_and_continue, or ignore a hard block. A
+      soft error now exits 3. Three outcomes, three codes.
+    - "The restriction is enforced" was false. What is enforced is the DECLARATION: a handler
+      declaring `none` and writing to a network service is not detected. Narrowed and said plainly.
+    - The event envelope carried no actor attribution, contradicting SPEC-CAPABILITIES, which is
+      tier 0 and was approved the same week under APR-0014. `actor` with principal, id and
+      on_behalf_of is now required, validated for presence and never consulted for authorization.
+
+  Fifteen P2s and P3s also fixed. The notable ones: the front matter was missing the `enforcement`
+  field AUTHORITY_MODEL requires of every rule-bearing artifact; "no accepted document specifies a
+  durable event store" was false since ADR-003 chose Postgres, and the real gap is the atomic
+  claim-and-replay schema WITH recovery semantics for the crash-after-claim window; three hook
+  points are blocked at v1 rather than one, seven declared hard hooks in total;
+  work.recalculate_ready writes the work store and was missing from the write-blocked list; the
+  new closed sets must land in vocabularies.yaml per REGISTRIES rather than living inline; exit 0
+  does not mean every binding executed, because a declared soft binding is skipped and still exits
+  0; effective_state's projection was undefined and is now frozen; git notes need a named ref, a
+  push owner and a fetch refspec or they disappear with a checkout; and the acceptance criteria
+  accept the v1 COMPONENT, not "the hook engine", which AUTHORITY_MODEL defines far more broadly.
+
+  Also removed: the claim that Actions cannot construct a stable event_id. It exposes run_id and
+  run_attempt, which is what the delivery block models. ADR-018 alone is the reason and it is
+  sufficient; an immutable ADR carrying a false rationale invites reopening on that ground.
+
+  ADR-020 REMAINS `proposed`. This change does not accept it. It goes back for another review
+  before acceptance, because the last two reviews found four P1s and eighteen findings in
+  documents I believed were finished.
+required_gates: []
+dependencies:
+- WI-0024
+branch: adr/36-reopen-clause-two
