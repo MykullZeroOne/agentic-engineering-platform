@@ -1,0 +1,82 @@
+# Evidence package, per docs/spec/EVIDENCE_PACKAGE.md (evidence/v1).
+# Modelled on this repository's own PR #18, so the example is a real shape rather
+# than an invented one.
+
+evidence_id: EV-0001
+schema: evidence/v1
+work_item: WI-0023
+head_commit: 94e2057
+recorded_on: 2026-08-31
+
+claims:
+  - change: devctl work advance derives merged work-item state from the trunk
+    satisfies: WI-0023
+    proof: P-01
+  - change: A stale approval record no longer advances an item to done
+    satisfies: ADR-019
+    proof: P-02
+  - change: Go and Python agree on both legacy hash schemes
+    satisfies: ADR-016
+    proof: P-03
+  - change: Apply rewrites one line and never round-trips YAML
+    satisfies: WI-0023
+    proof: P-04
+
+proofs:
+  - id: P-01
+    kind: automated
+    command: go test ./internal/work/ -run TestPlanAdvancesAMergedUngatedItemToDone
+    expect: pass
+    ran_on: 94e2057
+    result: pass
+  - id: P-02
+    kind: automated
+    command: go test ./internal/work/ -run TestPlanTreatsAStaleRecordAsNotCovered
+    expect: pass
+    ran_on: 94e2057
+    result: pass
+  - id: P-03
+    kind: automated
+    command: go test ./internal/approvals/ -run TestGoReproducesRecordedDigests
+    expect: pass
+    ran_on: 94e2057
+    result: pass
+  - id: P-04
+    kind: automated
+    command: go test ./internal/work/ -run TestApply
+    expect: pass
+    ran_on: 94e2057
+    result: pass
+  - id: MANUAL-01
+    kind: manual
+    scenario: The derived plan matches the repository's real merge history
+    why_not_automated: >
+      Requires judging whether twelve derived states are correct, which is the judgement the
+      tool exists to replace. Automating it would test the derivation against itself.
+    preconditions:
+      - origin/main fetched
+      - working tree clean
+    given: A work store with twelve items whose PRs have merged
+    when: devctl work advance --dry-run
+    then: >
+      Each item is listed with the commit that closed it and the approval record covering its
+      gate, and no item is listed that has no Closes trailer on the trunk.
+    performed_by: MykullZeroOne
+
+gates:
+  - gate: platform_config
+    state: not_crossed
+    approval_record: null
+
+open:
+  - item: Independent review
+    status: suspended
+    reason: >
+      One human identity, and agents act as that identity, so GitHub cannot tell author from
+      reviewer. Recorded as suspended on every pull request since PR #15. Substitute tracked
+      as WI-0016.
+  - item: scripts/ is not a platform_config trigger
+    status: unresolved
+    reason: >
+      CLAUDE.md gates "anything altering a gate, policy, or required check", but the gate's
+      path triggers cover only .agentic/**. A change to a required check crosses no gate.
