@@ -1,0 +1,51 @@
+id: WI-0039
+store: local
+project: PRJ-mykullzeroone/agentic-engineering-platform
+type: docs
+work_state: intake
+priority: normal
+title: Reconcile CLAUDE.md's gate table with APR-0011's ruling that CLAUDE.md is ungated
+description: |
+  WI-0038 declared required_gates: [platform_config] on a change that amended CLAUDE.md's
+  documentation conventions, on the reasoning that CLAUDE.md's own table gates "anything altering
+  a gate, policy, or required check" and a root-document rule reads like policy. That declaration
+  was wrong, and the ruling that makes it wrong already existed.
+
+  APR-0011 records the principal being asked this exact question -- "whether to keep CLAUDE.md
+  gated, having reported that under a blocking check every edit to it would require an approval
+  record" -- and answering "Ungate it, move the policy instead". Its scope_note is explicit:
+  CLAUDE.md was removed as a platform_config trigger path, because gating the agent guide made
+  every wording fix an approval event, and the policy inside it still needs a gate, which is
+  WI-0020, blocked on tier 3 existing at all.
+
+  So the answer is settled. What is not settled is that nothing on the reading path says so. The
+  ruling lives in the scope_note of one approval record. A reader following CLAUDE.md's change-
+  class table reaches the opposite conclusion, which is what happened on WI-0038, by an agent
+  that had read the table and not the record.
+
+  THE FIX, roughly:
+
+    1. CLAUDE.md's change-class table says what "policy" means for the platform_config row, and
+       says that editing CLAUDE.md is not itself a gated act. Cite APR-0011 and WI-0020 so the
+       reasoning is one hop away rather than buried.
+    2. Note that the gate registry is the authority on triggers, and that gates.yaml names
+       CLAUDE.md as the gate's `sources` -- where the prose lives -- not as a trigger path. The
+       two words are one character apart in effect and opposite in meaning, and that is worth
+       stating once.
+    3. WI-0038's required_gates is left as merged history rather than rewritten. What it should
+       gain is a note that the declaration was over-cautious against an existing ruling.
+
+  Deliberately not in scope: gating the policy content itself. That is WI-0020, and it stays
+  blocked on tier 3.
+
+  Found alongside this, and NOT covered by this item -- it needs its own: `devctl work advance`
+  reports WI-0038 as `platform_config: covered (APR-0011)`. approvals.Cover matches a record by
+  gate ID and then verifies only that the record's OWN artifacts still hash to their recorded
+  digests. It never checks that the record has anything to do with the change that closed the
+  work item. So a declared gate is closed by any current record for that gate, and an item can
+  essentially never land `awaiting_human` for a gate that has one. Declaring a gate on a work
+  item is close to decorative today. That is a defect in the mechanism WI-0038 relied on to put
+  a question in front of the principal, and it deserves a work item of its own.
+required_gates: []
+dependencies: []
+branch: docs/39-gate-ambiguity-claude-md
