@@ -2,7 +2,7 @@ id: WI-0039
 store: local
 project: PRJ-mykullzeroone/agentic-engineering-platform
 type: docs
-work_state: done
+work_state: intake
 priority: normal
 title: Reconcile CLAUDE.md's gate table with APR-0011's ruling that CLAUDE.md is ungated
 description: |
@@ -46,6 +46,15 @@ description: |
   essentially never land `awaiting_human` for a gate that has one. Declaring a gate on a work
   item is close to decorative today. That is a defect in the mechanism WI-0038 relied on to put
   a question in front of the principal, and it deserves a work item of its own.
+  REOPENED 2026-09-01. This item went `done` in #37 without its work being done. PR #34 filed it
+  from a branch named docs/39-gate-ambiguity-claude-md, the item recorded that branch, and the
+  pull-request fallback in work.MergedItems matched the two: the PR that FILED the item was read
+  as the PR that CLOSED it. The trailer path was refused precisely to avoid this -- the commit
+  said "carries no Closes trailer for that reason" -- and the fallback closed it anyway.
+
+  The `branch` field is removed so the fallback cannot match again; the work branch, when it
+  exists, is a different one. The general defect -- filing an item on a branch named for it is
+  self-closing under the fallback -- is the item-filing convention gap made concrete, and it
+  needs a decision of its own rather than a workaround per item.
 required_gates: []
 dependencies: []
-branch: docs/39-gate-ambiguity-claude-md
