@@ -27,5 +27,22 @@ Turn development history into a measurable evaluation corpus for improving model
 - Support regression of model, skill, prompt, retrieval, routing, and planner/orchestrator changes.
 - Export structured datasets for future supervised/fine-tuning workflows without making fine-tuning an MVP dependency.
 
+### Retrieval quality telemetry
+Absorbed from Kairo's `docs/v2/23-observability` (ADR-022). Everything above measures whether a
+*run* was good; none of it measures whether the *context* was, and a bad packet and a bad model
+fail identically from the outside.
+
+- Record whether a context packet was accepted or rejected by the agent that received it.
+- Record which parts of a packet the agent actually used, against what it was given.
+- Record retrieval reported as irrelevant, by an agent or a human.
+- Record packet latency and size against its declared budget (PRD-006).
+
+Retrieval is a configuration like a model or a prompt, and the fourth requirement above already
+demands regression of retrieval changes. Without these signals there is nothing to regress
+against.
+
 ## Acceptance criteria
 A new Codex/Claude/model configuration can be evaluated against an existing role regression suite before becoming the default worker.
+
+And for retrieval: a change to the context builder can be shown to have improved or degraded
+packet acceptance on a fixed corpus of past runs, without re-running the agents.
