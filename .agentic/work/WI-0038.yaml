@@ -2,7 +2,7 @@ id: WI-0038
 store: local
 project: PRJ-mykullzeroone/agentic-engineering-platform
 type: docs
-work_state: awaiting_human
+work_state: done
 priority: normal
 title: Admit ISA.md at the repository root and bound its authority
 description: |
@@ -31,20 +31,28 @@ description: |
   validate_docs.py to cover the root, and does not reconcile its claims against the work store.
   Those are separate decisions, and the last two are recorded in the ISA's own Remaining Work.
 
-  This declares platform_config, and the reasoning matters more than the declaration. The gate's
+  This declared platform_config when it was filed, and the declaration was wrong. The gate's
   path triggers cover .agentic/project.yaml, registries, hooks and roles -- not CLAUDE.md, which
-  gates.yaml names as the gate's `sources` rather than a trigger -- so check_gates.py does not
-  fire on this branch. But CLAUDE.md's own table gates "anything altering a gate, policy, or
-  required check", and a change to the root-document rule and the authority bound on ISA.md is a
-  policy change by that reading. The check says no; the prose says yes.
+  gates.yaml names as the gate's `sources` rather than a trigger -- so check_gates.py never fired.
+  The declaration rested on CLAUDE.md's own table gating "anything altering a gate, policy, or
+  required check", read as covering a root-document rule and an authority bound.
 
-  Leaving it open was the wrong instinct. work.advance_state marks an item with no required_gates
-  `done` at merge, so an undeclared gate would have resolved the question silently, at merge, in
-  the direction the agent proposing the change preferred. Declaring it lands the item
-  `awaiting_human` and puts the question in front of the principal, which is where it belongs.
-  If the answer is that a documentation convention is not platform_config, the fix is to say so
-  and drop the gate -- not to have never asked.
-required_gates:
-  - platform_config
+  RULING (principal, 2026-09-01, chat): amending a documentation convention in CLAUDE.md is not a
+  platform_config change. This is the second time the same ruling has been given: APR-0011's
+  scope_note records "Ungate it, move the policy instead", with CLAUDE.md removed as a trigger
+  path and the policy content deferred to WI-0020. The declaration here was made by an agent
+  that had read the table and not the record, which is exactly the findability problem WI-0039
+  exists to fix.
+
+  required_gates is therefore empty, and the item advances to done on the next `work advance`
+  rather than holding at awaiting_human. This is a correction of a wrong declaration, not the
+  closing of a gate: no gate applied, so no approval record is written, and none is owed. Had
+  the ruling gone the other way, an approval record naming this item would have been the only
+  thing that could close it (WI-0040).
+
+  Declaring the gate was still the right instinct at the time. Before WI-0040, an undeclared
+  gate would have auto-closed the question at merge; declared, it surfaced. The mechanism then
+  turned out to be broken in a different way, which the declaration is what exposed.
+required_gates: []
 dependencies: []
 branch: docs/38-isa-root-carve-out
