@@ -1,0 +1,69 @@
+# Approval record, per ADR-019.
+#
+# First closure of constitutional_change over SPEC-EVIDENCE-PACKAGE. The document was written
+# as `draft` in WI-0026 precisely so it could merge without opening a gate; accepting it is the
+# separate act that opens one.
+
+id: APR-0016
+gate: constitutional_change
+surface: chat
+session: 17687d1e-330e-45d9-9ebb-5dbc42dc2dcf
+
+approver: MykullZeroOne
+approved_on: 2026-09-01
+recorded_on: 2026-09-01
+
+hash_scheme: legacy/truncated-32
+
+artifacts:
+  - id: SPEC-EVIDENCE-PACKAGE
+    kind: spec
+    path: docs/spec/EVIDENCE_PACKAGE.md
+    title: Evidence Package
+    content_hash: legacy/truncated-32:sha256:bf2640c7570db83005e1633b467b435d
+
+request: >
+  Walked the five documents this session produced, lowest risk first. Presented
+  SPEC-EVIDENCE-PACKAGE as item 1 of 5, naming its tier, its current status, the four rules
+  adapted from Kairo's acceptance-criteria convention, the three additions that are not in that
+  source, the gap it fills, and that enforcement stays `prose`. Offered accept, hold, and
+  withdraw. Asked for explicit approval before writing any record.
+
+statement: >
+  Accept — write the record
+
+  -- selected against a question naming the document, its tier, the four rules, and each of the
+  three additions.
+
+scope_note: >
+  Approves docs/spec/EVIDENCE_PACKAGE.md at the content it carries on `main` at 3f5559d, and
+  moves it from `draft` to `approved`. It becomes tier 0 authority, so CLAUDE.md merge
+  requirement 3 has a definition behind it for the first time.
+
+  The substance is `evidence/v1`: identity with a required `head_commit`, `claims` each citing
+  exactly one proof, `proofs` typed automated or manual, `gates` with their records, and a
+  required `open` block.
+
+  Three provisions worth naming because they are the ones that will chafe:
+
+  - `head_commit` is required. A proof that does not name the commit it ran on proves nothing
+    about the head, and a package assembled across a rebase is the failure this catches.
+  - `open` must be present even when empty, because an absent section and an empty one read
+    identically and only one of them is a claim.
+  - `satisfies` may not be empty. "Refactor" and "cleanup" are not requirements; such a change
+    goes in `open` with a justification rather than carrying a decorative satisfier.
+
+  What this does NOT approve:
+
+  - It does not approve an implementation. Nothing produces or validates a package. Enforcement
+    is `prose` deliberately, because claiming `check` before a check exists would assert a stage
+    the pipeline is not at.
+  - It does not close the skill-schema half of the same gap in REGISTRIES.md (WI-0010).
+  - It does not decide where packages are stored. That is a platform_config change.
+  - It does not narrow SPEC-REGISTRIES' known-gaps entry, which is now stale on the evidence
+    half. That document is approved, so editing it opens this gate again and needs its own
+    record.
+
+  Risk accepted knowingly: a schema nothing produces is a schema nothing keeps current, and the
+  four rules are adapted from a convention that works for Kairo rather than one demonstrated to
+  work here.

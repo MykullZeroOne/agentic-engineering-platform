@@ -45,7 +45,7 @@ Constitutional and meta-specification. Tier 0.
 | `SPEC-CONTENT-HASHING` | Canonical Content Hashing | `draft` | [docs/spec/CONTENT_HASHING.md](docs/spec/CONTENT_HASHING.md) |
 | `SPEC-LIFECYCLE` | Document Lifecycle and Front Matter | `approved` | [docs/spec/DOCUMENT_LIFECYCLE.md](docs/spec/DOCUMENT_LIFECYCLE.md) |
 | `SPEC-ENTITY-MODEL-GUIDE` | Entity Model — How to Read It | `draft` | [docs/spec/ENTITY_MODEL.md](docs/spec/ENTITY_MODEL.md) |
-| `SPEC-EVIDENCE-PACKAGE` | Evidence Package | `draft` | [docs/spec/EVIDENCE_PACKAGE.md](docs/spec/EVIDENCE_PACKAGE.md) |
+| `SPEC-EVIDENCE-PACKAGE` | Evidence Package | `approved` | [docs/spec/EVIDENCE_PACKAGE.md](docs/spec/EVIDENCE_PACKAGE.md) |
 | `SPEC-LOCAL-WORK-STORE` | Local Work Store | `draft` | [docs/spec/LOCAL_WORK_STORE.md](docs/spec/LOCAL_WORK_STORE.md) |
 | `SPEC-REGISTRIES` | Registries | `approved` | [docs/spec/REGISTRIES.md](docs/spec/REGISTRIES.md) |
 | `SPEC-ENTITY-MODEL` | Entity Model | `draft` | [docs/spec/entity-model.yaml](docs/spec/entity-model.yaml) |
