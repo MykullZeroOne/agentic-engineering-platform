@@ -121,7 +121,7 @@ func runAdvance(root, ref string, dryRun bool) int {
 		fmt.Fprintf(os.Stderr, "devctl work advance: %v\n", err)
 		return 2
 	}
-	merged, err := work.MergedItems(root, ref)
+	merged, err := work.MergedItems(root, ref, items, work.GH{})
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "devctl work advance: %v\n", err)
 		return 2

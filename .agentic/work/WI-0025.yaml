@@ -2,7 +2,7 @@ id: WI-0025
 store: local
 project: PRJ-mykullzeroone/agentic-engineering-platform
 type: adr
-work_state: review
+work_state: done
 priority: normal
 title: Evaluate Kairo as the provenance and knowledge-index dependency
 description: |

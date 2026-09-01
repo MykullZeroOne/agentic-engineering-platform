@@ -1,0 +1,58 @@
+id: WI-0032
+store: local
+project: PRJ-mykullzeroone/agentic-engineering-platform
+type: fix
+work_state: review
+priority: high
+title: Derive merged work items from the pull request when the trailer is missing
+description: |
+  The `Closes WI-NNNN` convention has failed eight times on this trunk, six of them
+  consecutively, and WI-0023 built a tool that consumes it.
+
+  DIAGNOSIS. Every branch commit carried the trailer -- verified against the API for PRs #19 and
+  #20 -- and the repository's squash_merge_commit_message is COMMIT_MESSAGES. The squash commits
+  nonetheless have a one-line body and no trailer. So the loss happens AT MERGE TIME, not at
+  authoring time, which means a pre-merge check on branch commits would have caught nothing. That
+  ruled out the obvious fix.
+
+  The failures are contiguous: 59858a4 through 83ed210, six merges across 08-31 and 09-01. The
+  two merges either side of that block (65145ad before, 669431c after) both carry it. Whatever
+  caused it is intermittent, which is the strongest argument for not depending on it.
+
+  FIX. MergedItems now has two sources. The trailer stays first: offline, no token, testable
+  against a fixture repository. When a commit carries no trailer, the pull request number GitHub
+  appends to every squash subject is resolved to its head branch and matched against the work
+  item's own `branch` field. GitHub writes that number itself, so it depends on nobody remembering
+  a convention.
+
+  Design points that are not incidental:
+
+    - A trailer-derived entry is NEVER overwritten by a resolved one. The reliable source must not
+      lose to the one that exists because the reliable source failed.
+    - The number is trusted only at the END of the subject, where GitHub writes it. A number in
+      prose -- "revert the change from (#42)" -- is not a merge record.
+    - A branch matching no work item is skipped, never guessed. The fallback must not invent a
+      link the trailer could not.
+    - A resolver failure degrades to the trailer-only answer rather than failing the run, so an
+      offline machine still sees obvious drift.
+    - The output NAMES which items came from the fallback. A convention failure should be visible
+      in the report rather than papered over by the tool that works around it.
+
+  RECOVERED. All eight orphans, including WI-0014 and WI-0015, which I had repeatedly described
+  as permanently underivable. That was wrong: it was true only of the trailer, and I had mistaken
+  a property of one source for a property of the problem. PRD-009 and ADR-020 said the trailer was
+  the only surviving link; both are corrected here, and both are draft or proposed so neither
+  crosses a gate.
+
+  Mutation-tested three ways. Trusting the number mid-subject, letting the fallback overwrite a
+  trailer, and turning a resolver error into a run failure are each caught. The overwrite mutation
+  SURVIVED the first attempt, because the test that claimed to cover it used one commit carrying
+  both a trailer and a number -- such a commit never reaches the fallback, so the mutation was
+  unreachable. Rewritten with two commits where only the older carries the trailer.
+
+  Not fixed: whatever GitHub is doing at merge time. This makes the derivation survive it rather
+  than explaining it.
+required_gates: []
+dependencies:
+- WI-0023
+branch: fix/32-derive-via-pull-request

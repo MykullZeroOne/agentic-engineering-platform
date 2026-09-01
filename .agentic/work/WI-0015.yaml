@@ -2,7 +2,7 @@ id: WI-0015
 store: local
 project: PRJ-mykullzeroone/agentic-engineering-platform
 type: docs
-work_state: review
+work_state: done
 priority: high
 title: Record independent review as suspended rather than satisfied
 description: |

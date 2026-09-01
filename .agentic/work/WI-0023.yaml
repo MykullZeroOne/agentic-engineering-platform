@@ -2,7 +2,7 @@ id: WI-0023
 store: local
 project: PRJ-mykullzeroone/agentic-engineering-platform
 type: feat
-work_state: review
+work_state: done
 priority: high
 title: Derive work state from the merge record instead of hand-editing it
 description: |

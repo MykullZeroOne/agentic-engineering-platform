@@ -1,6 +1,7 @@
 package work
 
 import (
+	"errors"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -47,7 +48,7 @@ func TestMergedItemsReadsTheClosesTrailer(t *testing.T) {
 		"feat(x): first\n\nbody\n\nCloses WI-0001\n",
 		"docs(y): second\n\nCloses WI-0002\n",
 	)
-	got, err := MergedItems(dir, "main")
+	got, err := MergedItems(dir, "main", nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -66,7 +67,7 @@ func TestMergedItemsReadsTheClosesTrailer(t *testing.T) {
 // like that must come back absent, never guessed at from the subject line.
 func TestMergedItemsIgnoresACommitWithNoTrailer(t *testing.T) {
 	dir := gitRepo(t, "docs(work): mark WI-0009 done\n\nno trailer here\n")
-	got, err := MergedItems(dir, "main")
+	got, err := MergedItems(dir, "main", nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -77,7 +78,7 @@ func TestMergedItemsIgnoresACommitWithNoTrailer(t *testing.T) {
 
 func TestMergedItemsFindsSeveralItemsInOneCommit(t *testing.T) {
 	dir := gitRepo(t, "spec(a): batch\n\nCloses WI-0004\nCloses WI-0005\n")
-	got, err := MergedItems(dir, "main")
+	got, err := MergedItems(dir, "main", nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -94,7 +95,7 @@ func wi(id, state string, gates ...string) config.WorkItem {
 
 func TestPlanAdvancesAMergedUngatedItemToDone(t *testing.T) {
 	items := []config.WorkItem{wi("WI-0001", "review")}
-	merged := map[string]string{"WI-0001": "abc123"}
+	merged := map[string]Merge{"WI-0001": {"abc123", "trailer"}}
 	got := Plan(t.TempDir(), items, merged, nil)
 	if len(got) != 1 || got[0].To != "done" {
 		t.Fatalf("got %+v, want one change to done", got)
@@ -103,7 +104,7 @@ func TestPlanAdvancesAMergedUngatedItemToDone(t *testing.T) {
 
 func TestPlanLeavesAnUnmergedItemAlone(t *testing.T) {
 	items := []config.WorkItem{wi("WI-0001", "review")}
-	if got := Plan(t.TempDir(), items, map[string]string{}, nil); len(got) != 0 {
+	if got := Plan(t.TempDir(), items, map[string]Merge{}, nil); len(got) != 0 {
 		t.Fatalf("got %+v, want no change: nothing merged it", got)
 	}
 }
@@ -113,7 +114,7 @@ func TestPlanLeavesAnUnmergedItemAlone(t *testing.T) {
 // ADR-019 says a merge never does.
 func TestPlanSendsAMergedItemWithAnOpenGateToAwaitingHuman(t *testing.T) {
 	items := []config.WorkItem{wi("WI-0001", "review", "platform_config")}
-	merged := map[string]string{"WI-0001": "abc123"}
+	merged := map[string]Merge{"WI-0001": {"abc123", "trailer"}}
 	got := Plan(t.TempDir(), items, merged, nil)
 	if len(got) != 1 || got[0].To != "awaiting_human" {
 		t.Fatalf("got %+v, want awaiting_human", got)
@@ -137,7 +138,7 @@ func TestPlanTreatsAStaleRecordAsNotCovered(t *testing.T) {
 	recs := []approvals.Record{{ID: "APR-0001", Gate: "g", Artifacts: []approvals.Artifact{art}}}
 
 	items := []config.WorkItem{wi("WI-0001", "review", "g")}
-	merged := map[string]string{"WI-0001": "abc123"}
+	merged := map[string]Merge{"WI-0001": {"abc123", "trailer"}}
 
 	if got := Plan(root, items, merged, recs); len(got) != 1 || got[0].To != "done" {
 		t.Fatalf("baseline: got %+v, want done while the record is current", got)
@@ -153,7 +154,7 @@ func TestPlanTreatsAStaleRecordAsNotCovered(t *testing.T) {
 
 func TestPlanSkipsTerminalStates(t *testing.T) {
 	items := []config.WorkItem{wi("WI-0001", "done"), wi("WI-0002", "cancelled")}
-	merged := map[string]string{"WI-0001": "a", "WI-0002": "b"}
+	merged := map[string]Merge{"WI-0001": {"a", "trailer"}, "WI-0002": {"b", "trailer"}}
 	if got := Plan(t.TempDir(), items, merged, nil); len(got) != 0 {
 		t.Fatalf("got %+v, want nothing: done and cancelled are terminal", got)
 	}
@@ -161,7 +162,7 @@ func TestPlanSkipsTerminalStates(t *testing.T) {
 
 func TestPlanIsOrderedByID(t *testing.T) {
 	items := []config.WorkItem{wi("WI-0009", "review"), wi("WI-0002", "review"), wi("WI-0005", "review")}
-	merged := map[string]string{"WI-0009": "a", "WI-0002": "b", "WI-0005": "c"}
+	merged := map[string]Merge{"WI-0009": {"a", "trailer"}, "WI-0002": {"b", "trailer"}, "WI-0005": {"c", "trailer"}}
 	got := Plan(t.TempDir(), items, merged, nil)
 	if len(got) != 3 {
 		t.Fatalf("got %d changes, want 3", len(got))
@@ -258,5 +259,124 @@ func TestApplyRefusesAFileWithNoStateKey(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "want exactly 1") {
 		t.Errorf("error %q does not say what was wrong", err)
+	}
+}
+
+// --- the pull-request fallback ------------------------------------------------------
+//
+// The trailer has failed eight times on this repository's own trunk, six of them
+// consecutively, with every branch commit carrying it and the squash setting on
+// COMMIT_MESSAGES. These tests cover the path that works anyway.
+
+type fakeResolver struct {
+	branches map[int]string
+	err      error
+}
+
+func (f fakeResolver) MergedBranches() (map[int]string, error) { return f.branches, f.err }
+
+func TestMergedItemsFallsBackToThePullRequestNumber(t *testing.T) {
+	dir := gitRepo(t, "spec(x): a change with no trailer at all (#42)\n\nbody without the word\n")
+	items := []config.WorkItem{{ID: "WI-0099", Branch: "spec/99-something"}}
+	res := fakeResolver{branches: map[int]string{42: "spec/99-something"}}
+
+	got, err := MergedItems(dir, "main", items, res)
+	if err != nil {
+		t.Fatal(err)
+	}
+	m, ok := got["WI-0099"]
+	if !ok {
+		t.Fatalf("not recovered; got %v", got)
+	}
+	if m.Source != "pull-request" {
+		t.Errorf("source %q, want pull-request: the caller has to be able to tell", m.Source)
+	}
+}
+
+// The trailer is preferred when present, so an offline machine and a networked one agree
+// on every commit that followed the convention.
+func TestMergedItemsPrefersTheTrailerOverTheFallback(t *testing.T) {
+	dir := gitRepo(t, "spec(x): a change (#42)\n\nCloses WI-0099\n")
+	items := []config.WorkItem{{ID: "WI-0099", Branch: "spec/99-something"}}
+	res := fakeResolver{branches: map[int]string{42: "spec/99-something"}}
+
+	got, _ := MergedItems(dir, "main", items, res)
+	if got["WI-0099"].Source != "trailer" {
+		t.Fatalf("source %q, want trailer", got["WI-0099"].Source)
+	}
+}
+
+// The case above cannot fail if the fallback overrides the trailer, because a commit with a
+// trailer never reaches the fallback at all. This one can: two commits, and only the older
+// carries the trailer. A trailer-derived entry must never be replaced by a resolved one --
+// otherwise the reliable source loses to the one that exists because the reliable source
+// failed.
+func TestMergedItemsDoesNotLetTheFallbackOverwriteATrailer(t *testing.T) {
+	dir := gitRepo(t,
+		"spec(a): the merge that closed it (#41)\n\nCloses WI-0099\n",
+		"spec(b): a later touch on the same branch (#42)\n\nno trailer here\n")
+	items := []config.WorkItem{{ID: "WI-0099", Branch: "spec/99-something"}}
+	res := fakeResolver{branches: map[int]string{41: "spec/99-something", 42: "spec/99-something"}}
+
+	got, _ := MergedItems(dir, "main", items, res)
+	if got["WI-0099"].Source != "trailer" {
+		t.Fatalf("source %q, want trailer: the fallback overwrote a trailer-derived entry",
+			got["WI-0099"].Source)
+	}
+}
+
+// A branch that matches no work item must not be guessed at. This is the guard against the
+// fallback inventing a link the way the trailer never could.
+func TestMergedItemsIgnoresAnUnmatchedBranch(t *testing.T) {
+	dir := gitRepo(t, "spec(x): something else (#42)\n\nno trailer\n")
+	items := []config.WorkItem{{ID: "WI-0099", Branch: "spec/99-something"}}
+	res := fakeResolver{branches: map[int]string{42: "spec/77-unrelated"}}
+
+	if got, _ := MergedItems(dir, "main", items, res); len(got) != 0 {
+		t.Fatalf("got %v, want nothing: the branch matches no work item", got)
+	}
+}
+
+// A resolver failure degrades to the trailer-only answer. An offline machine should still
+// see obvious drift rather than getting an error instead of a report.
+func TestMergedItemsDegradesWhenTheResolverFails(t *testing.T) {
+	dir := gitRepo(t,
+		"spec(a): trailer present (#41)\n\nCloses WI-0098\n",
+		"spec(b): trailer missing (#42)\n\nnothing\n")
+	items := []config.WorkItem{
+		{ID: "WI-0098", Branch: "spec/98-a"},
+		{ID: "WI-0099", Branch: "spec/99-b"},
+	}
+	res := fakeResolver{err: errors.New("no network")}
+
+	got, err := MergedItems(dir, "main", items, res)
+	if err != nil {
+		t.Fatalf("resolver failure became a run failure: %v", err)
+	}
+	if _, ok := got["WI-0098"]; !ok {
+		t.Error("the trailer-derived item was lost")
+	}
+	if _, ok := got["WI-0099"]; ok {
+		t.Error("an item was recovered with no working resolver")
+	}
+}
+
+// The number is only trusted at the end of the subject, where GitHub writes it. An issue
+// reference in prose is not a merge record.
+func TestMergedItemsIgnoresAPullRequestNumberMidSubject(t *testing.T) {
+	dir := gitRepo(t, "spec(x): revert the change from (#42) that broke things\n\nno trailer\n")
+	items := []config.WorkItem{{ID: "WI-0099", Branch: "spec/99-something"}}
+	res := fakeResolver{branches: map[int]string{42: "spec/99-something"}}
+
+	if got, _ := MergedItems(dir, "main", items, res); len(got) != 0 {
+		t.Fatalf("got %v: a number mid-subject is not the squash suffix", got)
+	}
+}
+
+func TestFormatPlanNamesTheFallback(t *testing.T) {
+	out := FormatPlan([]Change{{ID: "WI-0099", From: "review", To: "done",
+		Commit: "abc123", Source: "pull-request", Why: []string{"no required gates"}}}, false)
+	if !strings.Contains(out, "no Closes trailer") {
+		t.Errorf("output does not say the trailer was missing:\n%s", out)
 	}
 }
