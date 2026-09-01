@@ -1,0 +1,24 @@
+id: WI-0058
+store: local
+project: PRJ-mykullzeroone/agentic-engineering-platform
+type: chore
+work_state: in_progress
+priority: normal
+title: Advance the work states of two merged items
+description: |
+  Bookkeeping, produced by `devctl work advance` rather than by hand. WI-0007 (roadmap phases
+  into work items, #40) and WI-0041 (the previous bookkeeping pass, #37) merged without their
+  work_state following, because no item can record its own completion inside the pull request
+  that completes it. Every merged item needs a trailing bookkeeping change, and that change is
+  itself work needing an item. This is it.
+
+  WI-0038 and WI-0039 are not in this pass: #38 set WI-0038 to done by hand on the principal's
+  ruling and `advance --dry-run` reports no drift for it, and #39 reopened WI-0039 with its
+  branch field removed so the pull-request fallback cannot re-close it.
+
+  Twenty-three open items are reported as "no Closes trailer, not evaluated". All are simply
+  unmerged, which is correct for open work. The message conflating never-merged with
+  merged-but-unidentifiable is a known reporting defect and not a finding about them.
+required_gates: []
+dependencies: []
+branch: chore/58-advance-merged-work-states
