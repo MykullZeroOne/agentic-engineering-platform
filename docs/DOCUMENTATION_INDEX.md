@@ -76,6 +76,7 @@ Immutable once accepted. Reverse by superseding. Tier 1.
 | `ADR-018` | A GitHub App Is the Control-Plane Adapter | `accepted` | [docs/adr/ADR-018-GITHUB-APP-ADAPTER.md](docs/adr/ADR-018-GITHUB-APP-ADAPTER.md) |
 | `ADR-019` | Conversational Approval, Restated | `accepted` | [docs/adr/ADR-019-CONVERSATIONAL-APPROVAL-V2.md](docs/adr/ADR-019-CONVERSATIONAL-APPROVAL-V2.md) |
 | `ADR-020` | The Hook Engine | `proposed` | [docs/adr/ADR-020-HOOK-ENGINE.md](docs/adr/ADR-020-HOOK-ENGINE.md) |
+| `ADR-021` | Port Kairo's Provenance and Knowledge-Index Layer | `draft` | [docs/adr/ADR-021-KAIRO-PROVENANCE-PORT.md](docs/adr/ADR-021-KAIRO-PROVENANCE-PORT.md) |
 
 ## Product requirements
 
@@ -91,6 +92,7 @@ Human-readable requirements. Tier 2.
 | `PRD-006` | Context Retrieval and Context Packets | `draft` | [docs/prd/PRD-006-CONTEXT-RETRIEVAL.md](docs/prd/PRD-006-CONTEXT-RETRIEVAL.md) |
 | `PRD-007` | Evaluation, Regression, and Future Training | `draft` | [docs/prd/PRD-007-EVALUATION-REGRESSION.md](docs/prd/PRD-007-EVALUATION-REGRESSION.md) |
 | `PRD-008` | Project Bootstrap, Portability, and Legacy Adoption | `draft` | [docs/prd/PRD-008-PORTABILITY-ADOPTION.md](docs/prd/PRD-008-PORTABILITY-ADOPTION.md) |
+| `PRD-009` | Agent Provenance and Checkpoints | `draft` | [docs/prd/PRD-009-AGENT-PROVENANCE-AND-CHECKPOINTS.md](docs/prd/PRD-009-AGENT-PROVENANCE-AND-CHECKPOINTS.md) |
 
 ## Agent development specifications
 
