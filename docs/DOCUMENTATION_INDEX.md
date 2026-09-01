@@ -78,6 +78,7 @@ Immutable once accepted. Reverse by superseding. Tier 1.
 | `ADR-019` | Conversational Approval, Restated | `accepted` | [docs/adr/ADR-019-CONVERSATIONAL-APPROVAL-V2.md](docs/adr/ADR-019-CONVERSATIONAL-APPROVAL-V2.md) |
 | `ADR-020` | The Hook Engine | `proposed` | [docs/adr/ADR-020-HOOK-ENGINE.md](docs/adr/ADR-020-HOOK-ENGINE.md) |
 | `ADR-021` | Port Kairo's Provenance and Knowledge-Index Layer | `draft` | [docs/adr/ADR-021-KAIRO-PROVENANCE-PORT.md](docs/adr/ADR-021-KAIRO-PROVENANCE-PORT.md) |
+| `ADR-022` | Absorb Kairo's V2 Corpus by Translation | `draft` | [docs/adr/ADR-022-ABSORB-KAIRO-V2-CORPUS.md](docs/adr/ADR-022-ABSORB-KAIRO-V2-CORPUS.md) |
 
 ## Product requirements
 
