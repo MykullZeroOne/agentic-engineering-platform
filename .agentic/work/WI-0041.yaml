@@ -1,0 +1,39 @@
+id: WI-0041
+store: local
+project: PRJ-mykullzeroone/agentic-engineering-platform
+type: chore
+work_state: in_progress
+priority: normal
+title: Advance the work states of nine merged items
+description: |
+  Bookkeeping, produced by `devctl work advance` rather than by hand. Nine items merged over
+  2026-09-01 without their work_state following, because no item can record its own completion
+  inside the pull request that completes it -- a merge happens after the content is frozen. The
+  work.advance_state binding names this and advance.go's own comment states it: every merged item
+  needs a trailing bookkeeping change, and that change is itself work needing an item. This is it.
+
+  Eight of the nine go to `done`. WI-0038 goes to `awaiting_human`, and that one is the point of
+  the exercise rather than a side effect. It declared required_gates: [platform_config], and until
+  WI-0040 landed, coverage matched a record by gate id alone and reported the gate closed by
+  APR-0011 -- a record about two registry files, written for a different change the day before.
+  Post-fix, the same item reports:
+
+    platform_config: unrelated (APR-0008 closes this gate for another change; it names neither
+    WI-0038 nor any path this change touched)
+
+  So the item now holds where it was always supposed to hold, waiting on the principal's ruling
+  about whether amending a documentation convention in CLAUDE.md is a platform_config change.
+  WI-0039 carries the reconciliation; APR-0011's scope_note already answers it.
+
+  WI-0039 itself advanced via the pull-request fallback rather than a `Closes` trailer, because
+  its pull request filed a work item rather than closing one and a fabricated trailer would have
+  marked it done at merge. That gap between merge requirement 1 and item-filing pull requests is
+  unresolved and wants a convention decision; it is not this item's to make.
+
+  Not in scope: the seven items reported as having no merge record. WI-0006 through WI-0010,
+  WI-0016 and WI-0020 have simply never merged, which is the correct state for open work. The
+  message that lists them conflates never-merged with merged-but-unidentifiable, which is a
+  reporting defect worth its own item and not a finding about these seven.
+required_gates: []
+dependencies: []
+branch: chore/41-advance-merged-work-states

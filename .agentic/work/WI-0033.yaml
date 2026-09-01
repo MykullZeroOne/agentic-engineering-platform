@@ -2,7 +2,7 @@ id: WI-0033
 store: local
 project: PRJ-mykullzeroone/agentic-engineering-platform
 type: spec
-work_state: review
+work_state: done
 priority: normal
 title: Accept SPEC-EVIDENCE-PACKAGE
 description: |

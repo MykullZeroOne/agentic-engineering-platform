@@ -2,7 +2,7 @@ id: WI-0038
 store: local
 project: PRJ-mykullzeroone/agentic-engineering-platform
 type: docs
-work_state: in_progress
+work_state: awaiting_human
 priority: normal
 title: Admit ISA.md at the repository root and bound its authority
 description: |

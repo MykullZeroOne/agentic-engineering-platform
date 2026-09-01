@@ -2,7 +2,7 @@ id: WI-0032
 store: local
 project: PRJ-mykullzeroone/agentic-engineering-platform
 type: fix
-work_state: review
+work_state: done
 priority: high
 title: Derive merged work items from the pull request when the trailer is missing
 description: |

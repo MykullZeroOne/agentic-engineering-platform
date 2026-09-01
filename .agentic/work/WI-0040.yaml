@@ -2,7 +2,7 @@ id: WI-0040
 store: local
 project: PRJ-mykullzeroone/agentic-engineering-platform
 type: fix
-work_state: in_progress
+work_state: done
 priority: high
 title: Gate coverage in work advance ignores the change, so any current record closes a gate
 description: |
