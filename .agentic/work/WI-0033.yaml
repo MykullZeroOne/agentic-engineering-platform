@@ -1,0 +1,32 @@
+id: WI-0033
+store: local
+project: PRJ-mykullzeroone/agentic-engineering-platform
+type: spec
+work_state: review
+priority: normal
+title: Accept SPEC-EVIDENCE-PACKAGE
+description: |
+  First of five acceptances walked with the principal, lowest risk first. The document was
+  written as `draft` in WI-0026 precisely so it could merge without opening a gate; accepting it
+  is the separate act that opens one, which is constitutional_change over docs/spec/**.
+
+  Approval given explicitly against a question naming the document, its tier, the four rules
+  adapted from Kairo's acceptance-criteria convention, and each of the three additions that are
+  not in that source. APR-0016 records it and the front matter points at the record.
+
+  What this makes true: CLAUDE.md merge requirement 3 has demanded an evidence package on every
+  pull request since it was written, and nothing said what one is. Now something does, at tier 0.
+
+  Enforcement stays `prose`. Nothing produces or validates a package, and claiming `check` before
+  a check exists would make the document assert a stage the pipeline is not at -- the same error
+  WI-0013 avoided when it refused to mark gates `check` while the CI step was advisory.
+
+  Deliberately not done in this change: the skill-schema half of the same REGISTRIES gap
+  (WI-0010); where packages are stored, which is platform_config; and narrowing SPEC-REGISTRIES'
+  known-gaps entry, which is now stale on the evidence half. That document is approved, so
+  editing it re-opens this gate and needs its own record.
+required_gates:
+- constitutional_change
+dependencies:
+- WI-0026
+branch: spec/33-accept-evidence-package
