@@ -64,11 +64,21 @@ These come from `docs/vision/PRINCIPLES.md` and constrain every change:
 
 ## Documentation conventions
 
-- Markdown lives under `docs/` in an existing subdirectory, or `examples/`. `README.md` and this
-  file are the only permitted root-level markdown documents.
+- Markdown lives under `docs/` in an existing subdirectory, or `examples/`. `README.md`, this
+  file, and `ISA.md` are the only permitted root-level markdown documents. `ISA.md` is the
+  project's Ideal State Artifact — the articulation of what "done" means for AEP as a whole, and
+  the source of the claims the corpus is measured against. It sits at the root because it is
+  addressed to whoever opens the repository, not to the corpus: it is not a tier 0–3 artifact, it
+  carries no authority over any approved document, and nothing may cite it as binding intent.
+  Where it and an approved artifact disagree, the approved artifact wins and the ISA is wrong.
+  It is also not a backlog, and principle 3 still holds against it: work state lives only in
+  `.agentic/work/`. A checked claim in `ISA.md` records that a probe passed and points at the
+  proof; it never records that work was done, and the work store wins on any disagreement.
 - **Every document carries front matter** declaring `id`, `type`, `tier`, `status`, `version`,
   `owner`, and approval fields, per `docs/spec/DOCUMENT_LIFECYCLE.md`. `README.md`, this file,
-  `docs/schemas/*.yaml`, and `examples/project.yaml` are exempt.
+  `docs/schemas/*.yaml`, `examples/project.yaml`, and `ISA.md` are exempt. `ISA.md` carries ISA
+  front matter instead, per the ISA format spec; it is not a lifecycle-managed document and has no
+  `status`, `tier`, or approval fields to set.
 - **Only `approved` and `accepted` artifacts carry authority.** A `draft` document may guide your
   work but must never be cited as binding, and a drafted requirement is not approved intent. See
   `docs/spec/AUTHORITY_MODEL.md`.
