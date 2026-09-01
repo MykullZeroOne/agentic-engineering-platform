@@ -1,0 +1,16 @@
+id: WI-0057
+store: local
+project: PRJ-mykullzeroone/agentic-engineering-platform
+type: feat
+work_state: intake
+priority: low
+title: 'Phase 5: platform surfaces and additional adapters'
+description: |
+  Roadmap Phase 5, held as one item. Bullets: MCP server and client surfaces; plugin and
+  provider SDK; GitLab and Bitbucket adapters; additional runtime providers; distributed workers;
+  optional API model routing; organisation templates and marketplace. The SDK surface and the
+  marketplace are fog in the ISA and stay fog here.
+
+  Would serve ISC-54 and ISC-55. Decomposes when current.
+required_gates: []
+dependencies: [WI-0054]

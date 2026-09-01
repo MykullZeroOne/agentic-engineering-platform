@@ -1,0 +1,16 @@
+id: WI-0055
+store: local
+project: PRJ-mykullzeroone/agentic-engineering-platform
+type: feat
+work_state: intake
+priority: low
+title: 'Phase 3: durable memory and context plane'
+description: |
+  Roadmap Phase 3, held as one item. Bullets: event store; session consolidation; per-agent
+  memory projections; pgvector retrieval; explicit graph entities and edges; context provenance;
+  learning inbox. Much of the spec work has landed (ADR-021, ADR-022, WI-0028, WI-0030); none of
+  the runtime has.
+
+  Would serve ISC-43 through ISC-49. Decomposes when current.
+required_gates: []
+dependencies: [WI-0053]

@@ -1,0 +1,18 @@
+id: WI-0049
+store: local
+project: PRJ-mykullzeroone/agentic-engineering-platform
+type: feat
+work_state: intake
+priority: high
+title: Implement the universal agent loop
+description: |
+  Phase 1, roadmap bullet 8. docs/agents/UNIVERSAL_AGENT_LOOP.md defines the loop every role
+  runs: load context, act, record evidence, hand off or escalate. Per-role loops specialise it.
+  The adapters (WI-0046) execute a session; this is what makes a session part of a run that can
+  span sessions and survive a provider change.
+
+  Serves ISC-26 (evidence attaches to the run, not the session), ISC-27 (a failed run resumes
+  without re-deriving context from the human) and ISC-28. Done when a run killed mid-flight
+  resumes from its own record with no human input.
+required_gates: []
+dependencies: [WI-0046]
