@@ -1,0 +1,50 @@
+id: WI-0038
+store: local
+project: PRJ-mykullzeroone/agentic-engineering-platform
+type: docs
+work_state: in_progress
+priority: normal
+title: Admit ISA.md at the repository root and bound its authority
+description: |
+  The project now has an Ideal State Artifact at ISA.md: the articulation of what "done" means
+  for AEP as a whole, and the source of the claims the corpus is measured against. It is written
+  to whoever opens the repository, so the root is where it belongs.
+
+  That collides with a stated convention. CLAUDE.md permits README.md and CLAUDE.md as the only
+  root-level markdown documents, and requires lifecycle front matter on every document outside a
+  short exemption list. ISA.md satisfies neither: it sits at the root, and it carries ISA front
+  matter rather than the id/type/tier/status/approval fields DOCUMENT_LIFECYCLE.md defines.
+
+  No check breaks today -- scripts/validate_docs.py collects only docs/** and examples/**, so the
+  file is invisible to it. That is exactly why the convention needs amending rather than quietly
+  outliving its own exception: a rule that the tooling cannot see is enforced by whoever remembers
+  it, which is the enforcement stage this repository is trying to leave behind.
+
+  The amendment widens both lists by one file and then bounds what the exception buys. ISA.md is
+  not a tier 0-3 artifact, carries no authority over any approved document, is never citable as
+  binding intent, and loses to an approved artifact wherever the two disagree. Without that bound
+  a root-level document sitting outside AUTHORITY_MODEL.md is a hole in the authority model, not
+  a carve-out from a formatting rule.
+
+  Scope is deliberately narrow: admit the file, bound it, and land the ISA itself. It does not
+  move the ISA into the corpus, does not give it a document type or a lifecycle, does not extend
+  validate_docs.py to cover the root, and does not reconcile its claims against the work store.
+  Those are separate decisions, and the last two are recorded in the ISA's own Remaining Work.
+
+  This declares platform_config, and the reasoning matters more than the declaration. The gate's
+  path triggers cover .agentic/project.yaml, registries, hooks and roles -- not CLAUDE.md, which
+  gates.yaml names as the gate's `sources` rather than a trigger -- so check_gates.py does not
+  fire on this branch. But CLAUDE.md's own table gates "anything altering a gate, policy, or
+  required check", and a change to the root-document rule and the authority bound on ISA.md is a
+  policy change by that reading. The check says no; the prose says yes.
+
+  Leaving it open was the wrong instinct. work.advance_state marks an item with no required_gates
+  `done` at merge, so an undeclared gate would have resolved the question silently, at merge, in
+  the direction the agent proposing the change preferred. Declaring it lands the item
+  `awaiting_human` and puts the question in front of the principal, which is where it belongs.
+  If the answer is that a documentation convention is not platform_config, the fix is to say so
+  and drop the gate -- not to have never asked.
+required_gates:
+  - platform_config
+dependencies: []
+branch: docs/38-isa-root-carve-out
