@@ -28,10 +28,15 @@ var closes = regexp.MustCompile(`(?m)\bCloses\s+(WI-\d{4})\b`)
 // pullRequest matches the number GitHub appends to a squash commit subject.
 var pullRequest = regexp.MustCompile(`\(#(\d+)\)\s*$`)
 
-// Merge is how a work item was found to have merged.
+// Merge is how a work item was found to have merged, and what the merge touched.
 type Merge struct {
 	Commit string
 	Source string // "trailer" or "pull-request"
+	// Paths are the files the merge commit changed. They are what ties an approval
+	// record to this change when the record predates work_items (WI-0040). Empty is
+	// meaningful and not an error: it means no path evidence, so only a record naming
+	// the work item can close a gate.
+	Paths []string
 }
 
 // PRResolver maps pull request numbers to the branch each merged from.
@@ -109,7 +114,7 @@ func MergedItems(root, ref string, items []config.WorkItem, resolver PRResolver)
 			// First writer wins: git log is newest-first, and if an ID somehow appears
 			// twice the later merge is the one that closed it.
 			if _, seen := merged[m[1]]; !seen {
-				merged[m[1]] = Merge{short, "trailer"}
+				merged[m[1]] = Merge{Commit: short, Source: "trailer"}
 			}
 		}
 		if !found {
@@ -118,7 +123,7 @@ func MergedItems(root, ref string, items []config.WorkItem, resolver PRResolver)
 	}
 
 	if resolver == nil || len(commits) == 0 {
-		return merged, nil
+		return withPaths(root, merged), nil
 	}
 
 	branches, err := resolver.MergedBranches()
@@ -126,7 +131,7 @@ func MergedItems(root, ref string, items []config.WorkItem, resolver PRResolver)
 		// A resolver failure degrades to the trailer-only answer rather than failing the
 		// run. The caller already reports which items were not evaluated, so the loss is
 		// visible -- and an offline machine should still be able to see obvious drift.
-		return merged, nil
+		return withPaths(root, merged), nil
 	}
 
 	byBranch := make(map[string]string, len(items))
@@ -149,10 +154,43 @@ func MergedItems(root, ref string, items []config.WorkItem, resolver PRResolver)
 			continue
 		}
 		if _, seen := merged[id]; !seen {
-			merged[id] = Merge{c.sha, "pull-request"}
+			merged[id] = Merge{Commit: c.sha, Source: "pull-request"}
 		}
 	}
-	return merged, nil
+	return withPaths(root, merged), nil
+}
+
+// withPaths fills in the files each merge commit changed.
+//
+// One `git show` per distinct commit rather than parsing `--name-only` out of the single
+// `git log` above: that log uses record separators to keep multi-line bodies intact, and
+// interleaving a file list into the same stream makes the parser guess where a body ends.
+// The commit count here is the number of merged work items, not the repository's history.
+//
+// A commit that cannot be read leaves Paths empty. That is the safe direction: no path
+// evidence means a record must name the work item to close a gate, so a git failure makes
+// coverage stricter rather than looser.
+func withPaths(root string, merged map[string]Merge) map[string]Merge {
+	cache := map[string][]string{}
+	for id, m := range merged {
+		paths, seen := cache[m.Commit]
+		if !seen {
+			cmd := exec.Command("git", "show", "--name-only", "--format=", m.Commit)
+			cmd.Dir = root
+			out, err := cmd.Output()
+			if err == nil {
+				for _, line := range strings.Split(strings.TrimSpace(string(out)), "\n") {
+					if line = strings.TrimSpace(line); line != "" {
+						paths = append(paths, line)
+					}
+				}
+			}
+			cache[m.Commit] = paths
+		}
+		m.Paths = paths
+		merged[id] = m
+	}
+	return merged
 }
 
 // Change is one work item whose recorded state disagrees with the merge record.
@@ -188,7 +226,10 @@ func Plan(root string, items []config.WorkItem, merged map[string]Merge, records
 		target := "done"
 		var why []string
 		for _, gate := range item.RequiredGates {
-			res := approvals.Cover(root, gate, records)
+			res := approvals.Cover(root, gate, records, approvals.Change{
+				WorkItem: item.ID,
+				Paths:    m.Paths,
+			})
 			if res.Coverage != approvals.Covered {
 				target = "awaiting_human"
 			}

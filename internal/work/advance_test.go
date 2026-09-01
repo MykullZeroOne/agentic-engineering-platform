@@ -82,7 +82,7 @@ func TestMergedItemsFindsSeveralItemsInOneCommit(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(got) != 2 || got["WI-0004"] != got["WI-0005"] {
+	if len(got) != 2 || got["WI-0004"].Commit != got["WI-0005"].Commit {
 		t.Fatalf("got %v, want both items pointing at the same commit", got)
 	}
 }
@@ -95,7 +95,7 @@ func wi(id, state string, gates ...string) config.WorkItem {
 
 func TestPlanAdvancesAMergedUngatedItemToDone(t *testing.T) {
 	items := []config.WorkItem{wi("WI-0001", "review")}
-	merged := map[string]Merge{"WI-0001": {"abc123", "trailer"}}
+	merged := map[string]Merge{"WI-0001": {Commit: "abc123", Source: "trailer"}}
 	got := Plan(t.TempDir(), items, merged, nil)
 	if len(got) != 1 || got[0].To != "done" {
 		t.Fatalf("got %+v, want one change to done", got)
@@ -114,7 +114,7 @@ func TestPlanLeavesAnUnmergedItemAlone(t *testing.T) {
 // ADR-019 says a merge never does.
 func TestPlanSendsAMergedItemWithAnOpenGateToAwaitingHuman(t *testing.T) {
 	items := []config.WorkItem{wi("WI-0001", "review", "platform_config")}
-	merged := map[string]Merge{"WI-0001": {"abc123", "trailer"}}
+	merged := map[string]Merge{"WI-0001": {Commit: "abc123", Source: "trailer"}}
 	got := Plan(t.TempDir(), items, merged, nil)
 	if len(got) != 1 || got[0].To != "awaiting_human" {
 		t.Fatalf("got %+v, want awaiting_human", got)
@@ -138,7 +138,9 @@ func TestPlanTreatsAStaleRecordAsNotCovered(t *testing.T) {
 	recs := []approvals.Record{{ID: "APR-0001", Gate: "g", Artifacts: []approvals.Artifact{art}}}
 
 	items := []config.WorkItem{wi("WI-0001", "review", "g")}
-	merged := map[string]Merge{"WI-0001": {"abc123", "trailer"}}
+	// The merge touched the file the record approves, which is what makes the record
+	// relevant to this change at all (WI-0040).
+	merged := map[string]Merge{"WI-0001": {Commit: "abc123", Source: "trailer", Paths: []string{"doc.md"}}}
 
 	if got := Plan(root, items, merged, recs); len(got) != 1 || got[0].To != "done" {
 		t.Fatalf("baseline: got %+v, want done while the record is current", got)
@@ -154,7 +156,7 @@ func TestPlanTreatsAStaleRecordAsNotCovered(t *testing.T) {
 
 func TestPlanSkipsTerminalStates(t *testing.T) {
 	items := []config.WorkItem{wi("WI-0001", "done"), wi("WI-0002", "cancelled")}
-	merged := map[string]Merge{"WI-0001": {"a", "trailer"}, "WI-0002": {"b", "trailer"}}
+	merged := map[string]Merge{"WI-0001": {Commit: "a", Source: "trailer"}, "WI-0002": {Commit: "b", Source: "trailer"}}
 	if got := Plan(t.TempDir(), items, merged, nil); len(got) != 0 {
 		t.Fatalf("got %+v, want nothing: done and cancelled are terminal", got)
 	}
@@ -162,7 +164,7 @@ func TestPlanSkipsTerminalStates(t *testing.T) {
 
 func TestPlanIsOrderedByID(t *testing.T) {
 	items := []config.WorkItem{wi("WI-0009", "review"), wi("WI-0002", "review"), wi("WI-0005", "review")}
-	merged := map[string]Merge{"WI-0009": {"a", "trailer"}, "WI-0002": {"b", "trailer"}, "WI-0005": {"c", "trailer"}}
+	merged := map[string]Merge{"WI-0009": {Commit: "a", Source: "trailer"}, "WI-0002": {Commit: "b", Source: "trailer"}, "WI-0005": {Commit: "c", Source: "trailer"}}
 	got := Plan(t.TempDir(), items, merged, nil)
 	if len(got) != 3 {
 		t.Fatalf("got %d changes, want 3", len(got))
@@ -378,5 +380,56 @@ func TestFormatPlanNamesTheFallback(t *testing.T) {
 		Commit: "abc123", Source: "pull-request", Why: []string{"no required gates"}}}, false)
 	if !strings.Contains(out, "no Closes trailer") {
 		t.Errorf("output does not say the trailer was missing:\n%s", out)
+	}
+}
+
+// The WI-0040 regression, at the level the defect actually bit. WI-0038 declared
+// platform_config so that it would land awaiting_human and put a question in front of the
+// principal. `devctl work advance --dry-run` reported `platform_config: covered
+// (APR-0011)` and would have advanced it to done. APR-0011 is a current record for that
+// gate, over two registry files, written for an entirely different change.
+func TestPlanDoesNotCloseAGateWithARecordForAnotherChange(t *testing.T) {
+	root := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(root, ".agentic", "registries"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	gates := filepath.Join(root, ".agentic", "registries", "gates.yaml")
+	if err := os.WriteFile(gates, []byte("gates: []\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	art := approvals.Artifact{ID: "CFG-GATES", Kind: "config", Path: ".agentic/registries/gates.yaml"}
+	sum, ok := approvals.Digest(root, art)
+	if !ok {
+		t.Fatal("fixture produced no digest")
+	}
+	art.ContentHash = "legacy/file-32:sha256:" + sum
+	recs := []approvals.Record{{ID: "APR-0011", Gate: "platform_config",
+		Artifacts: []approvals.Artifact{art}}}
+
+	items := []config.WorkItem{wi("WI-0038", "in_progress", "platform_config")}
+	merged := map[string]Merge{"WI-0038": {Commit: "bdb38f6", Source: "trailer",
+		Paths: []string{"CLAUDE.md", "ISA.md", ".agentic/work/WI-0038.yaml"}}}
+
+	got := Plan(root, items, merged, recs)
+	if len(got) != 1 || got[0].To != "awaiting_human" {
+		t.Fatalf("got %+v, want awaiting_human: APR-0011 approved other files for another change", got)
+	}
+	if !strings.Contains(got[0].Why[0], "unrelated") {
+		t.Errorf("why = %v, want it to say the record is unrelated rather than absent", got[0].Why)
+	}
+}
+
+// The other half: a record that names the work item closes the gate whatever it touched.
+// This is the only way a gate triggering on classification, finding, lifecycle or
+// capability can ever be closed, since none of those has a path to match.
+func TestPlanClosesAGateWhenTheRecordNamesTheWorkItem(t *testing.T) {
+	root := t.TempDir()
+	recs := []approvals.Record{{ID: "APR-0099", Gate: "legal", WorkItems: []string{"WI-0038"}}}
+	items := []config.WorkItem{wi("WI-0038", "review", "legal")}
+	merged := map[string]Merge{"WI-0038": {Commit: "bdb38f6", Source: "trailer"}}
+
+	got := Plan(root, items, merged, recs)
+	if len(got) != 1 || got[0].To != "done" {
+		t.Fatalf("got %+v, want done: APR-0099 names WI-0038", got)
 	}
 }

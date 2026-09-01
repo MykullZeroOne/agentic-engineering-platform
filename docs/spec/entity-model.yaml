@@ -1664,6 +1664,15 @@ entities:
       re-anchors — without it ATT-0001 cannot say which of APR-0001..0003 each artifact belongs to, and
       the mechanism's first and only required use is unrepresentable. Each hash carries its own scheme
       in its prefix, because an attestation holds legacy and canonical hashes in one record.
+  - name: work_items
+    type: list of WorkItem id
+    required: false
+    notes: 'The change this record was given for. Added by WI-0040: coverage previously matched a
+      record to a gate by gate id alone, so any current record closed that gate for every later
+      change -- APR-0011 closed platform_config for a change to CLAUDE.md it had never seen. A
+      changed path is the other key and needs no field, which is why this one is optional and
+      absent from every record written before it. It is the only key available to the six gates
+      that trigger on classification, finding, lifecycle or capability rather than on a path.'
   - name: migration
     type: object with from and to {store, algorithm}
     required: false
