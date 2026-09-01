@@ -1,72 +1,49 @@
 <!--
-  This template IS the evidence package required by CLAUDE.md merge requirement #3.
-  A pull request is an evidence artifact, not just a diff (END_TO_END_SDLC, phases 5-6;
-  ENGINEERING_LOOP, step 7).
+  This IS the evidence package required by CLAUDE.md merge requirement 3.
 
-  Delete sections that genuinely do not apply, and say why rather than leaving them blank.
-  An empty section reads as "nothing to report"; a deleted one with a reason reads as a
-  decision.
+  It was cut down on 2026-09-01. The previous version asked for seven sections and a
+  six-box checklist on every change, including one box that was false on every pull
+  request because independent review is suspended repository-wide. That produced long
+  bodies nobody consumed and taught people to skim the list.
+
+  Keep it proportionate: a one-line fix does not need the same body as an architecture
+  decision. Delete a heading that does not apply rather than filling it.
 -->
 
-## What changed
+## What and why
 
-<!-- The change itself, in a few sentences. Not a file list — the diff already is one. -->
-
-## Why
-
-<!-- What forced this now, and what breaks without it. -->
-
-## Traceability
-
-<!--
-  Map each material change to the thing it satisfies. Use requirement IDs (REQ-NNN-NNN),
-  ADR IDs, or an ADS acceptance criterion. "Refactor" and "cleanup" are not requirements —
-  if a change satisfies nothing, say so and justify it.
--->
-
-| Change | Satisfies | Verified by |
-| --- | --- | --- |
-|  |  |  |
+<!-- The change and what forced it. Two or three sentences for ordinary work. -->
 
 ## Verification
 
 <!--
-  How you know it works. Paste the command and its actual output, not a claim that it
-  passed. For a fix, show the failure reproduced first and then the same check passing.
+  The command and its actual output, not a claim that it passed. For a fix, show the
+  failure first and then the same check passing.
 -->
 
 ```
-$ python3 scripts/validate_docs.py
 ```
 
-## Human gates
+## Gates
 
 <!--
-  Gate IDs resolve against .agentic/registries/gates.yaml. Merging does NOT close a gate
-  (ADR-013) — an approval record under .agentic/approvals/ does. List every gate this
-  change crosses and the record that closed it, or "not closed" if it is still open.
+  Only if the change crosses one. `check_gates.py --strict` decides; paste its verdict.
+  Merging closes no gate (ADR-019) -- an approval record does. Delete this heading when
+  nothing is crossed.
 -->
 
-| Gate | Approval record | Status |
-| --- | --- | --- |
-|  |  |  |
+## Risks
 
-## Risks and what could go wrong
-
-<!-- What you are least sure of. A PR with no stated risk is usually an unexamined one. -->
+<!-- What you are least sure of, and anything you did not do. One or two lines. -->
 
 ---
 
-### Merge requirements
+<!--
+  Expand into the full package -- traceability table mapping each change to what it
+  satisfies, per-proof verification, an explicit gate table -- when the change is an ADR,
+  a tier-0 spec, or anything crossing a gate. `docs/spec/EVIDENCE_PACKAGE.md` defines the
+  structure; this body is a projection of it.
 
-Per `CLAUDE.md`. A PR may merge only when all of these hold.
-
-- [ ] **1. Names its work item and closes it.** Work items live in `.agentic/work/`
-      (`docs/spec/LOCAL_WORK_STORE.md`). Put `Closes WI-NNNN` in the squash commit body.
-- [ ] **2. All required checks pass.** Never merge on a red or skipped required check, and
-      never weaken a check to make a PR mergeable.
-- [ ] **3. Carries its evidence package.** The sections above.
-- [ ] **4. Independent review.** The agent that wrote the change never approves it.
-- [ ] **5. Every human gate has explicit approval**, recorded under `.agentic/approvals/`.
-      An agent must never merge a PR whose gates are unclosed.
-- [ ] **6. Up to date with `main`** — rebased, not merged (ADR-009).
+  Merge requirements live in CLAUDE.md and are not restated here. Independent review is
+  suspended repository-wide (WI-0016), which is why it is no longer a per-PR box.
+-->
