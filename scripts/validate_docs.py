@@ -40,7 +40,8 @@ AUTHORITATIVE = {"approved", "accepted"}
 # A retired artifact was legitimately approved once. Supersession ends its force; it does
 # not rewrite the fact that a human approved it, so these statuses keep their approval fields.
 RETIRED = {"superseded", "deprecated"}
-ID_PATTERN = {"adr": r"^ADR-\d{3}$", "prd": r"^PRD-\d{3}$", "ads": r"^ADS-\d{3}$"}
+ID_PATTERN = {"adr": r"^ADR-\d{3}$", "prd": r"^PRD-\d{3}$", "ads": r"^ADS-\d{3}$",
+              "policy": r"^POL-\d{3}$", "standard": r"^STD-\d{3}$"}
 
 ENFORCEMENT_STAGES = set(_vocab("enforcement_stage"))
 

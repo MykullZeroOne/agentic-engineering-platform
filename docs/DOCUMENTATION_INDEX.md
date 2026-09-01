@@ -157,6 +157,14 @@ Normative platform design. Tier 2.
 | `DES-POLICY-MODEL` | Standards, Policies, Skills, and Hooks | `draft` | [docs/workflows/POLICY_MODEL.md](docs/workflows/POLICY_MODEL.md) |
 | `DES-QUESTION-ESCALATION` | Question and Escalation Workflow | `draft` | [docs/workflows/QUESTION_ESCALATION.md](docs/workflows/QUESTION_ESCALATION.md) |
 
+## Rules
+
+Policies block when violated; standards inform review. Tier 3.
+
+| ID | Document | Status | Path |
+| --- | --- | --- | --- |
+| `POL-001` | Branching and Merging | `draft` | [docs/policies/POL-001-BRANCHING-AND-MERGING.md](docs/policies/POL-001-BRANCHING-AND-MERGING.md) |
+
 ## Reference
 
 Non-normative. Carries no authority in conflict resolution.

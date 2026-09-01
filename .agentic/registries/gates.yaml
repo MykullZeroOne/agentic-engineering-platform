@@ -174,6 +174,32 @@ gates:
     aliases: ["material_privacy_risk_acceptance"]
     enforcement: prose
 
+  - id: rule_change
+    title: Rule change approval
+    description: >
+      Approval of a tier-3 artifact: a policy or a standard. AUTHORITY_MODEL says every
+      artifact in tiers 0-3 is gated, and until this gate existed tier 3 was the one tier
+      it forgot -- nothing triggered on docs/policies/ or docs/standards/, so the first
+      rule written there would have carried normative force with no human having closed
+      anything. Follows the per-tier pattern: constitutional_change for 0,
+      architecture_decision for 1, product_spec for 2, this for 3. Not platform_config,
+      whose subject is control surfaces (config, hooks, registries, roles); a rule is what
+      those surfaces enforce, not one of them.
+    approver: human.cto
+    blocking: true
+    risk_tier: reversible
+    applies_when: authoritative
+    triggers:
+      - kind: path
+        condition: docs/policies/**
+      - kind: path
+        condition: docs/standards/**
+      - kind: artifact_status
+        condition: a tier-3 artifact transitions to `approved`
+    sources: ["docs/spec/AUTHORITY_MODEL.md"]
+    aliases: []
+    enforcement: check
+
   - id: platform_config
     title: Platform configuration change approval
     description: >
