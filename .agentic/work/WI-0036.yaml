@@ -2,7 +2,7 @@ id: WI-0036
 store: local
 project: PRJ-mykullzeroone/agentic-engineering-platform
 type: adr
-work_state: review
+work_state: done
 priority: high
 title: Reopen ADR-020 clause 2 and fix the pre-acceptance review findings
 description: |
