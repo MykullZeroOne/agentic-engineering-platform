@@ -1,0 +1,44 @@
+id: WI-0035
+store: local
+project: PRJ-mykullzeroone/agentic-engineering-platform
+type: adr
+work_state: review
+priority: normal
+title: Accept ADR-022, the Kairo corpus absorption
+description: |
+  Item 4 of the five-document acceptance walk. Approval given explicitly against a question
+  naming the ADR, the translation rule, the pinned Kairo revision, both named conflicts, the
+  hosted-primary correction, and the review history. APR-0018 records it.
+
+  The review history was stated before approval rather than after, because it is the strongest
+  argument against accepting: the document was rewritten after an independent review found
+  EIGHTEEN defects, four of them authority-model errors including instructions to edit immutable
+  accepted ADRs, and six triage rows went stale within a day of being written.
+
+  Status moves draft to ACCEPTED. Immutable, reversible only by supersession.
+
+  Now binding: nothing is copied; nothing hosted, multi-tenant or serverless enters AEP by
+  absorption; where an approved or accepted AEP artifact disagrees with the corpus the AEP
+  artifact governs; absorption never edits an accepted ADR; Law 2 is absorbed narrowed so the
+  knowledge layer indexes approvals and never owns them; and the corpus is pinned to
+  17cdd4565f93dabb3c0cf9285383cbffe9c0c7fa.
+
+  The record states three things it does not approve. It does not approve the triage table as
+  CURRENT -- six rows were stale within a day, one pointing at content since approved under
+  APR-0014. It does not authorise any individual translation; each carries its own gate, and the
+  ADR enumerates four. And it does not give the Kairo corpus an authority tier in any form.
+
+  Ordering note, not recorded as a dependency because it cannot be: this acceptance follows
+  ADR-021's (WI-0034), which is why ADR-022's governing rule now cites an accepted artifact rather
+  than a proposal. WI-0034 is not on `main` yet, so naming it here would dangle -- both the
+  validator and devctl doctor rejected exactly that before this was fixed.
+
+  An unusual risk, visible before approval and recorded rather than discovered: this document's
+  own risk section argues the triage table decays faster than the work executes, and acceptance
+  freezes that table in an immutable artifact. The stated mitigation -- replace it with work items
+  if the absorptions run over weeks -- is now itself a superseding ADR rather than an edit.
+required_gates:
+- architecture_decision
+dependencies:
+- WI-0027
+branch: adr/35-accept-corpus-absorption
