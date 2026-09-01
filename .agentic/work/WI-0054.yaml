@@ -1,0 +1,18 @@
+id: WI-0054
+store: local
+project: PRJ-mykullzeroone/agentic-engineering-platform
+type: feat
+work_state: intake
+priority: low
+title: 'Phase 2: full virtual organisation'
+description: |
+  Roadmap Phase 2, held as one item until Phase 1 exits and its shape is known. Bullets from
+  the roadmap: grooming, architecture, planning, QA, review and integration roles; hierarchical
+  questions and escalation; dependency DAG and orchestrator; GitHub Project state mapping; skill
+  registry and versioning; policies and configurable human gates.
+
+  Would serve ISC-16, ISC-17, ISC-20, ISC-21, ISC-33 and ISC-40. Decomposes into per-bullet items
+  when it becomes current; decomposing now would be speculative claims written to satisfy a
+  count, which the ISA forbids and ADR-012 gains nothing from.
+required_gates: []
+dependencies: [WI-0053]

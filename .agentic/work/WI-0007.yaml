@@ -2,10 +2,27 @@ id: WI-0007
 store: local
 project: PRJ-mykullzeroone/agentic-engineering-platform
 type: docs
-work_state: ready
+work_state: in_progress
 priority: normal
 title: Convert IMPLEMENTATION_ROADMAP phases into work items
 description: |
   ADR-012 requires it: phases, sequencing and exit criteria are intent and stay in documentation;
   anything with a status is state and belongs in the work store. The roadmap has been acting as the
   de facto backlog, which Principle 3 forbids.
+
+  DECISION, 2026-09-01: Phase 1 decomposes fully, later phases do not. Phase 1's eleven bullets
+  and its exit criterion become WI-0042 through WI-0053, each naming the ISA claims it serves and
+  its dependencies, so `devctl work list` now shows the runtime work the board had none of.
+  Phases 2 to 5 become one item each (WI-0054 to WI-0057), listing their bullets and held until
+  the prior phase exits. Decomposing them now would be writing thirty speculative items to
+  satisfy a count: the ISA's fog rule forbids exactly that, and ADR-012 asks for status in the
+  store, not for every future bullet to have one.
+
+  The roadmap keeps phases, sequencing and exit criteria and gains a reference per bullet to the
+  item that carries it. It never says whether anything is done. `devctl doctor` verifies every
+  dependency named exists.
+
+  WI-0008 is not among the new items and serves no ISA claim. ADR-017 (documents as projections
+  of structured data) has no ISC; that is an ISA gap, recorded in the mapping and not resolved
+  here.
+branch: docs/7-roadmap-phases-to-work-items

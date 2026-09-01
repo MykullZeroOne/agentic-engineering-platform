@@ -1,0 +1,16 @@
+id: WI-0056
+store: local
+project: PRJ-mykullzeroone/agentic-engineering-platform
+type: feat
+work_state: intake
+priority: low
+title: 'Phase 4: evaluation plane'
+description: |
+  Roadmap Phase 4, held as one item. Bullets: regression case creation; model, skill, prompt
+  and retrieval comparisons; telemetry dashboards; learned routing inputs; historical repository
+  learning. The ISA holds most of this as fog: what the plane measures well enough to drive a
+  routing decision cannot be known before Phase 3 produces event history.
+
+  Would serve ISC-50 and ISC-51. Decomposes when current.
+required_gates: []
+dependencies: [WI-0055]

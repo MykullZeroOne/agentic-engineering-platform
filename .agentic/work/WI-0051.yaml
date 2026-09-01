@@ -1,0 +1,19 @@
+id: WI-0051
+store: local
+project: PRJ-mykullzeroone/agentic-engineering-platform
+type: feat
+work_state: intake
+priority: normal
+title: Emit PRD and ADS as peer projections of approved intent
+description: |
+  Phase 1, roadmap bullet 10. The file-backed corpus exists and ADS-001 is a hand-written
+  example. ADR-006 makes the ADS the machine-readable peer of the PRD, both projected from one
+  underlying intent, neither derived from the other. Nothing produces either.
+
+  Serves ISC-12 and the anti-claim ISC-14 (a draft PRD or ADS is never cited as binding). Depends
+  on WI-0008 only loosely: the projection generator there is for the whole corpus, this is for two
+  document types from one source; they should share a renderer and need not wait on each other.
+  Done when an approved intent record yields both documents with lifecycle front matter that
+  passes validate_docs.py.
+required_gates: []
+dependencies: [WI-0042]

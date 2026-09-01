@@ -1,0 +1,20 @@
+id: WI-0052
+store: local
+project: PRJ-mykullzeroone/agentic-engineering-platform
+type: feat
+work_state: intake
+priority: high
+title: Build the hook engine
+description: |
+  Phase 1, roadmap bullet 11, and what adoption level 3 is blocked on. Every binding in
+  .agentic/hooks/hooks.yaml is declarative; nothing executes them. WI-0024 decided the execution
+  model in ADR-020, which is still `proposed` with one review owed before acceptance -- this item
+  should not start until it is accepted, because building to a proposed ADR is building to
+  nothing.
+
+  Serves ISC-37, ISC-38 and ISC-38.1 (hard blocks, soft logs and continues with later bindings
+  still running), and ISC-41 (escalation gains a hook point). Done when a hard hook failing on a
+  lifecycle transition blocks it, and validation.docs runs through the engine rather than beside
+  it.
+required_gates: []
+dependencies: [WI-0042]

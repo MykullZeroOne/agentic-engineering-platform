@@ -1,0 +1,19 @@
+id: WI-0043
+store: local
+project: PRJ-mykullzeroone/agentic-engineering-platform
+type: feat
+work_state: intake
+priority: normal
+title: Create the PostgreSQL schema from DATA_MODEL
+description: |
+  Phase 1, roadmap bullet 2. ADR-003 chooses PostgreSQL for the event store and memory; ADR-017
+  makes structured data the base and documents a projection. DES-DATA-MODEL names the tables.
+  No schema exists.
+
+  Serves ISC-43 (runs recorded as immutable events, memory rebuildable by replay) as its
+  groundwork, and ISC-18 (work_items as a projection of the authoritative store, never the
+  source). Depends on WI-0009: the entity model is draft, and a schema cut from a draft model
+  gets re-cut. Done when migrations create the Phase 1 tables and a replay test rebuilds a
+  projection from events alone.
+required_gates: []
+dependencies: [WI-0009]

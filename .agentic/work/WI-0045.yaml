@@ -1,0 +1,18 @@
+id: WI-0045
+store: local
+project: PRJ-mykullzeroone/agentic-engineering-platform
+type: feat
+work_state: intake
+priority: high
+title: Implement the project and agent-identity registry
+description: |
+  Phase 1, roadmap bullet 4. ADR-002: a role is a durable identity, a runtime is transient. The
+  registry is where that becomes structural: agent identities with memory, permissions and
+  hierarchy that persist across sessions and provider changes. Today roles are an empty
+  directory (.agentic/roles/.gitkeep) and identities exist only in prose.
+
+  Serves ISC-2 (a role naming a model fails validation), ISC-3 (swapping every provider changes
+  no organisational row) and ISC-25. Done when a role file naming a provider is rejected at load,
+  and a provider swap in runtime_preferences leaves the registry tables byte-identical.
+required_gates: []
+dependencies: [WI-0042, WI-0043]

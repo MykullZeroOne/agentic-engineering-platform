@@ -1,0 +1,18 @@
+id: WI-0048
+store: local
+project: PRJ-mykullzeroone/agentic-engineering-platform
+type: feat
+work_state: intake
+priority: normal
+title: Show live agent activity in the workspace UI
+description: |
+  Phase 1, roadmap bullet 7. The vision's promise is watching a team work and stepping in.
+  docs/operations/ describes the agent workspace; nothing renders it. This is the Experience
+  plane's first surface: every active run with live activity, and an interrupt that redirects a
+  run rather than killing it.
+
+  Serves ISC-31, ISC-32 and ISC-34 (the antecedent: reasoning and context provenance side by
+  side). Done when a running adapter's output streams to the UI within two seconds and an
+  interrupt is observed by the run.
+required_gates: []
+dependencies: [WI-0042, WI-0046]

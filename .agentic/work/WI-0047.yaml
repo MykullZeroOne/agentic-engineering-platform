@@ -1,0 +1,17 @@
+id: WI-0047
+store: local
+project: PRJ-mykullzeroone/agentic-engineering-platform
+type: feat
+work_state: intake
+priority: normal
+title: Add devctl init and adopt
+description: |
+  Phase 1, roadmap bullet 6. `devctl doctor` shipped in WI-0019. `init` scaffolds a fresh
+  project's .agentic/ from examples/project.yaml; `adopt` brings an existing repository to a
+  working configuration without restructuring what it already has, per docs/github/LEGACY_ADOPTION.md.
+
+  Serves ISC-52 and the anti-claim ISC-56 (adopting never requires restructuring an existing
+  repository's documentation format). Done when `adopt` on a repository with foreign documentation
+  produces a passing `doctor` and touches nothing outside .agentic/.
+required_gates: []
+dependencies: []

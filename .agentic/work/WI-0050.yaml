@@ -1,0 +1,18 @@
+id: WI-0050
+store: local
+project: PRJ-mykullzeroone/agentic-engineering-platform
+type: feat
+work_state: intake
+priority: high
+title: Implement the BA loop with compliance and legal specialists
+description: |
+  Phase 1, roadmap bullet 9, and the heart of the exit criterion. docs/agents/BA_LOOP.md: a
+  conversational idea produces a session that asks clarifying questions, runs compliance, legal,
+  privacy and security preflight through specialists reporting to the BA lead (ADR-005), and
+  terminates on the human's approval rather than its own judgement of completeness.
+
+  Serves ISC-9, ISC-10, ISC-11, ISC-13 and ISC-15, and the anti-claim ISC-14. Done when an idea
+  submitted in conversation yields at least one clarifying question before any specification,
+  and withholding approval leaves the loop open.
+required_gates: []
+dependencies: [WI-0049]

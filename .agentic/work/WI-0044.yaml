@@ -1,0 +1,19 @@
+id: WI-0044
+store: local
+project: PRJ-mykullzeroone/agentic-engineering-platform
+type: feat
+work_state: intake
+priority: normal
+title: Build the GitHub App adapter behind the control-plane port
+description: |
+  Phase 1, roadmap bullet 3. ADR-001 makes GitHub the control plane; ADR-018 decides a GitHub
+  App rather than a PAT; `gh` stays the local and agent-friendly path. The Control plane is one of
+  only two planes a provider may attach to (ADR-010), so this adapter is the first real test of the
+  port.
+
+  Serves ISC-55 by making the port exist at all (a second adapter proves it later), and ISC-19's
+  runtime form: work state derived from the merge event rather than from `gh pr list` in a CLI.
+  Done when the service receives pull-request and merge webhooks and the adapter is the only
+  package that imports the GitHub client.
+required_gates: []
+dependencies: [WI-0042]

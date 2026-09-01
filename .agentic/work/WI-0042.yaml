@@ -1,0 +1,18 @@
+id: WI-0042
+store: local
+project: PRJ-mykullzeroone/agentic-engineering-platform
+type: feat
+work_state: intake
+priority: high
+title: Stand up the modular monolith service with plane-aligned packages
+description: |
+  Phase 1, roadmap bullet 1. ADR-011 decides a Go modular monolith, one deployable, packages
+  following ADR-010's plane boundaries. Today the only binary is devctl, a CLI with no process
+  lifetime. This item adds the long-running service the UI, adapters and hook engine attach to,
+  with a package per plane and the port rule enforced by import boundaries rather than convention.
+
+  Serves ISC-53 (AEP reads this repository's own .agentic/ unchanged and operates on it) and is
+  the substrate for ISC-7's plane-count check. Done when the service starts, loads
+  .agentic/project.yaml through internal/config, and a cross-plane import fails the build.
+required_gates: [architecture_high_risk]
+dependencies: []
