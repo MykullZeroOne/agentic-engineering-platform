@@ -110,6 +110,21 @@ no long-lived release branches, and no environment branches.
    arrives through a pull request.
 2. **One issue, one branch, one PR.** A branch that cannot name the issue it serves should not
    exist. If work grows beyond its issue, split it — do not widen the branch.
+
+   **Two carve-outs, both added after a day that produced twenty pull requests against twelve
+   hundred lines of product code.**
+
+   *Approval records batch.* One pull request may carry several approval records closing several
+   gates, provided each record names its own artifact and statement. Nothing ever required one
+   record per pull request; it was a habit, and it cost four pull requests in a single afternoon
+   to record three approvals.
+
+   *An approval-only change needs no work item.* When a pull request changes nothing but approval
+   records under `.agentic/approvals/` and the front-matter fields pointing at them, it names the
+   approved artifacts instead of a work item. An approval record already states what was approved,
+   by whom, on what content hash, and in response to what request. A work item saying "accept X"
+   adds a second place to look and no fact. This carve-out is narrow on purpose: any change that
+   touches a document's *body* is ordinary work and needs its item.
 3. **Branch from current `main`.** Always `git fetch origin && git switch -c <branch> origin/main`.
    Never branch from another feature branch; if you genuinely depend on unmerged work, say so on
    the issue and wait, or land the dependency first.
@@ -179,11 +194,17 @@ A PR may merge only when all of these hold:
    disable a check to make a PR mergeable.
 3. It carries its **evidence package** — what changed, why, and how it was verified. A PR is an
    evidence artifact, not just a diff (`docs/workflows/END_TO_END_SDLC.md`, Phase 5–6).
-4. It has an independent review — **suspended, not satisfied.** This repository has one human
-   identity, and agents act as that identity, so GitHub cannot tell author from reviewer and no
-   branch protection setting enforces this. Never cite this requirement as met, and never treat a
-   self-approval as independent. It is an open risk, alongside the bus factor ADR-014 already
-   accepts, until `WI-0016` substitutes a reviewing agent or a second identity exists.
+4. It has an independent review — **suspended repository-wide, not satisfied per pull request.**
+   This repository has one human identity and agents act as that identity, so GitHub cannot tell
+   author from reviewer. The suspension is a standing fact recorded here; **it is not a checkbox
+   on every pull request**, because a box that is false on every change teaches people to skip the
+   list rather than read it. Never cite the requirement as met and never treat a self-approval as
+   independent. Open risk until `WI-0016` substitutes a reviewing agent or a second identity
+   exists.
+
+   An automated adversarial review is not this, and is worth running anyway: two runs on
+   2026-09-01 found 38 findings across two documents, 8 of them severity 1, including a
+   contradiction with a tier-0 spec approved the same week.
 5. Every **human gate** the change triggers has explicit human approval. The gates in force are
    `human_gates` in `.agentic/project.yaml`, defined in `.agentic/registries/gates.yaml`; read
    them there rather than from any list restated in prose. **An agent must never merge a PR that

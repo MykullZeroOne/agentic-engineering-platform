@@ -1,0 +1,61 @@
+id: WI-0037
+store: local
+project: PRJ-mykullzeroone/agentic-engineering-platform
+type: chore
+work_state: review
+priority: high
+title: Cut five sources of process ceremony that were costing velocity
+description: |
+  The principal observed that the process destroys velocity. The numbers support it: 2026-09-01
+  produced roughly twenty pull requests against about 1200 lines of product code, and four of
+  those pull requests did nothing but record three approvals. WI-0033 through WI-0036 are work
+  items about approving documents.
+
+  Not all of the ceremony is waste, and the cuts are chosen to leave the parts that caught real
+  defects. What paid this session: the gate check caught unapproved changes to approved artifacts;
+  devctl doctor and validate_docs caught dangling dependencies three separate times; an
+  independent adversarial review caught 38 findings across two documents, 8 of them severity 1,
+  including a contradiction with a tier-0 spec approved the same week. None of that is theatre.
+
+  FIVE CUTS:
+
+    1. Approval records may batch. One pull request may carry several records closing several
+       gates. Nothing ever required one record per pull request -- it was a habit, and it cost
+       four pull requests in one afternoon to record three approvals.
+
+    2. An approval-only change needs no work item. When a pull request changes nothing but
+       approval records and the front-matter fields pointing at them, it names the approved
+       artifacts instead. A record already states what was approved, by whom, at what content
+       hash, and in response to what request; a work item saying "accept X" adds a second place to
+       look and no fact. Deliberately narrow: touching a document BODY is ordinary work and needs
+       an item.
+
+    3. .gitattributes marks docs/DOCUMENTATION_INDEX.md as merge=union. It is generated, one row
+       per document, so every branch adding a document inserts a row and git treats adjacent
+       insertions as a conflict. That cost three manual resolutions in one day, none of them a
+       judgement call. Union keeps both sides; build_index.py regenerates deterministically and
+       fixes ordering; the docs job still fails if anyone forgets to run it. A generated file
+       should never be hand-merged.
+
+    4. Independent review stops being a per-pull-request checkbox. It is suspended
+       repository-wide, so the box was false on every change, and a box that is always false
+       teaches people to skip the list rather than read it. The suspension is now a standing fact
+       in CLAUDE.md. Nothing about the rule weakens: still never cited as met, still never
+       satisfied by self-approval, still an open risk until WI-0016.
+
+    5. The pull request template drops from 72 lines to 49, and from seven sections plus a six-box
+       checklist to four headings. What and why, verification, gates only when crossed, risks. The
+       full package -- traceability table, per-proof verification, explicit gate table -- is
+       expanded for an ADR, a tier-0 spec, or anything crossing a gate. SPEC-EVIDENCE-PACKAGE
+       defines the structure; the body is a projection of it.
+
+  Nothing here weakens a gate, a hash binding, or the authority model. No ADR is contradicted:
+  ADR-009 says one issue, one branch, one PR, and the carve-outs are about which artifact NAMES
+  the pull request, not about batching unrelated work.
+
+  Honest limit: this is a guess at which ceremony is load-bearing, made after one heavy day. If
+  the batching carve-out starts hiding approvals in large pull requests, it is the first thing to
+  reverse.
+required_gates: []
+dependencies: []
+branch: chore/37-cut-ceremony
