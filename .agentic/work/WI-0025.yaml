@@ -1,0 +1,159 @@
+id: WI-0025
+store: local
+project: PRJ-mykullzeroone/agentic-engineering-platform
+type: adr
+work_state: review
+priority: normal
+title: Evaluate Kairo as the provenance and knowledge-index dependency
+description: |
+  docs/schemas/run-record.example.yaml:12 carries `context_manifest: CTX-99182` and no AEP
+  document defines what a context manifest is. The identifier is cited and the artifact does
+  not exist. Kairo defines it, along with checkpoint, session, event and restore-plan schemas
+  and a knowledge index whose method set covers much of roadmap Phase 3.
+
+  ADR-021 decides to PORT selected Kairo packages into AEP under AEP's own module, not to
+  depend on github.com/MykullZeroOne/kairo. Same owner, MIT, so the port is unambiguous and the
+  usual reason to prefer a dependency does not apply: there is no third party whose cadence must
+  be respected and no API owed to strangers. AEP needs adaptations Kairo should not carry --
+  .agentic/ configuration, a Postgres Engine, AEP-specific manifest entry kinds -- and pushing
+  those upstream would make Kairo worse as a standalone product.
+
+  PRD-009 states the provenance requirement independently, so it survives if the port is
+  rejected.
+
+  LINEAGE. Kairo was the first attempt at the problem AEP now solves: agent memory across
+  sessions, rewind snapshots, a knowledge graph so one session's learning reaches the next. AEP
+  is the next iteration of the same intent with a wider scope -- roles, human gates, an authority
+  model, an execution plane. So this is consolidation rather than adoption: one attempt folding
+  its working parts into its successor.
+
+  That gives a rule that resolves every overlap without arguing each one. Where Kairo and AEP
+  overlap, Kairo is usually the narrower and earlier form -- Adapter captures where AEP's
+  executes, HydrateContext returns provenance where AEP's context packet must return canonical
+  knowledge first, corehash sorts keys where ADR-016 specifies RFC 8785. Not defects; the earlier
+  iteration. Where AEP has since decided something more demanding, AEP's decision governs and the
+  ported code adapts to it.
+
+  SCOPE. Every package was surveyed by reading it. Ported: knowledge (4248 loc), handoff (1249),
+  storage (869), integrations (858), adapters (760, renamed provenance/capture), checkpoint
+  (709), migrate (621), plugin (538, unwired), gitref (490), audit (413), security (384), schema
+  (382), session (212), manifest (132), embedding (90), corehash (70). Roughly 11k lines.
+
+  Not ported: config (617, reads .kairo/config.yaml where AEP reads .agentic/), doctor (409, AEP
+  shipped internal/doctor in WI-0019 and two doctors is worse than one), version (6), and the
+  entire hosted* family (~2600 loc of multi-tenant sync, tenancy, login, credentials, RBAC).
+  AEP has no tenancy concept: ADR-010 has no tenant boundary and project.yaml describes exactly
+  one project, so porting it would import an unowned abstraction.
+
+  SURVEY CORRECTION. The first pass covered pkg/ only and took pkg/gitref's package comment
+  ("Git worktree helpers") at face value. Reading it showed the opposite: it is one of the
+  highest-value packages in the repository. Git notes under refs/notes/kairo carrying
+  checkpoint, session and context IDs; Agent-Session / Agent-Checkpoint / Agent-Context commit
+  trailers with typed parsing and a not-found error; git://<repo>@<commit>:<path> content
+  pointers with resolve and validate; and MergeBase / RevList / DefaultBaseBranch. No
+  .gitattributes use anywhere -- notes and trailers, not attributes.
+
+  Notes matter more to AEP than to Kairo. Squash merge destroys the link between branch work and
+  the trunk commit, which CLAUDE.md already records, and AEP's answer is a Closes trailer that
+  works only when someone remembers -- PRs #8 and #9 merged without one. A note attaches to the
+  merge commit AFTER the fact without rewriting it, which a trailer cannot do. AEP also already
+  hand-rolled a Closes regex in internal/work/advance.go that trailers.go generalizes.
+
+  AND IT BEARS ON ADR-020. That ADR is built on the premise that a hook cannot record anything
+  after a merge because rule 1 forbids committing to main. Rule 1 is scoped to main, and a git
+  note lives in refs/notes/*, which branch protection on main does not cover. An after_merge
+  hook could attach provenance without violating rule 1 as written. ADR-021 records this and
+  does NOT act on it: quietly widening what a hook may write by porting a library is the same
+  reinterpretation the plugin finding refuses.
+
+  TWO FINDINGS FROM THE SURVEY that were not in the brief:
+
+    - pkg/security fills a NAMED AEP gap. hooks.yaml lists pre_commit as unbound with the
+      comment "CLAUDE.md forbids committing secrets; no check enforces it". Kairo has
+      ContainsSecrets, ScanTree, Redact, object encryption with keychain and env key loading,
+      and plugin-spec validation. 384 loc, 3 test files.
+
+    - pkg/knowledge/hook is a compiled-in callback registry (OnCheckpoint, OnSession, OnEvent,
+      wired at internal/cli/hooks.go:14-36). That is the same registry model ADR-020 chose,
+      which corroborates it rather than conflicting with it.
+
+    - pkg/plugin is in direct tension with ADR-020. invoke.go:42 runs exec.CommandContext on a
+      command named in configuration, which ADR-020 clause 2 rejects and its acceptance
+      criterion 12 forbids. BUT ADR-020 rejected the shell-command alternative on security
+      surface, and pkg/security/plugin.go already provides the mitigation ADR-020 assumed did
+      not exist -- ValidatePluginSpec, AuditPluginSpec, validatePluginCommand,
+      BuildPluginEnvironment. ADR-021 ports the plugin host UNWIRED and does not resolve this,
+      because reversing a proposed ADR silently through a port is the quiet reinterpretation
+      this repository forbids. If the mitigation changes the answer, that amends ADR-020 before
+      it is accepted.
+
+  The `module kairo` go.mod path is not a blocker under a port. It would be a condition
+  precedent under a dependency -- nothing can `require` Kairo today -- but a port makes it a
+  find-and-replace.
+
+  ADR-003 and ADR-011 both name Postgres as the single store while Kairo's default index is
+  SQLite. Not a contradiction ONLY because knowledge.Engine is an interface and ADR-021 clause 5
+  has AEP supply a Postgres backend, porting the SQLite one as a test target. Shipping on the
+  ported SQLite engine would require superseding both, and the ADR says so rather than
+  reinterpreting them.
+
+  FINAL REVIEW, whole repository plus branches. Three more findings:
+
+    - WHERE KAIRO'S MOMENTUM IS. 222 branches. HEAD is feat/217-projection-drain, one commit
+      ahead of master and 56 ahead of the v1.5.0 tag, and every one of those 56 is hosted-
+      platform work: outbox projection, presigned upload, sync push, event ingestion. The
+      unmerged branches (feat/215-event-spec, feat/216-event-ingestion) are the same. Kairo's
+      active development is entirely in the half this ADR excludes; the half AEP wants has
+      barely moved since v1.5.0. That makes the port lower-risk and softens the divergence
+      risk, though softening a risk by noting upstream is busy elsewhere is not removing it.
+
+    - docs/v2 IS THE MOST VALUABLE THING IN THE REPOSITORY, AND IT IS NOT CODE. 63 markdown
+      files across 28 sections. Two matter directly. 27-traceability/requirements-traceability
+      .md is a working PRD -> FR/NFR -> docs -> milestone matrix with an exit-evidence column;
+      AEP has PRDs and ADS and nothing connecting them. 27-traceability/acceptance-criteria-
+      convention.md fills a gap AEP has NAMED and not filled: REGISTRIES.md lists "the evidence
+      package has no defined structure" under Known gaps while CLAUDE.md merge requirement 3
+      demands one. Its four rules -- automate first, manual only as Given/When/Then,
+      preconditions explicit, ONE PROOF PER CHECKBOX citing a make target or test path -- are
+      the cheapest high-value adoption available anywhere in Kairo. Reference, not port: these
+      are Kairo's documents and would not pass validate_docs.py.
+
+      Also: Kairo v2 ADR-0006 independently reaches AEP's ADR-003 (Postgres as metadata store,
+      event log, edge store and pgvector index, specialized backends later behind the same
+      interfaces), which corroborates clause 5 rather than fighting it. v2 ADR-0004 matches
+      PRD-009's rebuild requirement.
+
+    - KAIRO HAS WORKING AGENT HOOKS; AEP HAS SPECIFIED ONES. .claude/settings.json binds
+      SessionStart, UserPromptSubmit, PostToolUse on Edit|Write, and Stop to shell scripts that
+      start a session, mark edits, checkpoint at turn end, and inject the previous handoff on
+      resume. AEP's hooks.yaml has fourteen bindings and has never executed one. Not
+      interchangeable mechanisms, but a working implementation of the capture behaviour AEP
+      specified for before_agent_run/after_agent_run. It is also the THIRD data point on the
+      ADR-020 tension: shell commands named in configuration, the model ADR-020 clause 2
+      rejects. Not acted on, same reason as the other two.
+
+  THE DETRIMENT RISK, quantified. AEP's entire product surface is 1229 lines of Go plus 930 of
+  test. Porting ~11k lines makes roughly 90% of the codebase Kairo-derived and inverts what AEP
+  is: a specification repository with a small tool becomes a large provenance library with a
+  specification attached. That argues for porting in sequenced slices driven by a demonstrated
+  need rather than all at once because the code exists. ADR-021 does not specify that sequence,
+  and the disposition tables should be read as an upper bound rather than a plan.
+
+  Outside pkg/, nothing is ported except schemas/, pkg/knowledge/hook and testdata/golden.
+  internal/cli (2690 loc, 40 subcommands) is a reference only -- AEP has its own devctl shape.
+  apps/hosted, cmd/, internal/app, migrations/, release tooling, skills/ and docs/ are excluded.
+
+  The largest stated risk is that divergence becomes CERTAIN rather than possible. Under a
+  dependency, drift is a version mismatch a build catches. Under a port there is no version to
+  compare and no build to fail: a fix made in Kairo simply never arrives, and nothing reports
+  it. That is the cost this decision buys freedom with.
+
+  Written as `draft`. A draft carries no authority and does not fire architecture_decision,
+  which is scoped `authoritative`. Accepting is a separate human act with an approval record;
+  an agent may only write the record down.
+
+  Numbering note: ADR-020 and WI-0024 are in flight on PR #19, so ADR-021, PRD-009 and WI-0025
+  are the next free numbers on both sequences.
+required_gates: []
+dependencies: []
+branch: adr/25-kairo-provenance-dependency
