@@ -1,0 +1,40 @@
+id: WI-0030
+store: local
+project: PRJ-mykullzeroone/agentic-engineering-platform
+type: chore
+work_state: review
+priority: normal
+title: Add provenance node and edge types to the knowledge graph
+description: |
+  Third ADR-022 absorption. Crosses platform_config: .agentic/registries/** is a trigger scoped
+  `always`, so this opens the gate regardless of any document's status. An agent may write the
+  record; only a human closes the gate.
+
+  KNOWLEDGE_GRAPH.md already had 33 node types and 20 edge types, richer than Kairo's 22 and 16
+  in the intent and governance direction -- PRD, ADS, Requirement, AcceptanceCriterion, Policy,
+  Standard, Question, Answer, Finding, HumanIntervention, RegressionCase have no Kairo
+  equivalent. But it was provenance-light: it could express what was DECIDED and REQUIRED and
+  not what an agent actually held, read or produced. Kairo's is the inverse. The union again.
+
+  Ten provenance nodes added: Repository, File, GitBlob, ContextManifest, Checkpoint, Prompt,
+  ToolCall, TestRun, ExternalSnapshot, Model. Kairo's Organization is dropped because AEP has no
+  tenancy, and where names collide the AEP name wins per ADR-022's translation rule -- its
+  Session and Decision were already here and its Agent is this document's AgentIdentity.
+
+  Six provenance edges added: REFERENCES, READ, MODIFIED, MOTIVATED, EXPLAINS, RESTORES. READ and
+  MODIFIED are the pair that matter: together they make "what context did this agent hold when it
+  made this change" a graph query rather than an archaeology exercise, which is PRD-009's entire
+  acceptance criterion.
+
+  Kairo's PRODUCED, VALIDATED and FAILED are deliberately NOT added. They are this document's
+  PRODUCED_BY, VERIFIED_BY and FAILED_BECAUSE under different names, and two names for one edge is
+  exactly the drift a registry exists to prevent. HAS, CREATED and GENERATED are dropped as too
+  general to constrain anything.
+
+  Both sets are also registered as graph_node_type and graph_edge_type vocabularies, closed like
+  the capability namespace, so an edge naming an unknown node type is an error rather than a
+  silently tolerated one. 43 node tokens, 25 edge tokens.
+required_gates:
+- platform_config
+dependencies: []
+branch: chore/30-graph-vocabularies

@@ -2,6 +2,7 @@ package approvals
 
 import (
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -26,73 +27,111 @@ func repoRoot(t *testing.T) string {
 	}
 }
 
-// TestGoReproducesRecordedDigests is the check that makes the second implementation of
-// the hash schemes safe to have.
+// pythonDigest computes the same two schemes in Python, using the exact expressions
+// scripts/check_gates.py uses, and returns "" when python3 is unavailable.
+func pythonDigest(t *testing.T, root string, art Artifact) string {
+	t.Helper()
+	src := `
+import hashlib, sys
+path, kind = sys.argv[1], sys.argv[2]
+raw = open(path, "rb").read()
+if kind == "config":
+    print(hashlib.sha256(raw).hexdigest()[:32]); raise SystemExit
+s = raw.decode()
+if not path.endswith(".md") or not s.startswith("---\n"):
+    print(""); raise SystemExit
+end = s.find("\n---\n", 4)
+print("" if end == -1 else hashlib.sha256(s[end+5:].encode()).hexdigest()[:32])
+`
+	out, err := exec.Command("python3", "-c", src, filepath.Join(root, art.Path), art.Kind).Output()
+	if err != nil {
+		return ""
+	}
+	return strings.TrimSpace(string(out))
+}
+
+// TestGoAgreesWithPython is the check that makes the second implementation of the hash
+// schemes safe to have.
 //
 // scripts/check_gates.py implements legacy/truncated-32 and legacy/file-32 in Python; this
-// package implements them again in Go. Neither can be deleted -- CI needs the Python one
-// and devctl needs one that does not shell out -- so the duplication is pinned to a shared
-// corpus instead. Every digest in .agentic/approvals/ was computed by the Python side and
-// written down by a human. If Go reproduces them, the two implementations agree.
+// package implements them again in Go. Neither can be deleted -- CI needs the Python one and
+// devctl needs one that does not shell out -- so the two are compared directly over the same
+// bytes.
 //
-// The assertion is per PATH, not per record: for each artifact path, SOME record must
-// carry the digest Go computes for it today. Requiring every record to match would be
-// wrong, because records are historical. platform_config has been closed four times as the
-// registries changed, so APR-0008, APR-0009 and APR-0010 hold digests of gates.yaml that
-// are deliberately no longer current; only APR-0011 describes what is on disk. A test that
-// failed on those would be asserting that approval history cannot exist.
+// An earlier version compared Go's digest against the digests humans had RECORDED, requiring
+// that some record carry the value Go computes. That was wrong in a way that only showed up
+// under use: it fails on any legitimately gated edit. Editing an approved document is how a
+// gate is opened, and the resulting hash mismatch is the gate working -- not the two
+// implementations disagreeing. The test conflated "Go and Python differ", which is a bug,
+// with "this document has a pending unapproved edit", which is Tuesday. PRs #24 and #25 both
+// went red for it.
 //
-// This reads the working tree where check_gates.py reads HEAD. That difference is real and
-// intended -- check_gates evaluates a diff between commits, this evaluates what is on disk
-// now -- and the two coincide on a clean tree, which is what CI always has.
-func TestGoReproducesRecordedDigests(t *testing.T) {
+// Comparing the implementations to each other tests the actual claim and is indifferent to
+// whether any document is currently approved.
+func TestGoAgreesWithPython(t *testing.T) {
+	if _, err := exec.LookPath("python3"); err != nil {
+		t.Skip("python3 not available; cross-language agreement not checkable here")
+	}
 	root := repoRoot(t)
 	records, err := Load(root)
 	if err != nil {
 		t.Fatalf("Load: %v", err)
 	}
-	if len(records) == 0 {
-		t.Fatal("no approval records found; this test would pass vacuously")
-	}
 
-	// path -> the digest Go computes now, plus every digest any record recorded for it.
-	computed := map[string]string{}
-	recorded := map[string][]string{}
+	seen, checked := map[string]bool{}, 0
 	for _, rec := range records {
 		for _, art := range rec.Artifacts {
-			got, ok := Digest(root, art)
-			if !ok {
-				// Unverifiable is a legitimate outcome, not a failure: legacy/truncated-32
-				// is undefined over a YAML file. Skip it rather than count it as agreement.
+			key := art.Kind + ":" + art.Path
+			if seen[key] {
 				continue
 			}
-			computed[art.Path] = got
-			recorded[art.Path] = append(recorded[art.Path],
-				rec.ID+"="+recordedDigest(art.ContentHash))
+			seen[key] = true
+
+			got, ok := Digest(root, art)
+			want := pythonDigest(t, root, art)
+			if !ok {
+				// Both must agree that the scheme defines no digest here, or one of them
+				// is silently hashing something the other refuses to.
+				if want != "" {
+					t.Errorf("%s (%s): Go computes no digest, Python computes %s", art.Path, art.Kind, want)
+				}
+				continue
+			}
+			if want == "" {
+				t.Errorf("%s (%s): Go computes %s, Python computes no digest", art.Path, art.Kind, got)
+				continue
+			}
+			if got != want {
+				t.Errorf("%s (%s): Go %s, Python %s -- the implementations have diverged",
+					art.Path, art.Kind, got, want)
+			}
+			checked++
 		}
 	}
-	if len(computed) == 0 {
-		t.Fatal("every artifact was unverifiable; the schemes were never exercised")
+	if checked == 0 {
+		t.Fatal("no artifact was hashed by both; the comparison never ran")
 	}
+	t.Logf("Go and Python agree on %d artifact digest(s)", checked)
+}
 
-	for path, got := range computed {
-		matched := false
-		for _, entry := range recorded[path] {
-			if strings.HasSuffix(entry, "="+got) {
-				matched = true
-				break
+// TestSomeRecordedDigestIsReproducible guards the above from passing while Go and Python
+// agree on a scheme that is not the one the records were written under. It needs only one
+// match, because a path with a pending gated edit legitimately matches nothing.
+func TestSomeRecordedDigestIsReproducible(t *testing.T) {
+	root := repoRoot(t)
+	records, err := Load(root)
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	for _, rec := range records {
+		for _, art := range rec.Artifacts {
+			if got, ok := Digest(root, art); ok && got == recordedDigest(art.ContentHash) {
+				t.Logf("reproduced %s from %s", art.Path, rec.ID)
+				return
 			}
 		}
-		if !matched {
-			t.Errorf("%s: Go computes %s, which no record carries.\n"+
-				"  recorded: %s\n"+
-				"  Either the Go and Python hash implementations have diverged, or every "+
-				"record naming this path is stale and the gate is genuinely open.",
-				path, got, strings.Join(recorded[path], " "))
-		}
 	}
-	t.Logf("reproduced the recorded digest for %d path(s) across %d record(s)",
-		len(computed), len(records))
+	t.Fatal("no recorded digest is reproducible; the schemes do not match the corpus")
 }
 
 // TestBothSchemesAreExercised guards the test above from decaying into a one-scheme

@@ -1,0 +1,40 @@
+id: WI-0031
+store: local
+project: PRJ-mykullzeroone/agentic-engineering-platform
+type: fix
+work_state: review
+priority: high
+title: Fix the hash agreement test, which failed on every gated edit
+description: |
+  TestGoReproducesRecordedDigests (WI-0023) compared Go's digest against the digests humans had
+  RECORDED, requiring that some record on disk carry the value Go computes for each path.
+
+  That was wrong in a way only use revealed. EDITING AN APPROVED DOCUMENT IS HOW A GATE IS
+  OPENED, and the resulting hash mismatch is the gate working. The test read it as the two hash
+  implementations having diverged. So any legitimately gated change turned the build red for a
+  reason unrelated to what the test claims to check.
+
+  Found by PRs #24 and #25, both of which open gates on purpose and both of which went red on
+  `build` as well as on the intended `validate`. The validate failure was correct; the build
+  failure was this defect.
+
+  The test conflated two conditions that need different responses: "Go and Python disagree",
+  which is a bug in one of them, and "this document has a pending unapproved edit", which is
+  normal workflow.
+
+  Replaced by TestGoAgreesWithPython, which compares the two implementations DIRECTLY over the
+  same bytes, shelling out to python3 with the exact expressions check_gates.py uses. That tests
+  the actual claim and is indifferent to whether any document is currently approved. It skips
+  rather than fails when python3 is absent, and it errors if either side computes a digest where
+  the other refuses to -- otherwise one could silently hash something the other declines.
+
+  TestSomeRecordedDigestIsReproducible is kept as a guard against the pair agreeing on a scheme
+  that is not the one the records were written under. It needs only ONE match, because a path
+  with a pending gated edit legitimately matches nothing.
+
+  Mutation-tested: appending a byte inside bodyHash makes TestGoAgreesWithPython fail on every
+  markdown artifact with an explicit "the implementations have diverged" message. Restored green.
+required_gates: []
+dependencies:
+- WI-0023
+branch: fix/31-hash-agreement-test

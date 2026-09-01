@@ -30,7 +30,33 @@ Deliver concise, role-specific, evidence-backed context to agents automatically 
 - role-specific memories and lessons;
 - similar prior implementations;
 - known pitfalls;
-- provenance for each included item.
+- provenance for each included item;
+- the context budget: requested and estimated size;
+- **omissions and confidence** — what was considered and left out, and how sure the retriever is
+  that what remains is sufficient.
+
+## Reconstruction, not replay
+
+Context is *reconstructed* for the present task, not replayed from a prior session. Replay
+returns a previous state; reconstruction assembles the memory this task needs, which is a
+different and usually smaller set. Absorbed from Kairo's `docs/v2/12-resume` (ADR-022), which
+draws the same line as "resume is not restore".
+
+The distinction has a practical consequence: a packet is not judged by how faithfully it
+reproduces a prior context, but by whether the work succeeds with it.
+
+## Declared omissions
+
+**A packet states what it left out.** This is the requirement most likely to be dropped as
+overhead and is the one that makes the rest trustworthy.
+
+A packet listing only its contents is indistinguishable from a packet that found nothing else —
+so an agent cannot tell "there is no prior attempt at this" from "prior attempts were dropped for
+budget". The first is a fact about the work; the second is a fact about the retriever, and only
+one of them should change what the agent does.
+
+This is the same discipline as the evidence package's required `open` block
+(`docs/spec/EVIDENCE_PACKAGE.md`): absence stated, never implied.
 
 ## Retrieval principles
 - canonical knowledge first;
