@@ -1,0 +1,73 @@
+# Approval record, per ADR-019.
+#
+# Ratifies the product vision. Until now the document stating what AEP is carried no authority
+# at all: `type: guide`, `tier: null`, which AUTHORITY_MODEL's own table marks "non-normative,
+# carries no authority in conflict resolution", and `status: draft` on top of that. Meanwhile
+# six tier-0 specs about hashing, lifecycle, registries, capabilities, evidence and authority
+# were approved and gated. The corpus had ratified how it governs itself and never ratified
+# what it is.
+#
+# A 2026-09-04 audit traced the consequence: across 22 accepted ADRs the words `specialist`,
+# `recursive` and `definition of done` appear zero times, and 38 of the first 41 work items went
+# to the repository's own governance machinery. Effort followed authority.
+
+id: APR-0019
+gate: constitutional_change
+surface: chat
+session: 01UA6mEKxLN6d58jpT9eqjdw
+
+approver: MykullZeroOne
+approved_on: 2026-09-04
+recorded_on: 2026-09-04
+
+hash_scheme: legacy/truncated-32
+
+artifacts:
+  - id: PRODUCT-VISION
+    kind: principle
+    path: docs/vision/PRODUCT_VISION.md
+    title: Product Vision
+    content_hash: legacy/truncated-32:sha256:8cab6f4b7889b405e26408544b51faa2
+
+work_items:
+  - WI-0062
+
+request: >
+  Presented the five mechanical properties that make an artifact carry weight in this system --
+  tier, status, gate, citation, enforcement -- and showed the vision failing all five. Proposed
+  promoting it from `guide`/`tier: null` to `principle`/`tier: 0` and ratifying it, then adding a
+  required `serves` field to the work item schema so effort traces to intent. Named the approval
+  as the act that makes the constitutional_change gate live on this path.
+
+statement: >
+  Let's do it
+
+  -- given in response to that plan, whose first step was "promote and ratify the vision". The
+  body approved here is byte-identical to the one the principal read and merged in PR #45; the
+  content hash covers the document body and excludes front matter, so promoting type, tier and
+  status did not change what is being approved.
+
+scope_note: >
+  Approves the product vision at the content it carries in this change, and nothing else.
+
+  What this makes true: the vision becomes a tier-0 normative artifact, so under AUTHORITY_MODEL
+  rule 1 it now outranks every ADR, PRD and design document beneath it, and a conflict resolves
+  in its favour rather than being unresolvable. The constitutional_change gate becomes live on
+  docs/vision/PRODUCT_VISION.md, so future edits to its body require a record like this one.
+
+  What this does NOT cover:
+
+    - ADR-023 (the ten-step universal agent loop) is still `proposed` and unratified. It needs
+      its own record.
+    - docs/vision/PRINCIPLES.md is untouched.
+    - The three remaining thesis decisions -- the organization model, the Question entity and
+      escalation ladder, the memory typology -- have no ADR yet.
+    - SYSTEM_ARCHITECTURE.md:46 still states AEP's flow as a linear arrow chain. It is now
+      formally outranked by an approved tier-0 artifact that says otherwise, which makes it a
+      contradiction the corpus must resolve rather than a stylistic difference. Fixing it is a
+      gated edit under architecture_decision and is not covered here.
+
+  Known limit, stated rather than discovered: ratification makes the vision win arguments. It
+  does not make anything trace to it. Nothing in docs/ cites the vision today, and the work item
+  schema has no field connecting effort to intent. That is WI-0063, and it is the half of this
+  plan that actually changes what gets built.

@@ -50,6 +50,7 @@ Constitutional and meta-specification. Tier 0.
 | `SPEC-REGISTRIES` | Registries | `approved` | [docs/spec/REGISTRIES.md](docs/spec/REGISTRIES.md) |
 | `SPEC-ENTITY-MODEL` | Entity Model | `draft` | [docs/spec/entity-model.yaml](docs/spec/entity-model.yaml) |
 | `PRINCIPLES` | Product and Engineering Principles | `approved` | [docs/vision/PRINCIPLES.md](docs/vision/PRINCIPLES.md) |
+| `PRODUCT-VISION` | Product Vision | `approved` | [docs/vision/PRODUCT_VISION.md](docs/vision/PRODUCT_VISION.md) |
 
 ## Architecture decisions
 
@@ -162,7 +163,6 @@ Non-normative. Carries no authority in conflict resolution.
 | --- | --- | --- | --- |
 | `GUIDE-DOCUMENTATION-INDEX` | Documentation Index | `draft` | [docs/DOCUMENTATION_INDEX.md](docs/DOCUMENTATION_INDEX.md) |
 | `GUIDE-IMPLEMENTATION-ROADMAP` | Implementation Roadmap | `draft` | [docs/roadmap/IMPLEMENTATION_ROADMAP.md](docs/roadmap/IMPLEMENTATION_ROADMAP.md) |
-| `GUIDE-PRODUCT-VISION` | Product Vision | `draft` | [docs/vision/PRODUCT_VISION.md](docs/vision/PRODUCT_VISION.md) |
 | `EX-IDEA-TO-DELIVERY` | Example — From Human Idea to Delivery | `draft` | [examples/IDEA_TO_DELIVERY.md](examples/IDEA_TO_DELIVERY.md) |
 | `EX-SCENARIOS` | Scenarios | `draft` | [examples/SCENARIOS.md](examples/SCENARIOS.md) |
 

@@ -1,17 +1,18 @@
 ---
-id: GUIDE-PRODUCT-VISION
-type: guide
-tier: null
-status: draft
+id: PRODUCT-VISION
+type: principle
+tier: 0
+status: approved
 version: 2
 owner: human.cto
-human_approved: false
-approved_by: null
-approved_on: null
-approval_record: null
+human_approved: true
+approved_by: MykullZeroOne
+approved_on: 2026-09-04
+approval_record: APR-0019
 supersedes: null
 superseded_by: null
 last_reviewed: 2026-09-04
+enforcement: prose
 ---
 
 # Product Vision
