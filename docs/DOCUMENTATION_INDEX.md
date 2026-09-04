@@ -164,6 +164,7 @@ Non-normative. Carries no authority in conflict resolution.
 | `GUIDE-IMPLEMENTATION-ROADMAP` | Implementation Roadmap | `draft` | [docs/roadmap/IMPLEMENTATION_ROADMAP.md](docs/roadmap/IMPLEMENTATION_ROADMAP.md) |
 | `GUIDE-PRODUCT-VISION` | Product Vision | `draft` | [docs/vision/PRODUCT_VISION.md](docs/vision/PRODUCT_VISION.md) |
 | `EX-IDEA-TO-DELIVERY` | Example — From Human Idea to Delivery | `draft` | [examples/IDEA_TO_DELIVERY.md](examples/IDEA_TO_DELIVERY.md) |
+| `EX-SCENARIOS` | Scenarios | `draft` | [examples/SCENARIOS.md](examples/SCENARIOS.md) |
 
 ## Registries
 

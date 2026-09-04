@@ -1,0 +1,54 @@
+id: WI-0061
+store: local
+project: PRJ-mykullzeroone/agentic-engineering-platform
+type: docs
+work_state: in_progress
+priority: high
+title: Rewrite the product vision and add worked scenarios with diagrams
+description: |
+  The principal judged the vision too weak to communicate intent, and an outside reviewer
+  independently reached the same conclusion from the documents alone. A corpus audit found the
+  cause: the thesis was present but had no authority anywhere. PRODUCT_VISION.md is `type: guide,
+  tier: null` -- not merely draft but, by type, sitting with reference material that carries no
+  authority in conflict resolution at all.
+
+  The principal's own architecture infographic turned out to be the strongest statement of the
+  thesis in existence, and contained three things the corpus had nowhere: the tagline "You
+  provide intent and judgment. AEP runs the engineering organization"; feedback loops originating
+  at any stage, whose omission from SYSTEM_ARCHITECTURE.md:46 is what turned the organization
+  into a pipeline; and the Simple First Mile, which is the minimal-executable-proof boundary the
+  documentation never drew.
+
+  PRODUCT_VISION.md v2:
+
+    - Leads with the tagline, then states what AEP is, then five things it is not, because each
+      is a plausible misreading of the same description.
+    - Corrects the target user from "technically sophisticated solo founders and 2-10 person
+      teams" to an experienced engineer working solo or leading a small team, with the
+      non-technical founder as an explicit non-user. The reasoning is recorded rather than
+      asserted: a gate is only real if the person closing it knows enough to refuse.
+    - Names the seam. AEP begins when you have intent you can articulate; it does not do market
+      validation, user research, or visual design, and its UX roles are requirements analysts.
+    - Adds four Mermaid diagrams: the organization with its return paths, the ten-step loop with
+      its re-entry edges and escalation branch, the escalation ladder, and the first mile.
+    - States the subscription limitation honestly: what a consumer subscription permits under
+      automation is set by vendor terms, not by this platform.
+    - Ends with a designed/implemented/proven status section.
+
+  examples/SCENARIOS.md is new: five worked scenarios, each chosen because a session-shaped tool
+  fails it structurally rather than badly -- the question that never reaches the human, the
+  compliance question that is really a product question, the stuck role handed to another
+  provider, the regression no test suite can see, and the mistake made four times. Each carries a
+  diagram and a closing line naming what breaks without AEP.
+
+  These are the first diagrams in the corpus; nothing used Mermaid before.
+
+  Both files are `draft`, so the constitutional_change gate does not fire. Neither ratifies
+  anything. Ratifying the vision is a separate act and should probably also promote it above
+  `tier: null`, which is a decision this item does not make.
+
+  NOT DONE HERE: examples/IDEA_TO_DELIVERY.md is still the linear walkthrough the audit named as
+  its worst offender. It needs the same treatment and gets its own item.
+required_gates: []
+dependencies: []
+branch: docs/61-vision-scenarios-diagrams
