@@ -14,5 +14,6 @@ description: |
   Serves ISC-53 (AEP reads this repository's own .agentic/ unchanged and operates on it) and is
   the substrate for ISC-7's plane-count check. Done when the service starts, loads
   .agentic/project.yaml through internal/config, and a cross-plane import fails the build.
+serves: [ISC-53]
 required_gates: [architecture_high_risk]
 dependencies: []

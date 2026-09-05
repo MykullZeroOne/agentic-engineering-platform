@@ -25,6 +25,7 @@ description: |
   (WI-0010); where packages are stored, which is platform_config; and narrowing SPEC-REGISTRIES'
   known-gaps entry, which is now stale on the evidence half. That document is approved, so
   editing it re-opens this gate and needs its own record.
+serves: [ISC-29]
 required_gates:
 - constitutional_change
 dependencies:

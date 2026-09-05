@@ -71,6 +71,7 @@ description: |
 
   Not in scope: whether CLAUDE.md is a platform_config trigger at all. APR-0011 already ruled it
   is not, and WI-0039 covers making that ruling findable.
+serves: [ISC-1]
 required_gates: []
 dependencies: []
 branch: fix/40-gate-coverage-keyed-to-change

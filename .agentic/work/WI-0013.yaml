@@ -57,6 +57,7 @@ description: |
   uses, reports them as GRAND, and does not block. The summary says so rather than claiming
   every gate is closed, because waving something through and calling it approved is the
   overclaim this check exists to catch. ADR-016 attestation (WI-0005) is the real fix.
+serves: [governance]
 
 required_gates:
 - platform_config

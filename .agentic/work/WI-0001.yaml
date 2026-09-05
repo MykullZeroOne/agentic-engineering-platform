@@ -10,6 +10,7 @@ description: |
   SPEC-LIFECYCLE, populate it across the artifacts carrying `approved_by`, and add an agreement
   check to validate_docs.py alongside the existing approver check. This is a material change to
   SPEC-LIFECYCLE and re-opens its constitutional_change gate.
+serves: [governance]
 required_gates:
 - constitutional_change
 branch: claude/docs-processes-review-4vyl8q

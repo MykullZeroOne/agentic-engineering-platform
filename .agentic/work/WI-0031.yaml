@@ -34,6 +34,7 @@ description: |
 
   Mutation-tested: appending a byte inside bodyHash makes TestGoAgreesWithPython fail on every
   markdown artifact with an explicit "the implementations have diverged" message. Restored green.
+serves: [governance]
 required_gates: []
 dependencies:
 - WI-0023

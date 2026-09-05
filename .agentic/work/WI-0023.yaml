@@ -43,6 +43,7 @@ description: |
   the `hook` rung -- the derivation lives in a package the engine can call unchanged when
   it exists, and `advance` is the command that proves the derivation works before anything
   depends on it.
+serves: [ISC-19]
 required_gates: []
 dependencies:
 - WI-0013

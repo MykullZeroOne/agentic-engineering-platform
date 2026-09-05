@@ -10,4 +10,5 @@ description: |
   names no computation and is what the validator warns on. Normalise them to
   `legacy/truncated-32:sha256:` under a migration attestation per ADR-016. This does not move them
   to canonical/v2 -- that needs structured base data, which does not exist yet.
+serves: [governance]
 branch: spec/18-resolve-open-decisions

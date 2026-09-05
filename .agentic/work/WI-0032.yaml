@@ -52,6 +52,7 @@ description: |
 
   Not fixed: whatever GitHub is doing at merge time. This makes the derivation survive it rather
   than explaining it.
+serves: [ISC-19]
 required_gates: []
 dependencies:
 - WI-0023

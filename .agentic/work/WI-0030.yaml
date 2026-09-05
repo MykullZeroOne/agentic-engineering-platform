@@ -34,6 +34,7 @@ description: |
   Both sets are also registered as graph_node_type and graph_edge_type vocabularies, closed like
   the capability namespace, so an edge naming an unknown node type is an error rather than a
   silently tolerated one. 43 node tokens, 25 edge tokens.
+serves: [ISC-48]
 required_gates:
 - platform_config
 dependencies: []
