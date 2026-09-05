@@ -14,5 +14,6 @@ description: |
   Serves ISC-26 (evidence attaches to the run, not the session), ISC-27 (a failed run resumes
   without re-deriving context from the human) and ISC-28. Done when a run killed mid-flight
   resumes from its own record with no human input.
+serves: [ISC-26, ISC-27, ISC-28]
 required_gates: []
 dependencies: [WI-0046]

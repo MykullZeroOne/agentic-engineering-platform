@@ -33,6 +33,7 @@ description: |
 
   Unblocks: PRD-009 can now be taken on its own merits, and ADR-022's rule cites an accepted
   artifact rather than a proposal.
+serves: [ISC-48]
 required_gates:
 - architecture_decision
 dependencies:

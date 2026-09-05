@@ -15,5 +15,6 @@ description: |
   source). Depends on WI-0009: the entity model is draft, and a schema cut from a draft model
   gets re-cut. Done when migrations create the Phase 1 tables and a replay test rebuilds a
   projection from events alone.
+serves: [ISC-43, ISC-18]
 required_gates: []
 dependencies: [WI-0009]

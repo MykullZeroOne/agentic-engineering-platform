@@ -13,6 +13,7 @@ description: |
 
   Created retroactively: the work store did not exist when this work began, so the first item
   it can hold is the item for building it.
+serves: [ISC-18]
 required_gates:
 - platform_config
 branch: claude/docs-processes-review-4vyl8q

@@ -160,6 +160,7 @@ description: |
 
   The implementation is deliberately not in this change. It touches hooks.yaml, whose header
   and schema this ADR makes false, and that is a platform_config change with its own gate.
+serves: [ISC-37]
 required_gates: []
 dependencies:
 - WI-0023

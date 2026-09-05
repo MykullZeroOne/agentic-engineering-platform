@@ -19,6 +19,7 @@ description: |
   Twenty-three open items are reported as "no Closes trailer, not evaluated". All are simply
   unmerged, which is correct for open work. The message conflating never-merged with
   merged-but-unidentifiable is a known reporting defect and not a finding about them.
+serves: [governance]
 required_gates: []
 dependencies: []
 branch: chore/58-advance-merged-work-states

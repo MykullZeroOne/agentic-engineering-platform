@@ -14,5 +14,6 @@ description: |
   Serves ISC-2 (a role naming a model fails validation), ISC-3 (swapping every provider changes
   no organisational row) and ISC-25. Done when a role file naming a provider is rejected at load,
   and a provider swap in runtime_preferences leaves the registry tables byte-identical.
+serves: [ISC-2, ISC-3, ISC-25]
 required_gates: []
 dependencies: [WI-0042, WI-0043]

@@ -15,5 +15,6 @@ description: |
   document types from one source; they should share a renderer and need not wait on each other.
   Done when an approved intent record yields both documents with lifecycle front matter that
   passes validate_docs.py.
+serves: [ISC-12, ISC-14]
 required_gates: []
 dependencies: [WI-0042]
