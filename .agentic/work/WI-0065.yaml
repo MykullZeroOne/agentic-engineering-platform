@@ -1,0 +1,39 @@
+id: WI-0065
+store: local
+project: PRJ-mykullzeroone/agentic-engineering-platform
+type: spec
+work_state: intake
+priority: normal
+title: Reconcile SPEC-LOCAL-WORK-STORE's 38-of-41 governance figure with the measured 23
+description: |
+  SPEC-LOCAL-WORK-STORE's `Serves` section states, as the fact that motivated the field: "An
+  audit on 2026-09-04 found that 38 of the first 41 work items were governance and three were
+  product." WI-0064 backfilled `serves` across all sixty items by reading each one against
+  ISA.md, and measured 23 governance and 17 serving a claim over the same range.
+
+  The disagreement is not arithmetic. It is where the line falls. The audit counted
+  specification and decision work as governance; the backfill credited it to a claim wherever a
+  claim states what it advances -- WI-0019 (`devctl doctor`) to ISC-52, WI-0023 and WI-0032
+  (`devctl work advance`) to ISC-19, WI-0025, WI-0030 and WI-0034 (the Kairo provenance port)
+  to ISC-48, WI-0028 (memory typology and context budget) to ISC-45 and ISC-47. Those are AEP's
+  own runtime and AEP's own specifications, and the claims they name are real.
+
+  The finding survives either way: governance was the majority of the early work, and the share
+  fell from 56% to 15% once WI-0007 decomposed roadmap Phase 1. Only the magnitude is wrong, and
+  a tier-0 specification asserting a number its own field now contradicts is the kind of quiet
+  drift the corpus exists to prevent.
+
+  DECIDE: correct the figure to 23, or keep 38 and annotate it with the counting rule that
+  produced it and the measurement that disagrees. The second is probably better -- it records
+  that "governance" has a boundary people read differently, which is the more useful fact and
+  the one a bare corrected number would erase. Either way the section should say how the count
+  is defined, because it is now a query anyone can re-run and get a third answer from.
+
+  Crosses `constitutional_change`: SPEC-LOCAL-WORK-STORE is tier 0 under docs/spec/. It is
+  `draft` today and the gate is scoped `applies_when: authoritative`, so whether it fires
+  depends on the artifact's status at the time -- which is WI-0018's open question, not this
+  item's to settle. Declared here so the item lands `awaiting_human` rather than auto-closing
+  in the direction an agent prefers.
+serves: [governance]
+required_gates: [constitutional_change]
+dependencies: []

@@ -1,0 +1,33 @@
+id: WI-0066
+store: local
+project: PRJ-mykullzeroone/agentic-engineering-platform
+type: docs
+work_state: intake
+priority: normal
+title: Mark ISA claim polarity so anti-claims partition out of orphan lists
+description: |
+  Running the `serves` join backwards after WI-0064 found seven of ISA.md's 57 claims that no
+  work item serves: ISC-4, ISC-6, ISC-7, ISC-22, ISC-35, ISC-36 and ISC-42. Five of the seven
+  are anti-claims or advisory checks -- statements about what must NOT happen, which nobody
+  writes a work item for and which close as a property of other work rather than as work of
+  their own. Only ISC-22 (the one-query trace) and ISC-35/ISC-36 (human-gate UI behaviour that
+  WI-0048's workspace item does not reach) are gaps anyone should act on.
+
+  So the backward join reports five false positives out of seven, and a report that is 71% noise
+  gets ignored the second time it runs. The signal is already in the text: every anti-claim
+  begins "Anti:" and ISC-34 begins "Antecedent:". That is a convention a reader can see and a
+  tool cannot rely on, because nothing requires it and nothing checks it.
+
+  Make polarity structural rather than a prose prefix, so an orphan report can partition on it
+  and surface the two real gaps instead of seven candidates. Options not chosen here: a field in
+  the claim line, a separate section per polarity, or a marker the ISA format spec defines. The
+  format spec lives outside this repository, so a repo-local convention plus a validator check is
+  the cheaper path and does not require changing a system document to test the idea.
+
+  Not urgent, and worth doing before the next backward join rather than after. Forward
+  traceability (does this work advance anything?) and backward traceability (does this claim have
+  anyone working on it?) find different defects, and the backward direction is the one with no
+  tooling at all today.
+serves: [governance]
+required_gates: []
+dependencies: []
