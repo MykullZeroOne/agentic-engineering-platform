@@ -2,7 +2,7 @@ id: WI-0060
 store: local
 project: PRJ-mykullzeroone/agentic-engineering-platform
 type: adr
-work_state: in_progress
+work_state: awaiting_human
 priority: high
 title: Ratify the universal agent loop as a tier-1 decision
 description: |
