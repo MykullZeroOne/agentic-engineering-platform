@@ -1,0 +1,67 @@
+# Approval record, per ADR-019.
+#
+# Acceptance of ADR-023. An ADR moves to `accepted` rather than `approved` and is immutable
+# thereafter; reversing this decision requires a superseding ADR, not an edit.
+
+id: APR-0020
+gate: architecture_decision
+surface: chat
+session: 01UA6mEKxLN6d58jpT9eqjdw
+
+approver: MykullZeroOne
+approved_on: 2026-09-06
+recorded_on: 2026-09-06
+
+hash_scheme: legacy/truncated-32
+
+artifacts:
+  - id: ADR-023
+    kind: adr
+    path: docs/adr/ADR-023-UNIVERSAL-AGENT-LOOP.md
+    title: The Universal Agent Loop
+    content_hash: legacy/truncated-32:sha256:49ddd65bf3c6763d76933020fca53146
+
+request: >
+  ADR-023 was merged to main as `proposed` in #44 after an adversarial read produced four
+  findings, all addressed before merge: a return edge for cross-role repair (new Receive on
+  the same run, so ENGINEERING_LOOP's repair loop has a state and ISC-26 holds), the human as
+  a step-4 specialist and human-owned step-7 gates (what ISC-10 requires of the BA), ADR-005
+  cited for the escalation ladder instead of deferring a settled decision, and the citation
+  claim restated as a probe. The principal was told that merging closes no gate (ADR-019) and
+  that acceptance needs an explicit word naming the ADR, crossing architecture_decision.
+
+statement: >
+  Accept.
+
+  -- given against the merged content of ADR-023 at 20f8279, in reply to a message stating
+  that merge did not accept it and asking for the word.
+
+scope_note: >
+  Accepts docs/adr/ADR-023-UNIVERSAL-AGENT-LOOP.md at the content it carries on `main` at
+  20f8279. Status moves proposed to accepted; the ADR is immutable and reversible only by
+  supersession.
+
+  What is decided: every organizational tier runs the same ten-step loop; a tier configures
+  it (specialist set including the human, completion criteria and gate ownership, artifact
+  shapes, return sources) and never redefines it; escalation is a branch off step 6 on
+  ADR-005's ladder; one re-entry edge (step 6 or 7 to step 3) makes it recursive; one return
+  edge (a downstream role returning a hand-off as a new Receive on the same run) makes the
+  organization a loop rather than a pipeline; a human-owned step-7 gate passes on the human's
+  approval and on nothing the agent concludes.
+
+  What this does NOT approve:
+
+  - It does not accept the loop as implemented or proven. The ADR states it is `designed`;
+    no runtime executes it. The Simple First Mile is the mitigation and is separate work.
+  - It does not edit SYSTEM_ARCHITECTURE.md:46, which the ADR names as wrong and which is a
+    separate gated change.
+  - It does not decide the organization model, the Question entity, or the memory typology,
+    each excluded by WI-0060.
+  - It does not rewrite the eight per-role loop documents or write RELEASE_LOOP.md. Those are
+    consequences the ADR names and ordinary ungated work.
+
+  Risks accepted knowingly, all stated in the ADR: ten steps may be wrong at a tier nobody
+  has built, orchestration being the likely counterexample; the return edge's run-identity
+  rule is new and untested until ISC-26's probe exists; the re-entry condition has no
+  threshold; the infographic and the design document both still need updating or the
+  three-version problem returns as two.
