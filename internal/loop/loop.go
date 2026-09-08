@@ -226,6 +226,7 @@ func Run(ctx context.Context, o Options) (Outcome, error) {
 				rec.Handoff.State = "merged"
 				mergeCommit = pr.MergeCommit
 				closePassOutcome(rec, "accepted", nowStr())
+				rec.State = "working"
 				startStep = 8
 			case PRClosed:
 				closePassOutcome(rec, "returned", nowStr())
@@ -235,12 +236,28 @@ func Run(ctx context.Context, o Options) (Outcome, error) {
 				rec.Handoff = nil
 				rec.Pass++
 				rec.Passes = append(rec.Passes, Pass{N: rec.Pass, Objective: "returned: " + pr.Review, Opened: nowStr()})
+				rec.State = "working"
 				startStep = 1
 			default:
 				return Outcome{}, fmt.Errorf("loop: unrecognized PR state %q", pr.State)
 			}
 		} else {
 			startStep = rec.Resume()
+			// A plain resume (no open handoff) only ever finds the record parked
+			// awaiting_human (step 7) or idle (a completed run re-invoked, C1's dead
+			// end at step 10) — never blocked, since that state returns above before
+			// this branch runs. Either way the loop is about to execute steps again,
+			// so state must read working rather than the stale park state.
+			if rec.State == "awaiting_human" || rec.State == "idle" {
+				rec.State = "working"
+			}
+		}
+
+		// Persist the resumed/reopened state before the step loop runs, so a
+		// cancellation immediately after (even before step 1's own save) still
+		// leaves "working" on disk rather than the stale park state.
+		if err := SaveRecord(o.Root, rec, now()); err != nil {
+			return Outcome{}, err
 		}
 	}
 
