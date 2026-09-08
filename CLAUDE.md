@@ -246,6 +246,7 @@ Never commit: secrets, tokens, `.env` files, `.DS_Store`, agent scratch output, 
   pip install -r requirements-docs.txt
   python3 scripts/build_index.py                      # regenerate the index
   python3 scripts/validate_docs.py                    # front matter, tiers, registries, index freshness
+  python3 scripts/test_validate_docs.py               # the validator's own tests (required whenever scripts/ changes)
   python3 scripts/check_gates.py --base origin/main   # which human gates the change crosses
   go build ./... && go test ./...                     # required whenever cmd/ or internal/ changes
   ```

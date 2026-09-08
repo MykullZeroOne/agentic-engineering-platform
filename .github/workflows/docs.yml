@@ -30,6 +30,12 @@ jobs:
       - name: Validate documentation
         run: python3 scripts/validate_docs.py
 
+      # The validator's own tests. A validator rule that nothing exercises is a rule
+      # the next refactor can drop silently -- the ISA polarity marker set was verified
+      # by hand once and had no standing proof afterwards (WI-0066).
+      - name: Test the validator
+        run: python3 scripts/test_validate_docs.py
+
       - name: Verify index is current
         run: |
           python3 scripts/build_index.py
