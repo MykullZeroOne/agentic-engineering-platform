@@ -124,64 +124,44 @@ These come from `docs/vision/PRINCIPLES.md` and constrain every change:
 
 ### Open gaps
 
-Recorded in `docs/spec/REGISTRIES.md` under "Known gaps": tier 3 (`docs/policies/`,
-`docs/standards/`) has no artifacts, skills have no schema, the evidence package has no defined
-structure, and escalation has no hook point. Do not invent any of these in passing — each needs a
-decision.
+Recorded in `docs/spec/REGISTRIES.md` under "Known gaps", though that entry is now partly stale.
+Tier 3 has one artifact, POL-001, in `docs/policies/`; `docs/standards/` is still empty and
+materializes with STD-001. Skills still have no schema and escalation still has no hook point. Do
+not invent either in passing — each needs a decision.
 
-## Branching strategy
+## Branching and merging
 
-**Trunk-based development on `main`.** `main` is always releasable. There is no `develop` branch,
-no long-lived release branches, and no environment branches.
+`docs/policies/POL-001-BRANCHING-AND-MERGING.md` is approved (APR-0022) and holds the rules. This
+guide does not restate them; where the two disagree, POL-001 wins. Rule ids below (B1-B7, M1-M6)
+resolve against POL-001. What follows is the reasoning and incident history POL-001 deliberately
+leaves out.
 
-### Rules
+**Trunk-based development on `main`.** `main` is always releasable, protected (B1), and updated
+only by pull request.
 
-1. **`main` is protected.** Never commit directly to `main` and never force-push it. All change
-   arrives through a pull request.
-2. **One issue, one branch, one PR.** A branch that cannot name the issue it serves should not
-   exist. If work grows beyond its issue, split it — do not widen the branch.
-
-   **Two carve-outs, both added after a day that produced twenty pull requests against twelve
-   hundred lines of product code.**
-
-   *Approval records batch.* One pull request may carry several approval records closing several
-   gates, provided each record names its own artifact and statement. Nothing ever required one
-   record per pull request; it was a habit, and it cost four pull requests in a single afternoon
-   to record three approvals.
-
-   *An approval-only change needs no work item.* When a pull request changes nothing but approval
-   records under `.agentic/approvals/` and the front-matter fields pointing at them, it names the
-   approved artifacts instead of a work item. An approval record already states what was approved,
-   by whom, on what content hash, and in response to what request. A work item saying "accept X"
-   adds a second place to look and no fact. This carve-out is narrow on purpose: any change that
-   touches a document's *body* is ordinary work and needs its item.
-3. **Branch from current `main`.** Always `git fetch origin && git switch -c <branch> origin/main`.
-   Never branch from another feature branch; if you genuinely depend on unmerged work, say so on
-   the issue and wait, or land the dependency first.
-4. **Short-lived.** Target under two days of work and under ~400 changed lines. A branch older than
-   five days must be rebased on `main` or closed.
-5. **Isolated worktrees.** Agents implement in a dedicated git worktree per branch
-   (`git worktree add ../aep-<issue> -b <branch> origin/main`), so parallel agents never share a
-   working directory. Remove the worktree when the PR merges.
-6. **Update a branch either way — rebase, or merge `main` into it.** Squash collapses the branch
-   to one commit, so neither choice reaches `main`: PR #9 merged carrying a `main` merge commit
-   and landed as a single-parent squash anyway. The old rule was rebase-only "to keep history
-   linear", which is an argument for a merge-commit workflow this repository does not use. Prefer
-   rebase on a branch only you hold, because it keeps the PR diff easier to read; merge `main` in
-   on a branch someone else has checked out, because rewriting theirs is the greater harm.
-7. **Force-push is allowed on your own feature branch only**, and only with `--force-with-lease`.
+- **B2's two carve-outs** (approval records batching, and an approval-only change needing no work
+  item) exist because a single day once produced twenty pull requests against twelve hundred lines
+  of product code, four of them just to record three approvals under a one-work-item-per-PR rule
+  with no exception for records.
+- **B6** (rebase or merge `main` in, either is fine) replaced a rebase-only rule after PR #9
+  merged carrying a `main` merge commit and still landed as a single-parent squash: proof that
+  "rebase to keep history linear" was an argument for a merge-commit workflow this repository does
+  not run.
+- No local git test identifies a merged branch. Squash means the branch tip is never an ancestor
+  of `main`; GitHub's merge record is the only authority for that fact, the one
+  `work.advance_state` will have to read (WI-0013).
 
 ### Naming
+
+B2's naming convention, from POL-001:
 
 ```
 <type>/<work-item-number>-<kebab-summary>
 ```
 
-The number is the work item's, from `.agentic/work/` — `WI-0007` gives `7`. `<type>` is the work
+The number is the work item's, from `.agentic/work/` (`WI-0007` gives `7`). `<type>` is the work
 item's own `type` field, so the branch prefix and the item's type are one token, not two that
 drift.
-
-Types: `feat`, `fix`, `docs`, `spec`, `adr`, `chore`, `refactor`, `test`, `ci`.
 
 ```
 docs/42-context-packet-provenance
@@ -189,57 +169,24 @@ adr/57-supersede-postgres-first
 feat/103-devctl-doctor
 ```
 
-Work items are structured data, not prose: see `docs/spec/LOCAL_WORK_STORE.md` for the format and
-`.agentic/registries/states.yaml` for the `work_state` axis.
-
 Agent-driven branches may carry the role as a suffix when several roles touch one issue:
 `feat/103-devctl-doctor--backend.engineer`.
 
-## Merging strategy
+**Squash merge only.** One work item becomes one commit on `main`; merge commits and rebase-merge
+are both disabled.
 
-**Squash merge only.** One issue becomes one commit on `main`. This keeps `main` linear, makes
-revert a single operation, and makes the post-merge consolidation hooks
-(`.agentic/hooks/hooks.yaml`) reason about one coherent unit of change.
+- **M1** (the `Closes WI-NNNN` trailer belongs in the branch's commit message, not only the PR
+  body) exists because GitHub's squash body defaults to the branch's commit messages. PRs #8 and
+  #9 both merged without the trailer and reached `main` unlinked to their work item.
+- **M4** (independent review) is suspended repository-wide, not satisfied per pull request: one
+  human identity means GitHub cannot tell author from reviewer. Never cite it as met, never treat
+  self-approval as independent; open until WI-0016. An automated adversarial review is not this
+  requirement but is worth running anyway: two runs on 2026-09-01 found 38 findings across two
+  documents, 8 of them severity 1, including a contradiction with a tier-0 spec approved the same
+  week.
 
-- Merge commits: disabled. Rebase-merge: disabled.
-- The squash commit subject is the PR title. **Put `Closes WI-NNNN` in the branch's commit
-  message, not only in the PR body.** GitHub's squash body defaults to the branch's commit
-  messages, so a line living only in the pull request description never reaches `main` — PRs #8
-  and #9 both merged without one. Setting the repository's squash default to "pull request title
-  and description" also works, but a convention that survives a settings toggle is the sturdier
-  half, and this repository holds only one of the two.
-- Delete the branch on merge. No local git test identifies a merged branch here: squash means the
-  branch tip is never an ancestor of `main`, and its tree diverges as soon as `main` moves on.
-  GitHub's merge record is the only authority — which is also what `work.advance_state` will have
-  to read (`WI-0013`).
-
-### Merge requirements
-
-A PR may merge only when all of these hold:
-
-1. It names its work item and closes it. Work items live in the store named by `work_store`
-   (`.agentic/work/` here), and the branch's commit message carries `Closes WI-NNNN` so that the
-   squash body carries it onto `main`.
-2. All required checks pass. Never merge with a red or skipped required check, and never weaken or
-   disable a check to make a PR mergeable.
-3. It carries its **evidence package** — what changed, why, and how it was verified. A PR is an
-   evidence artifact, not just a diff (`docs/workflows/END_TO_END_SDLC.md`, Phase 5–6).
-4. It has an independent review — **suspended repository-wide, not satisfied per pull request.**
-   This repository has one human identity and agents act as that identity, so GitHub cannot tell
-   author from reviewer. The suspension is a standing fact recorded here; **it is not a checkbox
-   on every pull request**, because a box that is false on every change teaches people to skip the
-   list rather than read it. Never cite the requirement as met and never treat a self-approval as
-   independent. Open risk until `WI-0016` substitutes a reviewing agent or a second identity
-   exists.
-
-   An automated adversarial review is not this, and is worth running anyway: two runs on
-   2026-09-01 found 38 findings across two documents, 8 of them severity 1, including a
-   contradiction with a tier-0 spec approved the same week.
-5. Every **human gate** the change triggers has explicit human approval. The gates in force are
-   `human_gates` in `.agentic/project.yaml`, defined in `.agentic/registries/gates.yaml`; read
-   them there rather than from any list restated in prose. **An agent must never merge a PR that
-   crosses a human gate**, and merging closes no gate (ADR-019) — only an approval record does.
-6. It is up to date with `main`. How it got there does not matter — see branching rule 6.
+Gates in force are `human_gates` in `.agentic/project.yaml`, defined in
+`.agentic/registries/gates.yaml`; read them there, not from any list restated in prose.
 
 ### Change classes that always require human approval
 
@@ -255,10 +202,9 @@ approvers, and prior aliases for each.
 | Anything altering a gate, policy, or required check | `platform_config` |
 | Future: `migrations/**`, per `docs/workflows/POLICY_MODEL.md` | `destructive_data_change` |
 
-### Reverting
-
-Revert first, diagnose second. Because merges are squashed, `git revert <sha>` on `main` is always
-sufficient. Open a follow-up issue for the root cause; do not hot-fix forward on `main`.
+**Revert first, diagnose second.** Because merges are squashed, `git revert <sha>` on `main` is
+always sufficient; open a follow-up issue for the root cause rather than hot-fixing forward on
+`main`.
 
 ## Commits
 
