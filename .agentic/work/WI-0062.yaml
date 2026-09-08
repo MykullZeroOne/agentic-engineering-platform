@@ -1,0 +1,46 @@
+id: WI-0062
+store: local
+project: PRJ-mykullzeroone/agentic-engineering-platform
+type: spec
+work_state: in_progress
+priority: high
+title: Promote the product vision to tier 0 and ratify it
+description: |
+  The document stating what AEP is carried no authority at all. `type: guide`, `tier: null` --
+  which AUTHORITY_MODEL's own table marks "non-normative, carries no authority in conflict
+  resolution" -- and `status: draft` on top of that. Six tier-0 specs about hashing, lifecycle,
+  registries, capabilities, evidence and authority itself were approved and gated. The corpus had
+  ratified how it governs itself and never ratified what it is.
+
+  A 2026-09-04 corpus audit traced the consequence rather than assuming it. Across 22 accepted
+  ADRs the words `specialist`, `recursive` and `definition of done` appear zero times. The only
+  approved statement of AEP's flow was a linear arrow chain. And 38 of the first 41 work items
+  went to the repository's own governance machinery. Effort followed authority, which is what
+  authority is for; the thesis simply had none.
+
+  Done here: type guide -> principle, tier null -> 0, status draft -> approved, id
+  GUIDE-PRODUCT-VISION -> PRODUCT-VISION since a GUIDE- prefix on a tier-0 principle is
+  actively misleading. APR-0019 records the approval.
+
+  The content hash covers the document body and excludes front matter, so the body approved is
+  byte-identical to the one the principal read and merged in PR #45. Promoting the front matter
+  changed nothing about what was approved, which is the only reason this could be one act rather
+  than two.
+
+  What this makes true: under AUTHORITY_MODEL rule 1 the vision now outranks every ADR, PRD and
+  design document beneath it, so a conflict resolves in its favour instead of being
+  unresolvable. The constitutional_change gate becomes live on this path.
+
+  What it immediately exposes: SYSTEM_ARCHITECTURE.md:46 states AEP's flow as a linear arrow
+  chain and is now formally outranked by an approved tier-0 artifact saying otherwise. That is a
+  contradiction the corpus must resolve, not a stylistic difference. Gated under
+  architecture_decision, not fixed here.
+
+  Known limit, stated rather than discovered: ratification makes the vision win arguments. It
+  does not make anything trace to it. Nothing in docs/ cites the vision, and the work item schema
+  has no field connecting effort to intent. That is WI-0063, and it is the half of the plan that
+  changes what gets built rather than what wins a conflict.
+required_gates:
+  - constitutional_change
+dependencies: []
+branch: spec/62-ratify-vision
