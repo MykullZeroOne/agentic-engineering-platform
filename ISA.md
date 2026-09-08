@@ -70,6 +70,25 @@ items in `.agentic/work/` are units of *tracked execution* with their own lifecy
 is a unit of *done-ness* for the platform. One claim may take several work items to close, and a
 work item may close none.
 
+**Claim polarity (this ISA)** — which side of "done" a claim sits on, and therefore whether anyone
+should ever be working on it. A claim's text may open with exactly one marker from a closed set,
+and the marker *is* the polarity:
+
+| Marker | Polarity | Means | Expects a work item to serve it |
+| --- | --- | --- | --- |
+| `Anti:` | anti | a statement about what must **not** happen | no |
+| `Advisory:` | advisory | a standing or advisory check — a continuous property of the corpus or of CI | no |
+| `Antecedent:` | antecedent | a precondition another claim's probe reads through | yes |
+| *(none)* | direct | something built, then probed | yes |
+
+An anti-claim or an advisory check closes as a property of other work rather than as work of its
+own, so nobody writes a work item for one. Running the `serves` join backwards without that
+distinction reported seven unserved claims on 2026-09-08, five of them false positives; the
+polarity column is what partitions those out. The marker set is closed and
+`scripts/validate_docs.py` enforces it, because a convention nothing checks is one a tool cannot
+rely on. _Avoid_ inventing a fourth marker in passing: an unrecognised leading `Word:` is an error,
+not a new polarity.
+
 **Feature (this ISA)** — a vertical slice of AEP that can be verified end to end on its own.
 _Avoid_: "plane", "phase", "component". Planes (ADR-010) are a decomposition of responsibility and
 deliberately cut *across* features; roadmap phases are a delivery sequence. A feature block here
@@ -155,8 +174,8 @@ Why: every other feature can be built correctly and still leave AEP a vendor-loc
 - [ ] ISC-3: Replacing the configured runtime provider for every role changes no row of organizational state.
 - [ ] ISC-4: Anti: no code path writes `human_approved: true` as a side effect of a merge.
 - [ ] ISC-5: Anti: no agent identity is granted a capability that lets it approve its own work item.
-- [ ] ISC-6: Every rule in the corpus carries an enforcement stage from `vocabularies.yaml` (`prose`, `check`, `hook`), and no rule at `check` or `hook` lacks the validator, CI job, or binding it names.
-- [ ] ISC-7: A change touching four or more planes surfaces that fact for re-examination before implementation, advisory rather than blocking (ADR-010 calls it a signal, not a requirement, and the accepted ADR is what binds).
+- [ ] ISC-6: Advisory: every rule in the corpus carries an enforcement stage from `vocabularies.yaml` (`prose`, `check`, `hook`), and no rule at `check` or `hook` lacks the validator, CI job, or binding it names.
+- [ ] ISC-7: Advisory: a change touching four or more planes surfaces that fact for re-examination before implementation, advisory rather than blocking (ADR-010 calls it a signal, not a requirement, and the accepted ADR is what binds).
 - [ ] ISC-8: Anti: the platform runs a full idea-to-merge cycle with no metered API credentials present in the environment.
 
 ### F1 · Intent to approved specification
@@ -313,6 +332,7 @@ Why: AEP is worth nothing if adopting it requires a greenfield repository, and i
 - 2026-09-01: Second review pass corrected three more anchors. ISC-1 and ISC-35 pointed at ADR-013, which ADR-019 superseded precisely because its hash-scope and approval-pointer rules were wrong; both now cite ADR-019. ISC-37 cited ADR-020 for the hook execution model, but ADR-020 is `proposed` and a proposed artifact carries no authority, so the claim now names the binding registry and says explicitly why the ADR is not cited.
 - 2026-09-01: `## Remaining Work` drops its checkboxes. The ISA format spec writes those lines as `- [ ]`, but principle 3 forbids a checkbox task list in markdown beside `.agentic/work/`, and the first box had already gone `[x]` while WI-0038 was still `in_progress` -- the exact silent disagreement the principle exists to prevent. The repository's constitution wins over the artifact format inside this repository.
 - 2026-09-01: WI-0038 now declares `required_gates: [platform_config]`. Whether amending a documentation convention is a policy change was left open earlier; leaving it open was the wrong call, because `work.advance_state` treats an item with no required gates as `done` at merge, so silence would have auto-closed the question in the direction the agent preferred. Declaring the gate makes the item land `awaiting_human` instead, which is where a question for the principal belongs.
+- 2026-09-08: Claim polarity became a checked marker rather than a habit (WI-0066). The prefixes were already there — `Anti:` on five claims, `Antecedent:` on ISC-34 — but nothing required them, so the first backward `serves` join could not tell a claim nobody is building from a claim nobody should build, and reported five false positives out of seven. Two claims that were advisory in their prose but unmarked, ISC-6 and ISC-7, now say so. Rejected: a field in the claim line and a section per polarity, both of which restructure the artifact for a signal the text already carries; and a marker defined by the ISA format spec, which lives outside this repository and would make testing the idea a system change.
 - 2026-09-01: `## Dependencies` and `## Bridge Criteria` omitted — AEP has no sibling ISAs and no cross-ISA contracts.
 - 2026-09-01: `## Learning` omitted at scaffold. Nothing has been conjectured and refuted yet; the section appears when it has a four-piece entry to hold.
 - 2026-09-01: Independent review is recorded as suspended, not satisfied (WI-0015), and this ISA does not claim it. Whether an agent reviewer satisfies it is held as fog, not asserted as ISC-closable.
