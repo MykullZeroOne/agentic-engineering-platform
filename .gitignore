@@ -9,3 +9,6 @@ __pycache__/
 # the directories this repository has actually seen it land in.
 .agent/
 .idea/
+
+# Run records: the durable copy lives in the PR body a run opens (ADR-017), not here.
+.agentic/runs/
