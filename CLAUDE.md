@@ -8,11 +8,29 @@ The **Agentic Engineering Platform (AEP)** — a vendor-neutral, subscription-fi
 models a real engineering organization around GitHub, agent skills, deterministic hooks, durable
 per-role memory, and interchangeable execution providers (Claude Code, Codex).
 
-**Current state: specification, plus the tooling that keeps it honest.** There is no application
-code and no runtime. Phase 1 of `docs/roadmap/IMPLEMENTATION_ROADMAP.md` has not started. The only
-executable code is `scripts/`, which validates the documentation corpus. Do not assume a build
-system or product test suite exists — if you need one, it is new work that needs an issue and an
-ADR.
+**Current state: a specification corpus, the tooling that keeps it honest, and the first thin
+slice of the product.** Be precise about which, because an earlier version of this paragraph said
+"there is no application code" long after there was, and told agents not to run a test suite that
+already existed.
+
+What exists and runs:
+
+- `scripts/` — the documentation validator, the gate check, and the index generator. All three run
+  in CI; `validate` is a required check.
+- `cmd/devctl` and `internal/` — roughly 2,700 lines of Go with four test files. `devctl doctor`,
+  `devctl work list`, `devctl work show`, and `devctl work advance` are real and used. Those four
+  are the whole command surface; `docs/operations/DEVCTL.md` documents a much wider one that is
+  still `draft` and unbuilt.
+
+What does not exist: any runtime or long-lived service, the hook engine, a database, an event
+store, retrieval, agent execution, and the workspace UI. Every binding in `.agentic/hooks/hooks.yaml`
+is declarative — nothing executes them. `.agentic/roles/` and `.agentic/skills/` hold a `.gitkeep`
+each. Phase 1 of `docs/roadmap/IMPLEMENTATION_ROADMAP.md` is partially begun, not unstarted: the
+`devctl` slices landed under WI-0019, WI-0021 and WI-0023, and the rest is decomposed into WI-0042
+through WI-0053.
+
+When you write about this system, distinguish **designed** from **implemented** from **proven**.
+Most of the corpus is designed. A little is implemented. Only what CI runs is proven.
 
 AEP is the system being built here, not a system this repository runs on. It still dogfoods its
 own model in principle: `.agentic/` is this repository's real configuration and the reference
@@ -41,7 +59,9 @@ instance of the schema the first runtime must read unchanged.
 | `.agentic/` | This repository's config, hook bindings, and vocabulary registries |
 | `.agentic/work/` | The local work store — one YAML file per work item |
 | `.agentic/approvals/` | Approval records; the provenance behind every closed gate |
-| `scripts/` | Documentation validator and index generator |
+| `scripts/` | Documentation validator, gate check, and index generator |
+| `cmd/devctl/` | The `devctl` CLI — the only product binary |
+| `internal/` | Go packages behind `devctl`: `approvals`, `config`, `doctor`, `work` |
 
 Start with `docs/DOCUMENTATION_INDEX.md`. It is generated from document front matter and lists the
 intended reading order.
@@ -262,13 +282,17 @@ Never commit: secrets, tokens, `.env` files, `.DS_Store`, agent scratch output, 
   `docs/workflows/QUESTION_ESCALATION.md`. Do not invent product requirements.
 - **Stay in scope.** Fix what the issue asks. Unrelated problems you notice become new issues.
 - **Cite your sources.** When a change follows from a document, name it (`per ADR-002`).
-- **Validate before you push.** Both commands must be clean; `docs` is a required check.
+- **Validate before you push.** Every command must be clean. `validate` and `build` are both
+  required checks, so a red one blocks the merge.
 
   ```
   pip install -r requirements-docs.txt
-  python3 scripts/build_index.py     # regenerate the index
-  python3 scripts/validate_docs.py   # front matter, tiers, registries, index freshness
+  python3 scripts/build_index.py                      # regenerate the index
+  python3 scripts/validate_docs.py                    # front matter, tiers, registries, index freshness
+  python3 scripts/check_gates.py --base origin/main   # which human gates the change crosses
+  go build ./... && go test ./...                     # required whenever cmd/ or internal/ changes
   ```
 
-- No product code exists yet. When it lands, this section gets its build, test, and lint commands
-  — add them in the same PR that introduces them.
+  Run the Go commands on any change under `cmd/` or `internal/`. The previous version of this
+  section said no product code existed and listed only the Python commands, which meant an agent
+  following it literally skipped a test suite that was already there.
