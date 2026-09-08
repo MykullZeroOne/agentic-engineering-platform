@@ -1,0 +1,25 @@
+id: WI-0069
+store: local
+project: PRJ-mykullzeroone/agentic-engineering-platform
+type: docs
+work_state: in_progress
+priority: normal
+title: Reconcile the Simple First Mile's evidence into ISA.md
+description: |
+  The Simple First Mile (ADR-023 § Risks) ran on 2026-09-08 as a hill-climb against a task
+  ISA: the engineer.primary role and doctor's ADR-002 check (#56), the provider-neutral adapter
+  interface and the Claude adapter (#57), the ten-step loop with `devctl run` (#58), and the
+  dogfood run of WI-0066 on this repository's own `.agentic/`, which parked at step 7 with #59
+  open and `.agentic/` byte-identical outside `runs/`.
+
+  CLAUDE.md says a checked claim in ISA.md records that a probe passed and points at the proof.
+  This item records the five master claims whose probes the first mile's evidence spans, each
+  with a one-line provenance stub: ISC-2, ISC-26, ISC-27, ISC-30 and ISC-53. ISC-36 is not
+  checked: the first mile builds no interface element, so its probe cannot run.
+
+  Only true once #56, #57, #58 and #59 have merged; the stubs name the commits the probes ran
+  on. Where the work store and this record disagree, the work store wins.
+serves: [ISC-2, ISC-26, ISC-27, ISC-30, ISC-53]
+required_gates: []
+dependencies: []
+branch: docs/69-reconcile-first-mile-evidence

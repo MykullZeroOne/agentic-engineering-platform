@@ -3,9 +3,9 @@ task: "Ideal state for the Agentic Engineering Platform"
 slug: 20260901-120000_agentic-engineering-platform
 project: agentic-engineering-platform
 phase: scoping
-progress: 0/57
+progress: 5/57
 started: 2026-09-01T12:00:00Z
-updated: 2026-09-01T12:00:00Z
+updated: 2026-09-08T19:30:00Z
 principal_stated_goal: null
 context_sufficient: true
 interview_invoked: true
@@ -170,7 +170,7 @@ unchanged.
 Why: every other feature can be built correctly and still leave AEP a vendor-locked system with decorative gates. This feature is the part that has to hold when the rest is under delivery pressure.
 
 - [ ] ISC-1: A human gate cannot be closed without a matching approval record under `.agentic/approvals/`; the runtime rejects the write.
-- [ ] ISC-2: A role definition that names a model or provider fails validation.
+- [x] ISC-2: A role definition that names a model or provider fails validation.
 - [ ] ISC-3: Replacing the configured runtime provider for every role changes no row of organizational state.
 - [ ] ISC-4: Anti: no code path writes `human_approved: true` as a side effect of a merge.
 - [ ] ISC-5: Anti: no agent identity is granted a capability that lets it approve its own work item.
@@ -206,11 +206,11 @@ Why: this is the claim the whole product rests on. If a Codex-implemented story 
 - [ ] ISC-23: A Claude Code adapter executes an agent identity against a work item and returns a run record.
 - [ ] ISC-24: A Codex adapter does the same, producing a run record of identical shape (after: ISC-23).
 - [ ] ISC-25: Switching a role's `runtime_preferences` entry between providers requires no change to the role definition (after: ISC-24).
-- [ ] ISC-26: An agent run spanning multiple runtime sessions attaches its evidence to the run, not the session.
-- [ ] ISC-27: A run that fails mid-flight is resumable without re-deriving context from the human.
+- [x] ISC-26: An agent run spanning multiple runtime sessions attaches its evidence to the run, not the session.
+- [x] ISC-27: A run that fails mid-flight is resumable without re-deriving context from the human.
 - [ ] ISC-28: The engineering, QA, review, and integration loops each execute as defined in `docs/agents/`, with handoffs recorded.
 - [ ] ISC-29: Every merged change carries an evidence package conforming to SPEC-EVIDENCE-PACKAGE.
-- [ ] ISC-30: Anti: an agent never merges a pull request that crosses a human gate.
+- [x] ISC-30: Anti: an agent never merges a pull request that crosses a human gate.
 
 ### F4 · Human control surface
 Why: the vision's actual promise is watching a team work and stepping in when needed. Without this, AEP is a batch job with good documentation.
@@ -254,7 +254,7 @@ Why: without it, every claim about whether a model, prompt, skill, or retrieval 
 Why: AEP is worth nothing if adopting it requires a greenfield repository, and it is worth little if it only ever runs against GitHub and two CLIs.
 
 - [ ] ISC-52: `devctl init` and `devctl adopt` bring an existing repository to a working AEP configuration, and `devctl doctor` reports what is missing.
-- [ ] ISC-53: AEP reads this repository's own `.agentic/` configuration unchanged and operates on it.
+- [x] ISC-53: AEP reads this repository's own `.agentic/` configuration unchanged and operates on it.
 - [ ] ISC-54: An MCP surface exposes knowledge, context, communication, and runtime operations to external clients.
 - [ ] ISC-55: A second SCM adapter exists, proving the Control plane's port is real (after: ISC-53).
 - [ ] ISC-56: Anti: adopting AEP never requires restructuring an existing repository's documentation format.
@@ -337,9 +337,14 @@ Why: AEP is worth nothing if adopting it requires a greenfield repository, and i
 - 2026-09-01: `## Learning` omitted at scaffold. Nothing has been conjectured and refuted yet; the section appears when it has a four-piece entry to hold.
 - 2026-09-01: Independent review is recorded as suspended, not satisfied (WI-0015), and this ISA does not claim it. Whether an agent reviewer satisfies it is held as fog, not asserted as ISC-closable.
 
+- 2026-09-08: First reconcile of evidence into this file, from the Simple First Mile's task ISA (WI-0069). Five claims go `[x]` on probes that passed on #56, #57, #58 and the dogfood run behind #59 and #62 (RUN-0066-1, two passes, two sessions, complete); each stub names the test or scenario and the commit. ISC-36 stays open: no interface element exists to probe. ISC-23 is only partially evidenced (the adapter executes a session; the run record is the loop's) and is not checked. The `--runtime` override the dogfood needed is a standing question for `project.yaml`'s `implementation` preference, which still names a provider with no adapter.
 ## Verification
 
-No claims closed. Provenance stubs land here as claims go `[x]`.
+- ISC-2: unit + seam — `TestC8_RoleNamingProviderFails`, `TestC8_RoleNamingModelKeyAtDepthFails`, `TestC8_RoleWithAProviderValueUnderAnInnocentKeyFails` (internal/doctor) and `devctl doctor` rc 1 on a poisoned role; #56 @ a3a27ef
+- ISC-26: integration + scenario — `TestC30_AClosedPROpensPassTwoOnTheSameRunID` and `TestC5_EvidenceReadsFromDiskWithNoSessionAlive` (#58); and RUN-0066-1 for real: pass 1 returned on #59, pass 2 accepted on #62, sessions e6528722 and 92377c72, 12 evidence entries all keyed to the one run_id
+- ISC-27: integration + scenario — `TestC28_ACancelledRunResumesAtStepFourOnTheSameRunID` (#58 @ 324731f), and the dogfood run RUN-0066-1 resumed twice after crashes at steps 4 and 5 with no human input before parking at step 7 (#59), then resumed at step 7 of pass 2 and completed through step 10 after #62 merged
+- ISC-30: reflect + suite — `Control` has no merge method (`TestC2_ControlInterfaceHasNoMergeMethod`) and the suite-wide argv guard recorded no merge across 178 commands (#58 @ 096d070); by construction the loop merges nothing, gated or not
+- ISC-53: scenario — `devctl run WI-0066 --runtime claude-subscription` on this repository parked `awaiting_human` at step 7 with #59 open and `.agentic/` byte-identical outside `runs/` (2026-09-08, integration of #56–#58 @ 096d070)
 
 ## Remaining Work
 
