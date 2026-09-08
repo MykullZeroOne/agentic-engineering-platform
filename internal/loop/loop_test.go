@@ -414,6 +414,32 @@ func TestC28_ACancelledRunResumesAtStepFourOnTheSameRunID(t *testing.T) {
 	if adapter.started != 2 {
 		t.Errorf("adapter started %d sessions, want 2", adapter.started)
 	}
+
+	s4b, ok4b := second.Record.Step(1, 4)
+	if !ok4b {
+		t.Fatal("no step 4 entry after the second run")
+	}
+	if !strings.HasSuffix(s4b.Transcript, "1-2.jsonl") {
+		t.Errorf("second step 4 entry Transcript = %q, want suffix 1-2.jsonl", s4b.Transcript)
+	}
+
+	var transcriptEvidence *Evidence
+	for i := range second.Record.Evidence {
+		e := &second.Record.Evidence[i]
+		if e.Pass == 1 && e.Kind == "transcript" {
+			transcriptEvidence = e
+		}
+	}
+	if transcriptEvidence == nil {
+		t.Fatal("no transcript evidence recorded for pass 1")
+	}
+	if transcriptEvidence.Path != s4b.Transcript {
+		t.Errorf("step 5 transcript evidence path = %q, want the step 4 entry's Transcript %q", transcriptEvidence.Path, s4b.Transcript)
+	}
+	transcriptFile := filepath.Join(RunDir(root, runID), transcriptEvidence.Path)
+	if _, err := os.Stat(transcriptFile); err != nil {
+		t.Errorf("transcript file %q does not exist: %v", transcriptFile, err)
+	}
 }
 
 func TestC29_AFailingCheckReturnsToStepThreeInTheSamePass(t *testing.T) {
@@ -672,5 +698,215 @@ func TestC4_ConsolidateWritesExactlyOneStubUnderTheRunDir(t *testing.T) {
 	}
 	if len(entries) != 1 {
 		t.Fatalf("memory-candidates has %d files, want exactly 1: %v", len(entries), entries)
+	}
+}
+
+// TestC1_1_ABlockedRunReinvokedAdvancesNothing pins anti-claim C1.1: a run in state
+// "blocked" (question, or re-entry limit) re-invoked with no answer enters no step,
+// starts no session, and changes nothing in its record but Updated.
+func TestC1_1_ABlockedRunReinvokedAdvancesNothing(t *testing.T) {
+	assertNoAdvance := func(t *testing.T, first, second Outcome, adapter *fakeAdapter, control *fakeControl) {
+		t.Helper()
+		if second.Exit != 3 {
+			t.Errorf("second Outcome.Exit = %d, want 3", second.Exit)
+		}
+		if second.Record.State != "blocked" {
+			t.Errorf("second run State = %q, want blocked", second.Record.State)
+		}
+		if len(second.Record.Steps) != len(first.Record.Steps) {
+			t.Errorf("step count changed: %d -> %d", len(first.Record.Steps), len(second.Record.Steps))
+		}
+		if len(second.Record.Evidence) != len(first.Record.Evidence) {
+			t.Errorf("evidence count changed: %d -> %d", len(first.Record.Evidence), len(second.Record.Evidence))
+		}
+		if len(second.Record.Passes) != len(first.Record.Passes) {
+			t.Errorf("pass count changed: %d -> %d", len(first.Record.Passes), len(second.Record.Passes))
+		}
+		if second.Record.Question != first.Record.Question {
+			t.Errorf("Question changed: %q -> %q", first.Record.Question, second.Record.Question)
+		}
+		if adapter.started != 1 {
+			t.Errorf("adapter started %d sessions, want 1 (no new session on re-invocation)", adapter.started)
+		}
+		for _, c := range control.Calls {
+			if c != "" {
+				// no assertion on individual call kinds here; the count check below
+				// is what proves nothing new happened.
+			}
+		}
+
+		f1 := *first.Record
+		f2 := *second.Record
+		f1.Updated = ""
+		f2.Updated = ""
+		if f1.State != f2.State || len(f1.Steps) != len(f2.Steps) || len(f1.Evidence) != len(f2.Evidence) ||
+			f1.Question != f2.Question || len(f1.Passes) != len(f2.Passes) {
+			t.Errorf("records differ beyond Updated:\nfirst=%+v\nsecond=%+v", f1, f2)
+		}
+	}
+
+	t.Run("question", func(t *testing.T) {
+		root := fixture(t, nil)
+		control := &fakeControl{}
+		adapter := &fakeAdapter{Sessions: []fakeSession{{
+			SessionID: "sess-q",
+			Texts:     []string{"QUESTION: which registry owns polarity?"},
+			Result:    runtime.Result{Status: runtime.StatusSucceeded, ExitCode: 0},
+		}}}
+
+		first := mustRun(t, context.Background(), Options{
+			Root: root, Item: "WI-0001",
+			Adapter: adapter, Control: control, Checker: passChecker(), Now: fixedNow(),
+		})
+		if first.Record.State != "blocked" {
+			t.Fatalf("first run State = %q, want blocked", first.Record.State)
+		}
+		callsBefore := len(control.Calls)
+
+		second := mustRun(t, context.Background(), Options{
+			Root: root, Item: "WI-0001",
+			Adapter: adapter, Control: control, Checker: passChecker(), Now: fixedNow(),
+		})
+		if len(control.Calls) != callsBefore {
+			t.Errorf("control.Calls grew: %d -> %d (%v)", callsBefore, len(control.Calls), control.Calls)
+		}
+		assertNoAdvance(t, first, second, adapter, control)
+	})
+
+	t.Run("reentry_limit", func(t *testing.T) {
+		root := fixture(t, nil)
+		control := &fakeControl{}
+		adapter := &fakeAdapter{Sessions: []fakeSession{
+			{SessionID: "sess-1", Texts: []string{"a1"}, Result: runtime.Result{Status: runtime.StatusSucceeded, ExitCode: 0}},
+			{SessionID: "sess-2", Texts: []string{"a2"}, Result: runtime.Result{Status: runtime.StatusSucceeded, ExitCode: 0}},
+			{SessionID: "sess-3", Texts: []string{"a3"}, Result: runtime.Result{Status: runtime.StatusSucceeded, ExitCode: 0}},
+		}}
+		checker := &fakeChecker{Script: [][]Check{
+			{{Name: "go-build", Command: "go build ./...", RC: 1}},
+		}}
+
+		first := mustRun(t, context.Background(), Options{
+			Root: root, Item: "WI-0001",
+			Adapter: adapter, Control: control, Checker: checker, Now: fixedNow(),
+		})
+		if first.Record.State != "blocked" {
+			t.Fatalf("first run State = %q, want blocked", first.Record.State)
+		}
+		startedBefore := adapter.started
+		callsBefore := len(control.Calls)
+
+		second := mustRun(t, context.Background(), Options{
+			Root: root, Item: "WI-0001",
+			Adapter: adapter, Control: control, Checker: checker, Now: fixedNow(),
+		})
+		if adapter.started != startedBefore {
+			t.Errorf("adapter.started grew: %d -> %d", startedBefore, adapter.started)
+		}
+		if len(control.Calls) != callsBefore {
+			t.Errorf("control.Calls grew: %d -> %d (%v)", callsBefore, len(control.Calls), control.Calls)
+		}
+
+		if second.Exit != 3 {
+			t.Errorf("second Outcome.Exit = %d, want 3", second.Exit)
+		}
+		if second.Record.State != "blocked" {
+			t.Errorf("second run State = %q, want blocked", second.Record.State)
+		}
+		if len(second.Record.Steps) != len(first.Record.Steps) {
+			t.Errorf("step count changed: %d -> %d", len(first.Record.Steps), len(second.Record.Steps))
+		}
+		if len(second.Record.Evidence) != len(first.Record.Evidence) {
+			t.Errorf("evidence count changed: %d -> %d", len(first.Record.Evidence), len(second.Record.Evidence))
+		}
+		if len(second.Record.Passes) != len(first.Record.Passes) {
+			t.Errorf("pass count changed: %d -> %d", len(first.Record.Passes), len(second.Record.Passes))
+		}
+		if second.Record.Question != first.Record.Question {
+			t.Errorf("Question changed: %q -> %q", first.Record.Question, second.Record.Question)
+		}
+
+		f1 := *first.Record
+		f2 := *second.Record
+		f1.Updated = ""
+		f2.Updated = ""
+		if f1.State != f2.State || len(f1.Steps) != len(f2.Steps) || len(f1.Evidence) != len(f2.Evidence) ||
+			f1.Question != f2.Question || len(f1.Passes) != len(f2.Passes) {
+			t.Errorf("records differ beyond Updated:\nfirst=%+v\nsecond=%+v", f1, f2)
+		}
+	})
+}
+
+// TestC29_AFailedSessionReentersWithASynthesizedCheck pins amendment (b): a session
+// that exits non-zero with no QUESTION line still needs a non-empty re-entry packet,
+// so the loop synthesizes one check named "session" carrying the session's own
+// stderr and re-enters through step 3 rather than treating a silent failure as a
+// pass.
+func TestC29_AFailedSessionReentersWithASynthesizedCheck(t *testing.T) {
+	root := fixture(t, nil)
+	control := &fakeControl{}
+	adapter := &fakeAdapter{Sessions: []fakeSession{
+		{SessionID: "sess-fail", Result: runtime.Result{Status: runtime.StatusFailed, ExitCode: 2, Stderr: "boom"}},
+		{SessionID: "sess-ok", Texts: []string{"done"}, Result: runtime.Result{Status: runtime.StatusSucceeded, ExitCode: 0}},
+	}}
+	checker := passChecker()
+
+	out := mustRun(t, context.Background(), Options{
+		Root: root, Item: "WI-0001",
+		Adapter: adapter, Control: control, Checker: checker, Now: fixedNow(),
+	})
+
+	step3Count := 0
+	for _, s := range out.Record.Steps {
+		if s.N == 3 && s.Pass == 1 {
+			step3Count++
+		}
+	}
+	if step3Count != 2 {
+		t.Fatalf("step 3 entries in pass 1 = %d, want 2", step3Count)
+	}
+
+	var firstStep7 *Step
+	for i := range out.Record.Steps {
+		s := &out.Record.Steps[i]
+		if s.N == 7 && s.Pass == 1 {
+			firstStep7 = s
+			break
+		}
+	}
+	if firstStep7 == nil {
+		t.Fatal("no step 7 entry recorded")
+	}
+	if len(firstStep7.Checks) != 1 {
+		t.Fatalf("first step 7 has %d checks, want exactly 1 (the synthesized session check): %+v", len(firstStep7.Checks), firstStep7.Checks)
+	}
+	c := firstStep7.Checks[0]
+	if c.Name != "session" {
+		t.Errorf("first step 7 check name = %q, want session", c.Name)
+	}
+	if c.RC != 2 {
+		t.Errorf("first step 7 check RC = %d, want 2", c.RC)
+	}
+	p := filepath.Join(RunDir(root, out.RunID), c.Output)
+	b, err := os.ReadFile(p)
+	if err != nil {
+		t.Fatalf("session check Output %q does not resolve to a file under the run dir: %v", c.Output, err)
+	}
+	if !strings.Contains(string(b), "boom") {
+		t.Errorf("session check output = %q, want it to contain boom", b)
+	}
+
+	if len(adapter.Packets) < 2 {
+		t.Fatalf("adapter recorded %d packets, want at least 2 (the failed attempt and the re-entry)", len(adapter.Packets))
+	}
+	secondPrompt := adapter.Packets[1].Prompt
+	if !strings.Contains(secondPrompt, "session") {
+		t.Error("second rendered packet is missing the failed check name `session`")
+	}
+	if !strings.Contains(secondPrompt, "boom") {
+		t.Error("second rendered packet is missing the failure output `boom`")
+	}
+
+	if out.Record.State != "awaiting_human" {
+		t.Errorf("final State = %q, want awaiting_human", out.Record.State)
 	}
 }

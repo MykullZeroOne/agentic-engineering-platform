@@ -352,7 +352,11 @@ type fakeSession struct {
 // clamped to the last entry once the script runs out.
 type fakeAdapter struct {
 	Sessions []fakeSession
-	started  int
+	// Packets records every WorkPacket a call to Start was given, in call order, so a
+	// test can inspect what a delegate attempt was actually told (e.g. the rendered
+	// prompt on a re-entry).
+	Packets []runtime.WorkPacket
+	started int
 }
 
 func (a *fakeAdapter) Start(ctx context.Context, p runtime.WorkPacket) (runtime.Session, error) {
@@ -361,6 +365,7 @@ func (a *fakeAdapter) Start(ctx context.Context, p runtime.WorkPacket) (runtime.
 		idx = len(a.Sessions) - 1
 	}
 	a.started++
+	a.Packets = append(a.Packets, p)
 	spec := a.Sessions[idx]
 	logArgv("claude", "-p", "<work packet>", "--allowedTools", fmt.Sprintf("%v", p.Tools))
 

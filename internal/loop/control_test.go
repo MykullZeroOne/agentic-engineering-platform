@@ -7,6 +7,8 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/MykullZeroOne/agentic-engineering-platform/internal/config"
 )
 
 func TestC2_ControlInterfaceHasNoMergeMethod(t *testing.T) {
@@ -114,5 +116,33 @@ func TestC26_GHControlBuildsThePRArgv(t *testing.T) {
 	}
 	if !filepath.IsAbs(argv[bodyFileIdx]) {
 		t.Fatalf("body file path %q is not absolute", argv[bodyFileIdx])
+	}
+}
+
+// TestC26_CommitSubjectKeepsCaseAndCutsAtAWordBoundary pins amendment (4): the
+// commit/PR-title subject preserves the title's original case (it is not
+// lowercased) and, when it must be cut, cuts at the last word boundary before
+// byte 72 with no ellipsis appended.
+func TestC26_CommitSubjectKeepsCaseAndCutsAtAWordBoundary(t *testing.T) {
+	w := config.WorkItem{Type: "docs", Title: "Mark ISA claim polarity so anti-claims partition out of orphan lists"}
+	subj := commitSubject(w)
+	if !strings.HasPrefix(subj, "docs: Mark ISA claim polarity") {
+		t.Errorf("subj = %q, want prefix %q", subj, "docs: Mark ISA claim polarity")
+	}
+	if strings.Contains(subj, "...") {
+		t.Errorf("subj = %q, contains an ellipsis", subj)
+	}
+	if len(subj) > 72 {
+		t.Errorf("subj = %q, len %d > 72", subj, len(subj))
+	}
+	if strings.HasSuffix(subj, " ") {
+		t.Errorf("subj = %q, ends with a space", subj)
+	}
+
+	short := config.WorkItem{Type: "fix", Title: "Short title"}
+	got := commitSubject(short)
+	want := "fix: Short title"
+	if got != want {
+		t.Errorf("commitSubject(short) = %q, want %q", got, want)
 	}
 }
