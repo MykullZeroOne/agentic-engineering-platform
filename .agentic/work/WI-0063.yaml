@@ -2,7 +2,7 @@ id: WI-0063
 store: local
 project: PRJ-mykullzeroone/agentic-engineering-platform
 type: spec
-work_state: in_progress
+work_state: done
 priority: high
 title: Add a required serves field so work traces to intent
 description: |

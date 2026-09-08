@@ -1,0 +1,21 @@
+id: WI-0067
+store: local
+project: PRJ-mykullzeroone/agentic-engineering-platform
+type: chore
+work_state: in_progress
+priority: normal
+title: Advance the work states of five merged items
+description: |
+  Bookkeeping, produced by `devctl work advance` rather than by hand. WI-0058, WI-0061,
+  WI-0063 and WI-0064 merged without their work_state following, because no item can record
+  its own completion inside the pull request that completes it. WI-0060 (ADR-023) goes to
+  `awaiting_human`, correctly: its gate is architecture_decision and the accepting record is on
+  PR #50, not yet on main. It lands `done` on the next pass after that merge.
+
+  Four of the five were resolved by the pull-request fallback, not the trailer. WI-0064's branch
+  commit carried `Closes WI-0064` and the squash on main does not. That is WI-0032's
+  intermittent loss recurring, and the fallback WI-0032 built is what caught it.
+serves: [governance]
+required_gates: []
+dependencies: []
+branch: chore/67-advance-merged-items

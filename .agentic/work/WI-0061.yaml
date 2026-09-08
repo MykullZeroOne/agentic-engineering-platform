@@ -2,7 +2,7 @@ id: WI-0061
 store: local
 project: PRJ-mykullzeroone/agentic-engineering-platform
 type: docs
-work_state: in_progress
+work_state: done
 priority: high
 title: Rewrite the product vision and add worked scenarios with diagrams
 description: |
