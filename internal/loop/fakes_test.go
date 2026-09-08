@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -31,6 +32,23 @@ func logArgv(argv ...string) {
 	defer argvLog.mu.Unlock()
 	cp := append([]string(nil), argv...)
 	argvLog.lines = append(argvLog.lines, cp)
+}
+
+// argvLen returns argvLog's current length, so a test can snapshot "before" and look
+// only at what it itself added (TestC25_TheGateCheckRunsAfterTheCommit: fakeChecker and
+// fakeControl both call logArgv, so argvLog already threads the two fakes' calls into
+// one chronological sequence without any new synchronization).
+func argvLen() int {
+	argvLog.mu.Lock()
+	defer argvLog.mu.Unlock()
+	return len(argvLog.lines)
+}
+
+// argvFrom returns a copy of argvLog.lines[n:].
+func argvFrom(n int) [][]string {
+	argvLog.mu.Lock()
+	defer argvLog.mu.Unlock()
+	return append([][]string(nil), argvLog.lines[n:]...)
 }
 
 // TestMain inspects argvLog after every test has finished.
@@ -306,19 +324,34 @@ func (f *fakeControl) ViewPR(dir, url string) (PR, error) {
 // fakeChecker returns a scripted sequence of check results, one entry per
 // invocation, repeating the last once the script runs out. It writes a real log file
 // for every check so a probe asserting the Output path resolves to a file on disk
-// (C25, C5) has something to find.
+// (C25, C5) has something to find. Since step 7 now calls Run twice per successful
+// pass (once for the pre-commit checks, once for PostCommitChecks), a fixture that
+// wants to distinguish the two supplies two Script entries.
 type fakeChecker struct {
 	Script [][]Check
-	calls  int
+	// Content optionally overrides a check's log file content by name; a check not
+	// named here gets the default "rc=<n>\n" body. Used to plant a real-shaped
+	// check-gates line for a probe reading it back out of the PR body.
+	Content map[string]string
+	calls   int
 }
 
-func (f *fakeChecker) Run(ctx context.Context, dir, outDir, prefix string) ([]Check, error) {
+func (f *fakeChecker) Run(ctx context.Context, dir, outDir, prefix string, checks []LocalCheck) ([]Check, error) {
 	idx := f.calls
 	if idx >= len(f.Script) {
 		idx = len(f.Script) - 1
 	}
 	f.calls++
-	logArgv("fakeChecker", prefix)
+
+	names := make([]string, len(checks))
+	for i, lc := range checks {
+		names[i] = lc.Name
+	}
+	// A distinct marker per invocation: argvLog already interleaves fakeChecker and
+	// fakeControl calls in true chronological order (both call logArgv), so recording
+	// which checks THIS call was asked to run is what lets a probe tell the pre-commit
+	// invocation apart from the post-commit one in that shared sequence.
+	logArgv("fakeChecker", prefix, strings.Join(names, ","))
 
 	checksDir := filepath.Join(outDir, "checks")
 	if err := os.MkdirAll(checksDir, 0o755); err != nil {
@@ -329,7 +362,11 @@ func (f *fakeChecker) Run(ctx context.Context, dir, outDir, prefix string) ([]Ch
 	for _, c := range f.Script[idx] {
 		rel := filepath.Join("checks", fmt.Sprintf("%s-%s.log", prefix, c.Name))
 		abs := filepath.Join(outDir, rel)
-		if err := os.WriteFile(abs, []byte(fmt.Sprintf("rc=%d\n", c.RC)), 0o644); err != nil {
+		content := fmt.Sprintf("rc=%d\n", c.RC)
+		if custom, ok := f.Content[c.Name]; ok {
+			content = custom
+		}
+		if err := os.WriteFile(abs, []byte(content), 0o644); err != nil {
 			return nil, err
 		}
 		cc := c

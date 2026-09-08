@@ -48,7 +48,7 @@ type Options struct {
 	// RoleID defaults to "engineer.primary".
 	RoleID string
 	// Adapter, Control and Checker are injected by tests. Nil means the production
-	// implementation: runtime.New(provider), GHControl{}, CommandChecker{DefaultChecks}.
+	// implementation: runtime.New(provider), GHControl{}, CommandChecker{}.
 	Adapter runtime.Adapter
 	Control Control
 	Checker Checker
@@ -143,7 +143,7 @@ func Run(ctx context.Context, o Options) (Outcome, error) {
 	}
 	checker := o.Checker
 	if checker == nil {
-		checker = CommandChecker{Checks: DefaultChecks}
+		checker = CommandChecker{}
 	}
 
 	// --- Resume or open. ---
@@ -512,31 +512,36 @@ func Run(ctx context.Context, o Options) (Outcome, error) {
 		case 7: // validate
 			entered := nowStr()
 			prefix := fmt.Sprintf("pass-%d-%d", rec.Pass, countStepEntries(rec, rec.Pass, 3))
-			checks, verr := checker.Run(ctx, worktree, RunDir(o.Root, runID), prefix)
+			gate := &Gate{ID: gateID, HumanOwned: role.Completion.HumanOwned, Surface: "github_review"}
+
+			// Pre-commit: checks that examine the working tree, before anything is
+			// committed. Any of these failing re-enters step 3 in the same pass, same
+			// as before the split.
+			preChecks, verr := checker.Run(ctx, worktree, RunDir(o.Root, runID), prefix, DefaultChecks)
 			if verr != nil {
 				return Outcome{}, verr
 			}
-			gate := &Gate{ID: gateID, HumanOwned: role.Completion.HumanOwned, Surface: "github_review"}
-			rec.Steps = append(rec.Steps, Step{
-				N: 7, Name: StepNames[6], Pass: rec.Pass, Entered: entered, Exited: nowStr(), Checks: checks, Gate: gate,
-			})
-			for _, c := range checks {
-				rec.AddEvidence("check", sid, c.Output, now())
-			}
-			if err := SaveRecord(o.Root, rec, now()); err != nil {
-				return Outcome{}, err
-			}
 
-			if !allChecksPassed(checks) {
+			if !allChecksPassed(preChecks) {
+				rec.Steps = append(rec.Steps, Step{
+					N: 7, Name: StepNames[6], Pass: rec.Pass, Entered: entered, Exited: nowStr(), Checks: preChecks, Gate: gate,
+				})
+				for _, c := range preChecks {
+					rec.AddEvidence("check", sid, c.Output, now())
+				}
+				if err := SaveRecord(o.Root, rec, now()); err != nil {
+					return Outcome{}, err
+				}
+
 				if overReentryLimit(rec) {
 					rec.State = "blocked"
-					rec.Question = fmt.Sprintf("local checks failing: %s", strings.Join(namesOf(failingChecks(checks)), ", "))
+					rec.Question = fmt.Sprintf("local checks failing: %s", strings.Join(namesOf(failingChecks(preChecks)), ", "))
 					if err := SaveRecord(o.Root, rec, now()); err != nil {
 						return Outcome{}, err
 					}
 					return Outcome{RunID: runID, Record: rec, Exit: 3}, nil
 				}
-				failedChecks = failingChecks(checks)
+				failedChecks = failingChecks(preChecks)
 				checkOutput = map[string]string{}
 				for _, c := range failedChecks {
 					content, _ := os.ReadFile(filepath.Join(RunDir(o.Root, runID), c.Output))
@@ -556,6 +561,28 @@ func Run(ctx context.Context, o Options) (Outcome, error) {
 			if herr != nil {
 				return Outcome{}, herr
 			}
+
+			// Post-commit: check-gates, now able to see the session's edits because
+			// they are in a real commit changed_paths() can diff. This never re-enters
+			// and never blocks — an open gate is the human's decision at the PR
+			// (POL-001 M5), not the loop's inside step 7 — so its rc is recorded as
+			// data alongside the pre-commit checks and nothing else changes.
+			postChecks, cgerr := checker.Run(ctx, worktree, RunDir(o.Root, runID), prefix, PostCommitChecks)
+			if cgerr != nil {
+				return Outcome{}, cgerr
+			}
+
+			checks := append(append([]Check{}, preChecks...), postChecks...)
+			rec.Steps = append(rec.Steps, Step{
+				N: 7, Name: StepNames[6], Pass: rec.Pass, Entered: entered, Exited: nowStr(), Checks: checks, Gate: gate,
+			})
+			for _, c := range checks {
+				rec.AddEvidence("check", sid, c.Output, now())
+			}
+			if err := SaveRecord(o.Root, rec, now()); err != nil {
+				return Outcome{}, err
+			}
+
 			if perr := control.Push(worktree, branch); perr != nil {
 				return Outcome{}, perr
 			}
