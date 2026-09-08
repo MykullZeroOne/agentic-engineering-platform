@@ -324,6 +324,14 @@ func Run(ctx context.Context, o Options) (Outcome, error) {
 			transcriptRel := filepath.Join("sessions", fmt.Sprintf("%d-%d.jsonl", rec.Pass, attempt))
 			transcriptAbs := filepath.Join(RunDir(o.Root, runID), transcriptRel)
 
+			// The loop owns the run directory layout (adapters never create
+			// directories: a session that cannot start leaves no trace, C17), so the
+			// sessions/ directory the adapter's TranscriptPath points into has to
+			// exist before Start is called.
+			if err := os.MkdirAll(filepath.Dir(transcriptAbs), 0o755); err != nil {
+				return Outcome{}, fmt.Errorf("loop: creating sessions directory: %w", err)
+			}
+
 			sess, serr := adapter.Start(ctx, runtime.WorkPacket{
 				RunID:          runID,
 				Objective:      objective,

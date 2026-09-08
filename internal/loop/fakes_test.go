@@ -370,11 +370,12 @@ func (a *fakeAdapter) Start(ctx context.Context, p runtime.WorkPacket) (runtime.
 	logArgv("claude", "-p", "<work packet>", "--allowedTools", fmt.Sprintf("%v", p.Tools))
 
 	if p.TranscriptPath != "" {
-		if err := os.MkdirAll(filepath.Dir(p.TranscriptPath), 0o755); err != nil {
-			return nil, err
-		}
+		// Mirror claudeAdapter.Start (internal/runtime/claude.go): this fake never
+		// creates the transcript's parent directory itself, so a probe reaching this
+		// seam with no `sessions/` dir already in place exercises the same failure
+		// the real adapter's os.Create would hit.
 		if err := os.WriteFile(p.TranscriptPath, []byte("fake transcript\n"), 0o644); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("runtime: creating transcript file: %w", err)
 		}
 	}
 

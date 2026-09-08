@@ -136,6 +136,45 @@ func TestC22_DelegateRecordsTheRuntimeSessionAsItsOneDelegate(t *testing.T) {
 	}
 }
 
+// TestC22_DelegateCreatesTheSessionsDirBeforeStart is the seam the real
+// `devctl run WI-0066` failed at: step 4 hands the adapter a TranscriptPath under
+// `<rundir>/sessions/`, and nothing had ever created that directory. fakeAdapter used
+// to paper over the gap with its own MkdirAll; now it behaves like the real
+// claudeAdapter (os.Create with no MkdirAll), so this probe only goes green if the
+// loop itself creates `<rundir>/sessions/` before calling adapter.Start.
+func TestC22_DelegateCreatesTheSessionsDirBeforeStart(t *testing.T) {
+	root := fixture(t, nil)
+	adapter := passAdapter("sess-77", "done")
+	out := mustRun(t, context.Background(), Options{
+		Root: root, Item: "WI-0001",
+		Adapter: adapter, Control: &fakeControl{}, Checker: passChecker(), Now: fixedNow(),
+	})
+	if out.Exit != 0 {
+		t.Fatalf("Run exit = %d, want 0", out.Exit)
+	}
+
+	sessionsDir := filepath.Join(RunDir(root, out.RunID), "sessions")
+	if fi, err := os.Stat(sessionsDir); err != nil || !fi.IsDir() {
+		t.Fatalf("sessions dir %s not created before dispatch: %v", sessionsDir, err)
+	}
+
+	s, ok := out.Record.Step(1, 4)
+	if !ok {
+		t.Fatal("no delegate step recorded")
+	}
+	if s.Transcript == "" {
+		t.Fatal("delegate step recorded no transcript path")
+	}
+	transcriptAbs := filepath.Join(RunDir(root, out.RunID), s.Transcript)
+	if _, err := os.Stat(transcriptAbs); err != nil {
+		t.Fatalf("transcript file %s not on disk: %v", transcriptAbs, err)
+	}
+
+	if adapter.started != 1 {
+		t.Fatalf("fakeAdapter.started = %d, want 1", adapter.started)
+	}
+}
+
 func TestC23_CollectRecordsFilesChangedSessionIDAndExitStatus(t *testing.T) {
 	root := fixture(t, nil)
 	control := &fakeControl{StatusFiles: []string{"internal/loop/loop.go", "docs/foo.md"}}
