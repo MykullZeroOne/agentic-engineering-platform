@@ -39,6 +39,8 @@ registries:
 work_store: local
 human_gates:
   - platform_config
+runtime_preferences:
+  implementation: codex-subscription
 `,
 		".agentic/registries/gates.yaml": `
 gates:
@@ -73,6 +75,37 @@ priority: normal
 title: A work item
 `,
 	}
+}
+
+// goodRole is the smallest role body that should produce no findings, given the
+// runtime_preferences block good() adds to project.yaml.
+func goodRole() string {
+	return `
+id: engineer.primary
+role: engineer
+role_version: 1
+function: implementation
+parent: null
+specialists: []
+capabilities:
+  - implementation
+tools:
+  allow:
+    - repository.read
+  deny:
+    - github.merge
+memory:
+  namespace: agent/engineer.primary
+  inherit:
+    - project
+completion:
+  human_owned: true
+  criteria:
+    - local_checks_pass
+returns_from:
+  - human
+human_gates: []
+`
 }
 
 func check(t *testing.T, f files) *Report {
@@ -231,5 +264,74 @@ func TestThisRepositoryIsHealthy(t *testing.T) {
 	}
 	if rep.Errors() != 0 {
 		t.Fatalf("this repository's own .agentic/ must be coherent, got:\n%s", findings(rep))
+	}
+}
+
+func TestC7_ACleanRoleProducesNoFindings(t *testing.T) {
+	f := good()
+	f[".agentic/roles/engineer.primary.yaml"] = goodRole()
+	rep := check(t, f)
+	if rep.Errors() != 0 {
+		t.Fatalf("expected no errors from a clean role, got:\n%s", findings(rep))
+	}
+}
+
+func TestC9_DoctorCountsRolesInTheCheckedSummary(t *testing.T) {
+	f := good()
+	f[".agentic/roles/engineer.primary.yaml"] = goodRole()
+	rep := check(t, f)
+	if rep.Checked["roles"] != 1 {
+		t.Fatalf("Checked[\"roles\"] = %d, want 1", rep.Checked["roles"])
+	}
+}
+
+func TestC8_RoleNamingProviderFails(t *testing.T) {
+	f := good()
+	f[".agentic/roles/engineer.primary.yaml"] = goodRole() + "runtime:\n  preferred: claude-subscription\n"
+	rep := check(t, f)
+	if rep.Errors() == 0 {
+		t.Fatal("a role naming a runtime key must be an error")
+	}
+	out := findings(rep)
+	found := false
+	for _, finding := range rep.Findings {
+		if finding.Severity == Error && strings.Contains(finding.Where, "engineer.primary.yaml") && strings.Contains(finding.Message, "runtime") {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("expected an error naming the file and the %q key, got:\n%s", "runtime", out)
+	}
+}
+
+func TestC8_RoleNamingModelKeyAtDepthFails(t *testing.T) {
+	f := good()
+	f[".agentic/roles/engineer.primary.yaml"] = goodRole() + "execution:\n  session:\n    model: opus\n"
+	rep := check(t, f)
+	out := findings(rep)
+	found := false
+	for _, finding := range rep.Findings {
+		if finding.Severity == Error && strings.Contains(finding.Message, "model") && strings.Contains(finding.Message, "execution.session.model") {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("expected an error naming the dotted path execution.session.model, got:\n%s", out)
+	}
+}
+
+func TestC8_RoleWithAProviderValueUnderAnInnocentKeyFails(t *testing.T) {
+	f := good()
+	f[".agentic/roles/engineer.primary.yaml"] = goodRole() + "preferred_stack: codex-subscription\n"
+	rep := check(t, f)
+	out := findings(rep)
+	found := false
+	for _, finding := range rep.Findings {
+		if finding.Severity == Error && strings.Contains(finding.Message, "codex-subscription") {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("expected an error naming the provider-token value codex-subscription, got:\n%s", out)
 	}
 }

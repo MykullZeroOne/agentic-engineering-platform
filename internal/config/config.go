@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 
 	"gopkg.in/yaml.v3"
 )
@@ -22,6 +23,11 @@ type Project struct {
 	Registries map[string]string `yaml:"registries"`
 	WorkStore  string            `yaml:"work_store"`
 	HumanGates []string          `yaml:"human_gates"`
+
+	// RuntimePreferences maps a role function to a provider token. It is the only place
+	// in a project's configuration where a provider may be named; ADR-002 forbids it in a
+	// role definition, and `doctor` enforces that by comparing role values against these.
+	RuntimePreferences map[string]string `yaml:"runtime_preferences"`
 }
 
 // Gate is one entry in the gate registry.
@@ -74,6 +80,101 @@ type WorkItem struct {
 	Dependencies  []string `yaml:"dependencies"`
 	Parent        string   `yaml:"parent"`
 	Branch        string   `yaml:"branch"`
+}
+
+// Role is one file in .agentic/roles/. A durable organizational identity (ADR-002).
+//
+// The struct deliberately has no runtime, model, or provider field. That is not an
+// omission to be corrected later: adding one would make the thing ADR-002 forbids
+// representable, and doctor's check would be guarding a shape the loader invites.
+type Role struct {
+	ID           string         `yaml:"id"`
+	Role         string         `yaml:"role"`
+	RoleVersion  int            `yaml:"role_version"`
+	Function     string         `yaml:"function"`
+	Parent       string         `yaml:"parent"`
+	Specialists  []string       `yaml:"specialists"`
+	Capabilities []string       `yaml:"capabilities"`
+	Skills       []string       `yaml:"skills"`
+	Tools        RoleTools      `yaml:"tools"`
+	Memory       RoleMemory     `yaml:"memory"`
+	Completion   RoleCompletion `yaml:"completion"`
+	ReturnsFrom  []string       `yaml:"returns_from"`
+	HumanGates   []string       `yaml:"human_gates"`
+}
+
+// RoleTools is the capability boundary a runtime session is started inside.
+type RoleTools struct {
+	Allow []string `yaml:"allow"`
+	Deny  []string `yaml:"deny"`
+}
+
+// RoleMemory names the role's memory namespace and what it inherits.
+type RoleMemory struct {
+	Namespace string   `yaml:"namespace"`
+	Inherit   []string `yaml:"inherit"`
+}
+
+// RoleCompletion is the role's step-7 gate: its definition of done, and who owns it.
+// HumanOwned true means the gate passes on a human's explicit approval and on nothing
+// the agent concludes about completeness (ADR-023).
+type RoleCompletion struct {
+	HumanOwned bool     `yaml:"human_owned"`
+	Criteria   []string `yaml:"criteria"`
+}
+
+// RolesDir returns .agentic/roles/.
+func RolesDir(r Root) string {
+	return r.Agentic("roles")
+}
+
+// RolePath returns the file a role id resolves to: .agentic/roles/<id>.yaml.
+func RolePath(r Root, id string) string {
+	return filepath.Join(RolesDir(r), id+".yaml")
+}
+
+// LoadRoles reads every .agentic/roles/*.yaml, sorted by filename.
+func LoadRoles(r Root) ([]Role, error) {
+	paths, err := filepath.Glob(filepath.Join(RolesDir(r), "*.yaml"))
+	if err != nil {
+		return nil, err
+	}
+	sort.Strings(paths)
+	roles := make([]Role, 0, len(paths))
+	for _, p := range paths {
+		var role Role
+		if err := read(p, &role); err != nil {
+			return nil, err
+		}
+		roles = append(roles, role)
+	}
+	return roles, nil
+}
+
+// LoadRole reads one role by id. The error names the id and the path it looked at.
+func LoadRole(r Root, id string) (*Role, error) {
+	path := RolePath(r, id)
+	var role Role
+	if err := read(path, &role); err != nil {
+		if os.IsNotExist(err) {
+			return nil, fmt.Errorf("role %q not found at %s", id, path)
+		}
+		return nil, err
+	}
+	return &role, nil
+}
+
+// LoadRoleTree reads a role file as an untyped YAML tree.
+//
+// The typed Role silently discards keys it does not model, which is exactly the wrong
+// behaviour for a check whose whole subject is a key that must not be there. Structural
+// checks read this; everything else reads Role.
+func LoadRoleTree(path string) (map[string]any, error) {
+	var tree map[string]any
+	if err := read(path, &tree); err != nil {
+		return nil, err
+	}
+	return tree, nil
 }
 
 // Root is a project directory: the one holding .agentic/.
