@@ -34,6 +34,8 @@ SECTIONS = [
      lambda fm, rel: fm["type"] == "ads"),
     ("Design", "Normative platform design. Tier 2.",
      lambda fm, rel: fm["type"] == "design"),
+    ("Rules", "Policies block when violated; standards inform review. Tier 3.",
+     lambda fm, rel: fm["type"] in ("policy", "standard")),
     ("Reference", "Non-normative. Carries no authority in conflict resolution.",
      lambda fm, rel: fm["type"] in ("guide", "example")),
 ]
@@ -54,7 +56,7 @@ def title_of(path: pathlib.Path) -> str:
     for line in path.read_text().splitlines():
         if line.startswith("# "):
             # Strip a leading "ADR-001 — " / "PRD-002 — "; the ID has its own column.
-            return re.sub(r"^(?:ADR|PRD|ADS)-\d+\s*[—-]\s*", "", line[2:].strip())
+            return re.sub(r"^(?:ADR|PRD|ADS|POL|STD)-\d+\s*[—-]\s*", "", line[2:].strip())
     return path.stem
 
 

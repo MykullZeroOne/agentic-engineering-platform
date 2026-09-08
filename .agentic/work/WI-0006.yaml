@@ -2,7 +2,7 @@ id: WI-0006
 store: local
 project: PRJ-mykullzeroone/agentic-engineering-platform
 type: spec
-work_state: ready
+work_state: in_progress
 priority: normal
 title: Create the tier 3 policy and standard layer
 description: |
@@ -15,7 +15,37 @@ description: |
   Still to do, and deliberately not done here: create docs/policies/ and docs/standards/, and
   decide whether one directory or two follows from one entity. The decision removed the blocker;
   it did not write the artifacts.
+
+  DONE HERE, 2026-09-01: the layer exists. docs/policies/ holds POL-001 (branching and merging,
+  the rules CLAUDE.md had carried ungated, per WI-0020's forcing-function argument), status
+  draft. docs/standards/ is not created: git tracks no empty directory, a placeholder file has no
+  front matter and so counts as authoritative under the new gate (check_gates fired on it), and
+  the location is already declared in the registry. It materialises with STD-001. The validator knows POL-NNN and STD-NNN; the index
+  has a tier-3 section.
+
+  DECISIONS:
+
+    Two directories, not one. One entity does not imply one directory: the registry already
+    binds `policy` to docs/policies/ and `standard` to docs/standards/ with independent numbering,
+    and a reader looking for "what blocks" versus "what informs" is served by the split.
+    Reversible by a registry edit if the split proves empty.
+
+    A new gate, rule_change, covering tier 3. AUTHORITY_MODEL says every artifact in tiers 0-3
+    is gated, and nothing triggered on docs/policies/ at all -- the first rule written there
+    would have carried normative force with no human having closed anything. The per-tier
+    pattern (constitutional_change, architecture_decision, product_spec) gets its fourth member
+    rather than platform_config being stretched: platform_config's subject is control surfaces,
+    and a rule is what those surfaces enforce. Adding a gate is itself a platform_config change,
+    so this pull request crosses that gate and waits on a record.
+
+    POL-001 is draft, so rule_change does not fire on it here. Approving it is a separate human
+    act with its own record, and must precede WI-0020 removing the rules from CLAUDE.md: the
+    rules must have authority somewhere at every moment.
+
+  NOT DONE HERE: the REGISTRIES.md known-gaps entry still says tier 3 has no artifacts. That
+  document is tier 0 and approved, so a body edit crosses constitutional_change; it goes with
+  the next gated edit to that file rather than crossing a second gate for one bullet.
 serves: [ISC-39]
 required_gates:
-- constitutional_change
-branch: spec/18-resolve-open-decisions
+  - platform_config
+branch: spec/6-tier-3-policy-layer

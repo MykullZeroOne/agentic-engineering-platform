@@ -1,0 +1,71 @@
+# Approval record, per ADR-019.
+#
+# Sixth closure of platform_config over the registries, and the first that adds a gate rather
+# than reshaping one. gates.yaml gains `rule_change`, the tier-3 gate; project.yaml lists it
+# under human_gates. Each material change to a registry re-opens the gate on its own, which is
+# the point of binding an approval to a content hash.
+
+id: APR-0021
+gate: platform_config
+surface: chat
+session: 019yz4N5xiPXWMdfy4BNK6aj
+
+approver: MykullZeroOne
+approved_on: 2026-09-08
+recorded_on: 2026-09-08
+
+hash_scheme: legacy/file-32
+
+artifacts:
+  - id: CFG-GATES
+    kind: config
+    path: .agentic/registries/gates.yaml
+    title: Human gate registry
+    content_hash: legacy/file-32:sha256:9ccbcfa5430cac393a9e6667fc7c9e24
+  - id: CFG-PROJECT
+    kind: config
+    path: .agentic/project.yaml
+    title: Project configuration
+    content_hash: legacy/file-32:sha256:808f916073a9a365acee1c870571fc2c
+
+request: >
+  PR #42 (WI-0006) was rebased onto main after six days and one conflict, and check_gates
+  reported platform_config OPEN on the two files above. The principal asked what rule_change
+  does and whether to do it before approving. Presented: a human gate on tier 3 following the
+  per-tier pattern (constitutional_change, architecture_decision, product_spec), approver
+  human.cto, risk_tier reversible, applies_when authoritative so drafts pass free and only an
+  approved policy or standard stops for a human; the reason (AUTHORITY_MODEL gates tiers 0-3
+  and tier 3 had no trigger, so the first rule written there would have carried force with
+  nobody closing anything); the alternative rejected (stretching platform_config, whose subject
+  is control surfaces and which applies always, so every draft edit would stop); one open
+  second-order question (standards are advisory and the same gate may prove heavier than they
+  deserve, reversible by a registry edit); and what approval does not do (POL-001 lands draft,
+  so rule_change fires on nothing yet).
+
+statement: >
+  approve the rule_change gate, write APR-0021 and merge 42
+
+  -- given after the discussion above, naming the gate, the record, and the pull request.
+
+scope_note: >
+  Approves .agentic/registries/gates.yaml and .agentic/project.yaml at the whole-file content
+  they carry on spec/6-tier-3-policy-layer at f8c0bc9. The substance is one new gate,
+  rule_change: triggers on docs/policies/** and docs/standards/** and on a tier-3 artifact
+  transitioning to approved; approver human.cto; blocking; enforcement check; sourced to
+  docs/spec/AUTHORITY_MODEL.md. project.yaml adds it to human_gates. No existing gate changes.
+
+  What this does NOT approve:
+
+  - It does not approve POL-001. That document lands as draft and carries no authority;
+    making it binding is a separate act crossing rule_change, and must precede WI-0020
+    removing the branching rules from CLAUDE.md so the rules have authority somewhere at
+    every moment.
+  - It does not decide that standards deserve a blocking human gate. AUTHORITY_MODEL says
+    every tier-3 artifact is gated and this follows it; if advisory standards prove too
+    expensive to approve, the fix is a registry edit crossing platform_config again.
+  - It does not create docs/standards/. Git tracks no empty directory and a placeholder
+    without front matter counts as authoritative under the new gate; the directory
+    materialises with STD-001.
+  - It does not edit the REGISTRIES.md known-gaps entry that still says tier 3 has no
+    artifacts. That file is tier 0 and approved; the edit crosses constitutional_change and
+    goes with the next gated change to it.
