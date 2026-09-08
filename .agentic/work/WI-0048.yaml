@@ -14,5 +14,6 @@ description: |
   Serves ISC-31, ISC-32 and ISC-34 (the antecedent: reasoning and context provenance side by
   side). Done when a running adapter's output streams to the UI within two seconds and an
   interrupt is observed by the run.
+serves: [ISC-31, ISC-32, ISC-34]
 required_gates: []
 dependencies: [WI-0042, WI-0046]

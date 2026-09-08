@@ -30,6 +30,7 @@ description: |
   the new blocking check, and the gate covering tier 3 has not been decided -- no gate
   triggers on docs/policies/ at all today. Deciding that trigger is part of this work, not a
   prerequisite discovered halfway through it.
+serves: [governance]
 required_gates: []
 dependencies:
 - WI-0006

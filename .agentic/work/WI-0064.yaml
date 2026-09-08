@@ -1,0 +1,28 @@
+id: WI-0064
+store: local
+project: PRJ-mykullzeroone/agentic-engineering-platform
+type: chore
+work_state: in_progress
+priority: normal
+title: Backfill serves across every work item
+description: |
+  WI-0063 added `serves` and left the field empty on every item that already existed. An empty
+  field measures nothing, so the audit that motivated it -- 38 of the first 41 items were the
+  repository's own governance machinery -- stayed an assertion rather than a query.
+
+  This assigns `serves` to all sixty existing items by reading each one's title and description
+  against ISA.md's claims and the PRDs, and creates this item for the work. Two items are left
+  without the field on purpose, and they are the finding rather than an omission: WI-0008
+  (generate the markdown projection from base data) and WI-0061 (rewrite the product vision).
+  Neither advances a claim anyone has stated. WI-0007's own text already records the first --
+  "WI-0008 is not among the new items and serves no ISA claim" -- and the second is the more
+  interesting case, because rewriting the vision is the most product-shaping work in the
+  repository and the ISA holds no claim about the vision being communicable at all.
+
+  NOT DONE HERE: flipping the missing-`serves` warning to an error, which SPEC-LOCAL-WORK-STORE
+  states is a separate change after the backfill, and which cannot land while two items
+  legitimately carry no value.
+serves: [governance]
+required_gates: []
+dependencies: [WI-0063]
+branch: chore/64-backfill-serves

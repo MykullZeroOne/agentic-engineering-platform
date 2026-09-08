@@ -14,5 +14,6 @@ description: |
   Would serve ISC-16, ISC-17, ISC-20, ISC-21, ISC-33 and ISC-40. Decomposes into per-bullet items
   when it becomes current; decomposing now would be speculative claims written to satisfy a
   count, which the ISA forbids and ADR-012 gains nothing from.
+serves: [ISC-16, ISC-17, ISC-20, ISC-21, ISC-33, ISC-40]
 required_gates: []
 dependencies: [WI-0053]

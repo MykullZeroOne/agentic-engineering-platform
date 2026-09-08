@@ -1,0 +1,41 @@
+id: WI-0068
+store: local
+project: PRJ-mykullzeroone/agentic-engineering-platform
+type: docs
+work_state: in_progress
+priority: normal
+title: Make the loop documents configurations of ADR-023
+description: |
+  ADR-023 is accepted (APR-0020) and names its consequences for docs/agents/. None are done.
+  UNIVERSAL_AGENT_LOOP.md still lists eleven steps; none of the nine documents in the directory
+  cites the ADR or the universal loop by name (grep returns zero); three tiers have no
+  completion-criteria section; the Release tier ORGANIZATION.md defines has no loop document.
+
+  Bring the directory into line with the decision, and nothing more:
+
+  - UNIVERSAL_AGENT_LOOP.md becomes the design projection of ADR-023: ten steps as the ADR
+    numbers them, the re-entry edge, the return edge, escalation as a branch on ADR-005's
+    ladder, the human as a permitted step-4 specialist, and human-owned step-7 gates. Cites
+    ADR-023. Drops the eleven-step list.
+  - Every per-role loop document declares itself a configuration of ADR-023 and states, in
+    one section with a fixed heading, its step-4 specialist set, its step-7 completion criteria
+    and whether the gate is human-owned, its step-8 artifacts, and which roles may return work
+    to it. Where the document's existing steps restate universal steps, they are removed in
+    favour of the configuration; where they are genuinely role-specific behaviour inside a step,
+    they stay and say which step they refine. ENGINEERING_LOOP.md's step 9 collapses into the
+    return edge. BA_LOOP.md names the human as a specialist and its gate as human-owned.
+  - RELEASE_LOOP.md is written for the Release Lead, from ORGANIZATION.md's Release
+    organization section, as a configuration in the same shape. Production release is a human
+    gate (gates.yaml: production_release), so its step-7 gate is human-owned.
+  - The index is regenerated and the validator is clean.
+
+  NOT in scope: SYSTEM_ARCHITECTURE.md:46 (gated under architecture_decision and named in
+  APR-0020 as not approved here); ORGANIZATION.md's tier definitions; ROLE_RUNTIME_CONTRACT.md;
+  any statement about how the loop is executed, which is WI-0049's.
+
+  docs/agents/ is not a gate trigger path (gates.yaml names it only as a source), so this
+  crosses no gate.
+serves: [ISC-28]
+required_gates: []
+dependencies: [WI-0060]
+branch: docs/68-loop-docs-configure-adr-023

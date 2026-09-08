@@ -52,6 +52,7 @@ description: |
   Follow-up found here, not fixed here: platform_config's `.agentic/roles/**` trigger
   matches .agentic/roles/.gitkeep, an empty placeholder. Approving a zero-byte file to
   close a gate would be theatre, so the trigger needs narrowing to real role definitions.
+serves: [governance]
 required_gates:
 - constitutional_change
 - platform_config

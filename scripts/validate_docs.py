@@ -56,6 +56,14 @@ LEGACY_BARE_PREFIX = "sha256:"
 # that drift. work_state is not enumerated here: states.yaml is its sole source.
 WORK_REQUIRED = ["id", "store", "project", "type", "work_state", "priority",
                  "title", "description"]
+
+# `serves` names what a work item advances, per LOCAL_WORK_STORE.md. Advisory first: a
+# missing one warns, an unresolvable one errors. Same shape as WI-0012 -> WI-0013, where
+# the gate check landed advisory and went blocking a change later once the debt was clear.
+# `governance` is a literal, and a first-class value rather than an escape hatch: work on
+# the validator and the gates is real, and the reason it needs a name is that 38 of the
+# first 41 items were governance and nothing displayed it.
+SERVES_LITERAL = {"governance"}
 WORK_TYPES = set(_vocab("work_item_type"))
 WORK_PRIORITIES = set(_vocab("priority"))
 
@@ -402,7 +410,20 @@ def check_capabilities(gates):
                     err(srel, f"{kind} grant {grant!r} is not a known capability")
 
 
-def check_work_items(states, gates):
+def read_isa_claims() -> set[str]:
+    """Claim ids declared in ISA.md, so `serves` can be resolved against them.
+
+    ISA.md is exempt from the lifecycle contract and collect() never scans it, so it is
+    read directly here. Absent file is not an error: a repository need not have an ISA,
+    and in that case ISC- targets simply do not resolve.
+    """
+    isa = ROOT / "ISA.md"
+    if not isa.is_file():
+        return set()
+    return set(re.findall(r"^- \[[ x]\] (ISC-\d+(?:\.\d+)?):", isa.read_text(), re.M))
+
+
+def check_work_items(states, gates, by_id):
     """Validate the local work store (docs/spec/LOCAL_WORK_STORE.md)."""
     work_dir = ROOT / ".agentic" / "work"
     if not work_dir.is_dir():
@@ -410,6 +431,7 @@ def check_work_items(states, gates):
 
     valid_states = {v["token"] for v in states["axes"]["work_state"]["values"]}
     known_gates = {g["id"] for g in gates["gates"]}
+    isa_claims = read_isa_claims()
     items: dict[str, dict] = {}
 
     for path in sorted(work_dir.glob("WI-*.yaml")):
@@ -430,6 +452,25 @@ def check_work_items(states, gates):
         if wid in items:
             err(rel, f"duplicate work item id {wid}")
         items[wid] = item
+
+        # serves: what this item advances. Missing warns; unresolvable errors. An entry
+        # naming a claim or a requirement that does not exist is worse than no entry at
+        # all, because it looks like traceability and is not.
+        if "serves" not in item:
+            warnings.append(f"{rel}: no `serves`; nothing records what this item advances")
+        else:
+            for target in item.get("serves") or []:
+                t = str(target)
+                if t in SERVES_LITERAL:
+                    continue
+                if re.match(r"^ISC-\d+(\.\d+)?$", t):
+                    if t not in isa_claims:
+                        err(rel, f"serves names {t!r}, which is not a claim in ISA.md")
+                elif re.match(r"^PRD-\d{3}$", t):
+                    if t not in by_id:
+                        err(rel, f"serves names {t!r}, which is not a document in the corpus")
+                else:
+                    err(rel, f"serves entry {t!r} is not an ISC-N, a PRD-NNN, or {sorted(SERVES_LITERAL)}")
 
         if item.get("type") not in WORK_TYPES:
             err(rel, f"type {item.get('type')!r} not in {sorted(WORK_TYPES)}")
@@ -467,7 +508,7 @@ def main() -> int:
     check_gates(gates)
     check_hooks(points)
     check_approvals(gates, by_id, fms)
-    check_work_items(states, gates)
+    check_work_items(states, gates, by_id)
     check_capabilities(gates)
 
     for w in warnings:

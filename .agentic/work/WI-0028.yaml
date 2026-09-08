@@ -45,6 +45,7 @@ description: |
   SPEC-CAPABILITIES is approved, so the principal model fires constitutional_change, and the
   graph node and edge vocabularies land in .agentic/registries/, which fires platform_config
   under a trigger scoped `always`.
+serves: [ISC-45, ISC-47]
 required_gates: []
 dependencies: []
 branch: spec/28-absorb-memory-context-model

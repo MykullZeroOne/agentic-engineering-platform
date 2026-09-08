@@ -35,5 +35,6 @@ description: |
   tests failed, then restored and they passed. A suite that catches nothing is the failure
   mode worth guarding against, and asserting on finding text rather than finding counts is
   what makes it catch things.
+serves: [ISC-52]
 required_gates: []
 branch: feat/19-devctl-doctor

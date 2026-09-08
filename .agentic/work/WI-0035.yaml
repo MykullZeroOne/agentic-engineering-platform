@@ -37,6 +37,7 @@ description: |
   own risk section argues the triage table decays faster than the work executes, and acceptance
   freezes that table in an immutable artifact. The stated mitigation -- replace it with work items
   if the absorptions run over weeks -- is now itself a superseding ADR rather than an edit.
+serves: [governance]
 required_gates:
 - architecture_decision
 dependencies:

@@ -13,5 +13,6 @@ description: |
   Serves ISC-23, ISC-24 and ISC-25 directly, and ISC-8 (a full cycle with no metered API
   credentials present). Done when the same work item runs through both adapters and the two run
   records differ only in provider metadata.
+serves: [ISC-23, ISC-24, ISC-25, ISC-8]
 required_gates: []
 dependencies: [WI-0045]

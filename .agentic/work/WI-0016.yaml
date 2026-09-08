@@ -34,6 +34,7 @@ description: |
 
   Depends on nothing in the repository today; it is blocked on the runtime decision above,
   not on other work items.
+serves: [governance]
 required_gates: []
 dependencies:
 - WI-0015

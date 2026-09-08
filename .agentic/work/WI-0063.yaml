@@ -1,0 +1,48 @@
+id: WI-0063
+store: local
+project: PRJ-mykullzeroone/agentic-engineering-platform
+type: spec
+work_state: in_progress
+priority: high
+title: Add a required serves field so work traces to intent
+description: |
+  WI-0062 ratified the vision, which makes it win arguments. This is the half that changes what
+  gets built.
+
+  It follows WI-0062, which is in flight on PR #46 and not yet merged. The dependency edge is
+  omitted rather than written, because the validator resolves `dependencies` against the work
+  store and a dangling edge would be a broken reference asserting a real one. The ordering is
+  recorded here instead.
+
+  A 2026-09-04 audit found 38 of the first 41 work items were the repository's own governance
+  machinery and three were product. Nobody chose that ratio. Nothing displayed it. The work item
+  schema requires id, store, project, type, work_state, priority, title and description, and
+  nothing that connects effort to intent -- so the work that felt urgent won every time and the
+  imbalance was invisible until somebody went looking.
+
+  `serves` is a list, and every entry resolves:
+
+    ISC-<n>     a claim in ISA.md
+    PRD-<nnn>   a document in docs/prd/
+    governance  a literal: this improves how the repository governs itself, not the product
+
+  `governance` is deliberately first-class rather than an escape hatch. Work on the validator,
+  the gate check and the approval machinery is real and worth doing. The point is not to
+  discourage it; it is to make its share visible. With this field, "where is the effort going"
+  stops being an investigation and becomes a query.
+
+  ADVISORY FIRST, following WI-0012 and WI-0013 exactly: a missing `serves` warns, an entry that
+  does not resolve errors. An unresolvable target is worse than an absent one, because it looks
+  like traceability and is not. Flipping the warning to an error is a separate change after the
+  backfill, once the debt is clear -- the same sequence the gate check went through.
+
+  All 59 existing items now warn. That is the backlog this measures, and backfilling it is the
+  interesting part: the items that cannot name anything they serve are the finding.
+
+  NOT DONE HERE: the backfill, and flipping the warning to an error. Nothing cites the vision
+  from docs/ yet either; a rule that every ADR must name the vision claim it serves is a
+  separate and probably better lever, and needs its own decision.
+serves: [governance]
+required_gates: []
+dependencies: []
+branch: spec/63-work-item-serves

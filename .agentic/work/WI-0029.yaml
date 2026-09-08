@@ -39,6 +39,7 @@ description: |
   Two new known limits recorded rather than hidden: principals are specified and not stored, since
   no user, team or token record exists anywhere in .agentic/; and the role kinds named here are
   not tokens in vocabularies.yaml, which makes them prose. Both are platform_config changes.
+serves: [ISC-5]
 required_gates:
 - constitutional_change
 dependencies: []

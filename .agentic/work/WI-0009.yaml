@@ -20,6 +20,7 @@ description: |
   Eleven remain and the model stays draft. The heaviest are which store is authoritative for each
   plane (Q9), whether invariants get a predicate language (Q4), whether skills are agent-authorable
   (Q1, where AUTHORITY_MODEL and gates.yaml disagree), and how cost_of_delay is computed (Q16).
+serves: [governance]
 required_gates:
 - constitutional_change
 branch: spec/18-resolve-open-decisions

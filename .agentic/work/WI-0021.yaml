@@ -36,5 +36,6 @@ description: |
 
   Ordering and the attention marker were mutation-tested: reversing the flow comparison and
   removing the off-flow ranking each failed two tests, and restoring them passed.
+serves: [governance]
 required_gates: []
 branch: feat/21-devctl-work

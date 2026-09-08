@@ -34,5 +34,6 @@ description: |
   were tried and both gave wrong answers on branches GitHub had already merged. The merge
   record is the only authority, which is a constraint on WI-0013's work.advance_state hook,
   not merely a cleanup annoyance.
+serves: [governance]
 required_gates: []
 branch: docs/17-merge-conventions

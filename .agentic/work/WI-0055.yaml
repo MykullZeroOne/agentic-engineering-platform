@@ -12,5 +12,6 @@ description: |
   the runtime has.
 
   Would serve ISC-43 through ISC-49. Decomposes when current.
+serves: [ISC-43, ISC-44, ISC-45, ISC-46, ISC-47, ISC-48, ISC-49]
 required_gates: []
 dependencies: [WI-0053]

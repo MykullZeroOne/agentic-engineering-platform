@@ -1,0 +1,44 @@
+id: WI-0060
+store: local
+project: PRJ-mykullzeroone/agentic-engineering-platform
+type: adr
+work_state: in_progress
+priority: high
+title: Ratify the universal agent loop as a tier-1 decision
+description: |
+  The first of the decisions that give AEP's thesis tier-1 authority. A 2026-09-04 corpus-wide
+  audit found that across all 22 accepted ADRs the word `specialist` appears zero times,
+  `recursive` zero times, and `definition of done` zero times, while the only approved statement
+  of AEP's flow is SYSTEM_ARCHITECTURE.md:46 -- a linear arrow chain that is the pipeline the
+  platform exists not to be. The loop lived only in a draft design document in the one directory
+  tree no gate protects.
+
+  Three incompatible versions were in circulation: eight steps in the principal's architecture
+  infographic, eleven in docs/agents/UNIVERSAL_AGENT_LOOP.md, thirteen in a restatement of
+  product intent. ADR-023 settles on ten, derived from the eleven with two corrections, and the
+  principal agreed to that shape before it was written.
+
+  The reasoning behind ten, which is the part worth preserving: each step must be a distinct
+  observable state transition that can be implemented and probed on its own. The thirteen
+  over-splits -- "identify unknowns" is the output of Analyze, "refine" is the re-entry edge
+  wearing a step number. The eight drops Receive, leaving no entry contract, and folds
+  Consolidate into Hand Off, leaving memory.consolidate with no step to attach to. But the eight
+  is right that escalation is a side branch rather than a numbered step, because numbering it
+  implies every pass escalates and the human is the most expensive reasoning resource in the
+  organization.
+
+  The re-entry edge from step 6 or 7 back to step 3 is what makes the loop recursive rather than
+  a longer pipeline. All three source versions left it implicit.
+
+  NOT IN SCOPE, each needing its own decision: the escalation ladder and the Question entity;
+  the organization model and its specialists; the memory typology. SYSTEM_ARCHITECTURE.md:46 is
+  wrong as written but is a gated edit under architecture_decision and is not touched here.
+
+  This pull request crosses architecture_decision and cannot be merged by an agent. ADR-023 is
+  written `proposed`: the principal agreed to the ten-step shape, not to prose they had not yet
+  read, and an approval record binds to a content hash. The record comes after they read it.
+serves: [ISC-28]
+required_gates:
+  - architecture_decision
+dependencies: []
+branch: adr/60-universal-agent-loop

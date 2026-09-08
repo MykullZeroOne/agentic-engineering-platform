@@ -12,5 +12,6 @@ description: |
   marketplace are fog in the ISA and stay fog here.
 
   Would serve ISC-54 and ISC-55. Decomposes when current.
+serves: [ISC-54, ISC-55]
 required_gates: []
 dependencies: [WI-0054]

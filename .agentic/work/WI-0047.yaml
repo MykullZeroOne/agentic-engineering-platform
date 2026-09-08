@@ -13,5 +13,6 @@ description: |
   Serves ISC-52 and the anti-claim ISC-56 (adopting never requires restructuring an existing
   repository's documentation format). Done when `adopt` on a repository with foreign documentation
   produces a passing `doctor` and touches nothing outside .agentic/.
+serves: [ISC-52, ISC-56]
 required_gates: []
 dependencies: []

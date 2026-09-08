@@ -9,3 +9,4 @@ description: |
   Two known gaps in SPEC-REGISTRIES. Skills are referenced as name@version throughout with no
   schema and .agentic/skills/ is empty. The evidence package has a shape -- the pull request
   template -- but no schema, so QA and review cannot consume it mechanically.
+serves: [ISC-29]

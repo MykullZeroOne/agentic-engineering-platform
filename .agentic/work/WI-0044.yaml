@@ -15,5 +15,6 @@ description: |
   runtime form: work state derived from the merge event rather than from `gh pr list` in a CLI.
   Done when the service receives pull-request and merge webhooks and the adapter is the only
   package that imports the GitHub client.
+serves: [ISC-55, ISC-19]
 required_gates: []
 dependencies: [WI-0042]

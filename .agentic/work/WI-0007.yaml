@@ -25,4 +25,5 @@ description: |
   WI-0008 is not among the new items and serves no ISA claim. ADR-017 (documents as projections
   of structured data) has no ISC; that is an ISA gap, recorded in the mapping and not resolved
   here.
+serves: [governance]
 branch: docs/7-roadmap-phases-to-work-items

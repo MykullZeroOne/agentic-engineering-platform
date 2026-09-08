@@ -1,0 +1,40 @@
+id: WI-0059
+store: local
+project: PRJ-mykullzeroone/agentic-engineering-platform
+type: docs
+work_state: in_progress
+priority: high
+title: Correct CLAUDE.md's false account of what code exists
+description: |
+  CLAUDE.md said "There is no application code and no runtime", "The only executable code is
+  `scripts/`", and "No product code exists yet". All three were false. `cmd/devctl` and
+  `internal/` hold roughly 2,700 lines of Go with four test files, shipped under WI-0019,
+  WI-0021 and WI-0023.
+
+  This is worse than a stale description. CLAUDE.md is loaded by every agent at session start,
+  and its "Validate before you push" checklist listed only the Python scripts. An agent
+  following it literally skips `go test` on a change to `internal/work` -- the package whose
+  coverage bug WI-0040 was filed against. The repository map had no row for `cmd/` or
+  `internal/` either, so the only product code in the repository was invisible in its own
+  governance file.
+
+  Corrected:
+
+    - The current-state paragraph now separates what exists and runs (scripts, devctl's four
+      real commands) from what does not (runtime, hook engine, database, event store,
+      retrieval, agent execution, UI) and says so concretely, naming the empty roles and
+      skills directories and the declarative-only hook bindings.
+    - It states that Phase 1 is partially begun rather than unstarted, and points at
+      WI-0042..WI-0053 for the rest.
+    - It instructs writers to distinguish designed from implemented from proven, which is the
+      discipline whose absence produced the false claim.
+    - The repository map gains rows for cmd/devctl/ and internal/.
+    - The pre-push checklist gains check_gates.py and `go build ./... && go test ./...`,
+      required on any change under cmd/ or internal/, and records why the omission mattered.
+
+  Found by a corpus-wide documentation audit, 2026-09-04, alongside a broader finding this item
+  does not address: the product thesis has no tier-1 authority behind it. That needs new ADRs
+  and is not in scope here.
+required_gates: []
+dependencies: []
+branch: docs/59-correct-claude-md-state

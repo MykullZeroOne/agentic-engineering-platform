@@ -19,5 +19,6 @@ description: |
 
   Advisory in this change: it reports without failing. The gate debt already on `main`
   has to be cleared before the rule can block, which is WI-0013.
+serves: [governance]
 required_gates: []
 branch: ci/12-gate-check
