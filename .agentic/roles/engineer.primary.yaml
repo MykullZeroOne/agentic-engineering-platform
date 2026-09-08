@@ -1,0 +1,57 @@
+# The first durable agent identity in this repository.
+#
+# ADR-002: a role is a durable organizational identity and a runtime is a transient
+# execution of it. This file therefore names no model and no provider at any depth,
+# and `devctl doctor` fails the repository if one ever appears here. The provider is
+# resolved from `function` against .agentic/project.yaml's runtime_preferences, which
+# is the only place a provider token is allowed to live.
+
+id: engineer.primary
+role: engineer
+role_version: 1
+
+# Resolves the provider through project.yaml runtime_preferences[function].
+# Never a provider token, never a model name.
+function: implementation
+
+parent: null
+specialists: []
+
+capabilities:
+  - implementation
+  - test-authoring
+
+skills: []
+
+tools:
+  allow:
+    - repository.read
+    - repository.write
+    - shell.exec
+  deny:
+    - github.merge
+
+memory:
+  namespace: agent/engineer.primary
+  inherit:
+    - function/engineering
+    - project
+
+# Step 7 of ADR-023. ENGINEERING_LOOP.md calls this gate agent-evaluated; that document
+# is `draft` and carries no authority, and the property this first mile exists to test is
+# that a human-owned gate parks the loop. The loop reads this file, not that document.
+completion:
+  human_owned: true
+  criteria:
+    - local_checks_pass
+    - scope_respected
+    - evidence_package_complete
+
+# Which roles may return a completed hand-off to this one (ADR-023's return edge).
+# `human` is here because in the first mile the human is the only reviewer that exists.
+returns_from:
+  - review
+  - qa
+  - human
+
+human_gates: []
