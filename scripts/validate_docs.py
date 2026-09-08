@@ -68,6 +68,19 @@ SERVES_LITERAL = {"governance"}
 WORK_TYPES = set(_vocab("work_item_type"))
 WORK_PRIORITIES = set(_vocab("priority"))
 
+# ISA claim polarity, per ISA.md's Language section. The marker that opens a claim's text
+# is its polarity; no marker means `direct`. The set is closed so that running `serves`
+# backwards can partition on it: an `anti` or `advisory` claim closes as a property of
+# other work, so an orphan report listing one is reporting noise rather than a gap.
+ISA_POLARITY_MARKERS = {
+    "Anti": "anti",
+    "Advisory": "advisory",
+    "Antecedent": "antecedent",
+}
+ISA_SERVED_POLARITIES = {"direct", "antecedent"}
+ISA_CLAIM_RE = re.compile(r"^- \[[ x]\] (ISC-\d+(?:\.\d+)?): *(.*)$", re.M)
+ISA_LEAD_TOKEN_RE = re.compile(r"^([A-Za-z][A-Za-z-]*): ")
+
 # Required ADR sections, per docs/spec/DOCUMENT_LIFECYCLE.md. ADR-001..008 predate the
 # requirement and are accepted and immutable, so they are grandfathered rather than rewritten.
 ADR_SECTIONS = ["## Context", "## Decision", "## Alternatives considered",
@@ -411,17 +424,38 @@ def check_capabilities(gates):
                     err(srel, f"{kind} grant {grant!r} is not a known capability")
 
 
-def read_isa_claims() -> set[str]:
-    """Claim ids declared in ISA.md, so `serves` can be resolved against them.
+def read_isa_claims() -> dict[str, str]:
+    """Claim ids declared in ISA.md mapped to their polarity.
 
     ISA.md is exempt from the lifecycle contract and collect() never scans it, so it is
     read directly here. Absent file is not an error: a repository need not have an ISA,
     and in that case ISC- targets simply do not resolve.
+
+    Polarity is the leading marker on a claim's text, per ISA.md's Language section. The
+    marker set is closed and enforced here: an unrecognised leading `Word:` is an error,
+    because a convention nothing checks is one no tool can partition on. That was the
+    finding behind WI-0066 -- the first backward `serves` join listed seven unserved
+    claims, five of which were anti-claims or advisory checks nobody should be building.
     """
     isa = ROOT / "ISA.md"
     if not isa.is_file():
-        return set()
-    return set(re.findall(r"^- \[[ x]\] (ISC-\d+(?:\.\d+)?):", isa.read_text(), re.M))
+        return {}
+
+    claims: dict[str, str] = {}
+    for cid, text in ISA_CLAIM_RE.findall(isa.read_text()):
+        polarity = "direct"
+        lead = ISA_LEAD_TOKEN_RE.match(text)
+        if lead:
+            token = lead.group(1)
+            if token not in ISA_POLARITY_MARKERS:
+                err("ISA.md", f"{cid} opens with {token + ':'!r}, which is not one of "
+                              f"{sorted(m + ':' for m in ISA_POLARITY_MARKERS)}")
+            else:
+                polarity = ISA_POLARITY_MARKERS[token]
+        if cid in claims:
+            err("ISA.md", f"duplicate claim id {cid}")
+        claims[cid] = polarity
+    return claims
 
 
 def check_work_items(states, gates, by_id):
@@ -434,6 +468,7 @@ def check_work_items(states, gates, by_id):
     known_gates = {g["id"] for g in gates["gates"]}
     isa_claims = read_isa_claims()
     items: dict[str, dict] = {}
+    served_claims: set[str] = set()
 
     for path in sorted(work_dir.glob("WI-*.yaml")):
         rel = str(path.relative_to(ROOT))
@@ -467,6 +502,8 @@ def check_work_items(states, gates, by_id):
                 if re.match(r"^ISC-\d+(\.\d+)?$", t):
                     if t not in isa_claims:
                         err(rel, f"serves names {t!r}, which is not a claim in ISA.md")
+                    else:
+                        served_claims.add(t)
                 elif re.match(r"^PRD-\d{3}$", t):
                     if t not in by_id:
                         err(rel, f"serves names {t!r}, which is not a document in the corpus")
@@ -495,6 +532,20 @@ def check_work_items(states, gates, by_id):
                     err(rel, f"{field} references unknown work item {ref!r}")
                 elif ref == wid:
                     err(rel, f"{field} references itself")
+
+    # The `serves` join run backwards: which claims has nobody taken up? Warning only,
+    # and only for polarities that expect a server -- an anti-claim or an advisory check
+    # closes as a property of other work, so listing one is noise, and a report that is
+    # mostly noise gets ignored the second time it runs (WI-0066).
+    orphans = sorted(
+        cid for cid, polarity in isa_claims.items()
+        if polarity in ISA_SERVED_POLARITIES and cid not in served_claims
+    )
+    if orphans:
+        warnings.append(
+            f"ISA.md: no work item serves {', '.join(orphans)}; "
+            f"each is a claim in a polarity that expects one"
+        )
 
 
 def main() -> int:
