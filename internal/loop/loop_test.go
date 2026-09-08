@@ -662,6 +662,67 @@ func TestC30_AClosedPROpensPassTwoOnTheSameRunID(t *testing.T) {
 	}
 }
 
+func TestC30_AReturnPassResetsTheStateToWorking(t *testing.T) {
+	root := fixture(t, nil)
+	control := &fakeControl{}
+	adapter := &fakeAdapter{Sessions: []fakeSession{
+		{SessionID: "sess-1", Texts: []string{"pass one"}, Result: runtime.Result{Status: runtime.StatusSucceeded, ExitCode: 0}},
+		{SessionID: "sess-blocked", Block: make(chan struct{})},
+	}}
+
+	first := mustRun(t, context.Background(), Options{
+		Root: root, Item: "WI-0001",
+		Adapter: adapter, Control: control, Checker: passChecker(), Now: fixedNow(),
+	})
+	if first.Record.State != "awaiting_human" {
+		t.Fatalf("first run state = %q, want awaiting_human", first.Record.State)
+	}
+
+	control.PR = PR{State: PRClosed, Review: "please add a test"}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	go func() {
+		time.Sleep(20 * time.Millisecond)
+		cancel()
+	}()
+
+	_, err := Run(ctx, Options{
+		Root: root, Item: "WI-0001",
+		Adapter: adapter, Control: control, Checker: passChecker(), Now: fixedNow(),
+	})
+	if err == nil {
+		t.Fatal("expected an error from a cancelled run")
+	}
+
+	runID, found, ferr := FindRun(root, "WI-0001")
+	if ferr != nil {
+		t.Fatal(ferr)
+	}
+	if !found {
+		t.Fatal("no open run found after cancellation")
+	}
+	rec, lerr := LoadRecord(root, runID)
+	if lerr != nil {
+		t.Fatal(lerr)
+	}
+	if rec.Pass != 2 {
+		t.Errorf("Pass = %d, want 2", rec.Pass)
+	}
+	if rec.State != "working" {
+		t.Errorf("State = %q, want working", rec.State)
+	}
+	s4, ok := rec.Step(2, 4)
+	if !ok {
+		t.Fatal("no pass-2 step 4 entry")
+	}
+	if s4.Entered == "" {
+		t.Error("pass-2 step 4 Entered is empty")
+	}
+	if s4.Exited != "" {
+		t.Errorf("pass-2 step 4 Exited = %q, want empty (unexited)", s4.Exited)
+	}
+}
+
 func TestC31_AMergedPRRunsStepsEightNineAndTen(t *testing.T) {
 	root := fixture(t, nil)
 	control := &fakeControl{}
