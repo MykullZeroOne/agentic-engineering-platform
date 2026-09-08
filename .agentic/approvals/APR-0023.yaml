@@ -1,0 +1,53 @@
+# Approval record, per ADR-019.
+#
+# First closure of platform_config over a role definition. .agentic/roles/ held a .gitkeep
+# until this file; engineer.primary is the first durable agent identity (ADR-002) and the
+# identity the Simple First Mile of the universal agent loop (ADR-023 § Risks) runs as.
+
+id: APR-0023
+gate: platform_config
+surface: chat
+session: 019yz4N5xiPXWMdfy4BNK6aj
+
+approver: MykullZeroOne
+approved_on: 2026-09-08
+recorded_on: 2026-09-08
+
+hash_scheme: legacy/file-32
+
+artifacts:
+  - id: engineer.primary
+    kind: config
+    path: .agentic/roles/engineer.primary.yaml
+    title: Engineer agent identity (engineer.primary)
+    content_hash: legacy/file-32:sha256:93beef598cfdc1d1633feec773685909
+
+work_items: [WI-0045]
+
+request: >
+  PR #56 (feat/45-engineer-role) adds .agentic/roles/engineer.primary.yaml, which matches
+  platform_config's path trigger .agentic/roles/*.yaml. CI reported the gate OPEN and the
+  helm held the record until the principal named the file. Presented in the PR body: the role
+  names no model or provider at any depth; its provider resolves through function against
+  project.yaml runtime_preferences; its step-7 gate is declared human_owned, diverging from
+  the draft ENGINEERING_LOOP.md on purpose; tools.deny is github.merge only; and devctl doctor
+  now rejects any role carrying a runtime, model or provider key or a provider-token value.
+
+statement: >
+  approve engineer.primary.yaml, write the platform_config record
+
+  -- given in chat, naming the file and the gate.
+
+scope_note: >
+  Approves .agentic/roles/engineer.primary.yaml at the content it carries on
+  feat/45-engineer-role at edad37a, hashed whole (legacy/file-32) because a role file has no
+  markdown body. Closes platform_config for that path at that content only.
+
+  What this does NOT approve:
+
+  - The Go changes in the same PR (internal/config, internal/doctor) cross no gate and need
+    no approval; they are ordinary work.
+  - Any change to project.yaml runtime_preferences, including the implementation
+    preference that still names codex-subscription. That is a separate platform_config edit.
+  - docs/schemas/agent-role.example.yaml, which contradicts this role's shape and stays stale.
+  - Any later edit to the role file: a changed hash makes this record stale, not covering.
