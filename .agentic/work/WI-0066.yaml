@@ -2,7 +2,7 @@ id: WI-0066
 store: local
 project: PRJ-mykullzeroone/agentic-engineering-platform
 type: docs
-work_state: intake
+work_state: done
 priority: normal
 title: Mark ISA claim polarity so anti-claims partition out of orphan lists
 description: |
