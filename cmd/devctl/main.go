@@ -6,6 +6,8 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -15,6 +17,7 @@ import (
 	"github.com/MykullZeroOne/agentic-engineering-platform/internal/approvals"
 	"github.com/MykullZeroOne/agentic-engineering-platform/internal/config"
 	"github.com/MykullZeroOne/agentic-engineering-platform/internal/doctor"
+	"github.com/MykullZeroOne/agentic-engineering-platform/internal/loop"
 	"github.com/MykullZeroOne/agentic-engineering-platform/internal/work"
 )
 
@@ -25,6 +28,7 @@ usage:
   devctl work list [--state S] [--type T] [--priority P] [--root DIR]
   devctl work show WI-NNNN [--root DIR]
   devctl work advance [--dry-run] [--ref REF] [--root DIR]
+  devctl run WI-NNNN [--runtime TOKEN] [--role ID] [--root DIR]
 
 commands:
   doctor   Report whether a project's .agentic/ configuration is coherent.
@@ -35,6 +39,11 @@ commands:
            .agentic/hooks/hooks.yaml, which has been bound and inert since
            WI-0013. --dry-run reports drift without writing and exits 1 when
            there is any, which is the shape a CI check needs.
+  run      Execute ADR-023's universal agent loop for one work item, resuming
+           an open run when one exists. Parks at step 7 on a human-owned gate:
+           the pull request it opens is the next thing a human acts on. Exit
+           codes: 0 parked or complete, 1 unknown work item, 2 a configuration
+           error, 3 blocked on a question a human must answer.
 `
 
 func main() {
@@ -47,6 +56,8 @@ func main() {
 		os.Exit(runDoctor(os.Args[2:]))
 	case "work":
 		os.Exit(runWork(os.Args[2:]))
+	case "run":
+		os.Exit(runRun(os.Args[2:]))
 	case "-h", "--help", "help":
 		fmt.Print(usage)
 		os.Exit(0)
@@ -164,6 +175,46 @@ func runAdvance(root, ref string, dryRun bool) int {
 }
 
 func isTerminal(s string) bool { return s == "done" || s == "cancelled" }
+
+// runRun executes the universal agent loop for one work item.
+//
+// Exit codes carry meaning, as they do for `work advance`: 0 parked or complete,
+// 1 the work item does not exist, 2 a configuration error the run cannot proceed
+// through, 3 the run is blocked on a question a human must answer.
+func runRun(args []string) int {
+	if len(args) == 0 || strings.HasPrefix(args[0], "-") {
+		fmt.Fprint(os.Stderr, "devctl run: expected a work item id, e.g. WI-0001\n")
+		return 2
+	}
+	item := args[0]
+
+	fs := flag.NewFlagSet("run", flag.ExitOnError)
+	root := fs.String("root", ".", "project root: the directory holding .agentic/")
+	runtimeToken := fs.String("runtime", "", "override the resolved provider (project.yaml's runtime_preferences by default)")
+	roleID := fs.String("role", "", "role id (default engineer.primary)")
+	_ = fs.Parse(args[1:])
+
+	out, err := loop.Run(context.Background(), loop.Options{
+		Root:     config.Root(*root),
+		Item:     item,
+		Provider: *runtimeToken,
+		RoleID:   *roleID,
+	})
+	if err != nil {
+		switch {
+		case errors.Is(err, loop.ErrUnknownItem):
+			fmt.Fprintf(os.Stderr, "devctl run: %v\n", err)
+			return 1
+		case errors.Is(err, loop.ErrNoAdapter):
+			fmt.Fprintf(os.Stderr, "devctl run: %v\n", err)
+			return 2
+		default:
+			fmt.Fprintf(os.Stderr, "devctl run: %v\n", err)
+			return 2
+		}
+	}
+	return out.Exit
+}
 
 func runDoctor(args []string) int {
 	fs := flag.NewFlagSet("doctor", flag.ExitOnError)

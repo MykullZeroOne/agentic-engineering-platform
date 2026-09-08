@@ -14,6 +14,15 @@ description: |
   Serves ISC-26 (evidence attaches to the run, not the session), ISC-27 (a failed run resumes
   without re-deriving context from the human) and ISC-28. Done when a run killed mid-flight
   resumes from its own record with no human input.
+
+  Partially served by the Simple First Mile (2026-09-08): `internal/loop` implements ADR-023's
+  ten-step state machine on a durable run record at `.agentic/runs/<run_id>/record.yaml`, and
+  `devctl run WI-NNNN` drives it. A cancelled run resumes at the exact step it was interrupted in
+  on the same run id, reading no stdin (ISC-27's probe). A re-entry (a failing local check) and a
+  return (a closed pull request) are both edges on the same run id rather than new runs, and every
+  evidence entry is keyed to the run and readable from disk with no session alive (ISC-26's
+  probe). ISC-28 remains open: nothing here yet demonstrates surviving a provider change, since
+  only the Claude adapter (WI-0046) exists. This item stays open for that.
 serves: [ISC-26, ISC-27, ISC-28]
 required_gates: []
 dependencies: [WI-0046]
