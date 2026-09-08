@@ -1,0 +1,22 @@
+id: WI-0070
+store: local
+project: PRJ-mykullzeroone/agentic-engineering-platform
+type: chore
+work_state: done
+priority: normal
+title: Advance the work states of the items merged by the Simple First Mile
+description: |
+  Bookkeeping, produced by `devctl work advance` rather than by hand, after the Simple First
+  Mile landed: WI-0066 (mark ISA claim polarity, #62, the loop's own pull request) and WI-0069
+  (reconcile the first mile's evidence into ISA.md, #60), plus the older merged items the same
+  pass found stale. No item can record its own completion inside the pull request that
+  completes it, so every merge needs this trailing change, and the change is itself work
+  needing an item. This is it, set to done by hand because a pull request that files an item
+  has nothing to close (POL-001, known gaps).
+
+  WI-0045, WI-0046 and WI-0049 are deliberately not advanced: #56, #57, #58 and #61 served
+  them partially and carried no Closes trailer, so they stay open for the claims they still owe.
+serves: [governance]
+required_gates: []
+dependencies: []
+branch: chore/70-advance-merged-work-states

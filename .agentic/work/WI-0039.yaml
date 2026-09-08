@@ -2,7 +2,7 @@ id: WI-0039
 store: local
 project: PRJ-mykullzeroone/agentic-engineering-platform
 type: docs
-work_state: in_progress
+work_state: done
 priority: normal
 title: Reconcile CLAUDE.md's gate table with APR-0011's ruling that CLAUDE.md is ungated
 description: |

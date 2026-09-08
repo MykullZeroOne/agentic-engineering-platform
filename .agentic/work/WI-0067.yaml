@@ -2,7 +2,7 @@ id: WI-0067
 store: local
 project: PRJ-mykullzeroone/agentic-engineering-platform
 type: chore
-work_state: in_progress
+work_state: done
 priority: normal
 title: Advance the work states of five merged items
 description: |

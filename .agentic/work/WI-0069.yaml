@@ -2,7 +2,7 @@ id: WI-0069
 store: local
 project: PRJ-mykullzeroone/agentic-engineering-platform
 type: docs
-work_state: in_progress
+work_state: done
 priority: normal
 title: Reconcile the Simple First Mile's evidence into ISA.md
 description: |
