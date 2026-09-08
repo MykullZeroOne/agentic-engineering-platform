@@ -185,22 +185,25 @@ are both disabled.
   documents, 8 of them severity 1, including a contradiction with a tier-0 spec approved the same
   week.
 
-Gates in force are `human_gates` in `.agentic/project.yaml`, defined in
-`.agentic/registries/gates.yaml`; read them there, not from any list restated in prose.
+### Gates
 
-### Change classes that always require human approval
+`.agentic/registries/gates.yaml` is the sole source of gate ids and triggers; `human_gates` in
+`.agentic/project.yaml` names those in force. No gate list is restated here, per POL-001.
 
-Gate IDs below resolve against `.agentic/registries/gates.yaml`, which holds the triggers,
-approvers, and prior aliases for each.
+To learn what a change crosses:
 
-| Change | Gate |
-| --- | --- |
-| Any new or superseding ADR (`docs/adr/**`) | `architecture_decision` |
-| `.agentic/project.yaml`, `registries/**`, `hooks/**`, `roles/**` | `platform_config` |
-| Anything under `docs/security/**` | `security_policy` |
-| Approving a PRD or ADS (`docs/prd/**`, `docs/ads/**`) | `product_spec` |
-| Anything altering a gate, policy, or required check | `platform_config` |
-| Future: `migrations/**`, per `docs/workflows/POLICY_MODEL.md` | `destructive_data_change` |
+```
+python3 scripts/check_gates.py --strict --base origin/main
+```
+
+CI runs the same command and blocks on any gate it reports OPEN.
+
+Editing this file is not itself a gated act. CLAUDE.md was briefly a `platform_config` trigger
+path (WI-0014), making every wording fix an approval event, until the principal ruled "Ungate it,
+move the policy instead" (APR-0011); the policy moved to POL-001 (WI-0006, WI-0020).
+
+`sources` in `gates.yaml` names where a gate's prose rationale lives, not what triggers it.
+CLAUDE.md sits in several `sources` lists and no `triggers` list; being a source gates nothing.
 
 **Revert first, diagnose second.** Because merges are squashed, `git revert <sha>` on `main` is
 always sufficient; open a follow-up issue for the root cause rather than hot-fixing forward on

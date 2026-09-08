@@ -2,7 +2,7 @@ id: WI-0039
 store: local
 project: PRJ-mykullzeroone/agentic-engineering-platform
 type: docs
-work_state: intake
+work_state: in_progress
 priority: normal
 title: Reconcile CLAUDE.md's gate table with APR-0011's ruling that CLAUDE.md is ungated
 description: |
@@ -56,6 +56,27 @@ description: |
   exists, is a different one. The general defect -- filing an item on a branch named for it is
   self-closing under the fallback -- is the item-filing convention gap made concrete, and it
   needs a decision of its own rather than a workaround per item.
+
+  DONE HERE, 2026-09-08: the gate table under CLAUDE.md's "Change classes that always require
+  human approval" heading is removed, not repaired, and replaced with a `### Gates` subsection.
+  The table was a prose restatement of the registry, which POL-001 and the sentence directly
+  above the old table both already said is a second source that drifts; it had already drifted,
+  omitting `rule_change` (added in #42) and listing `destructive_data_change`, which is not in
+  `human_gates`. The new subsection names `.agentic/registries/gates.yaml` and `human_gates` in
+  `.agentic/project.yaml` as the sole source, gives `python3 scripts/check_gates.py --strict
+  --base origin/main` as the deterministic way to learn what a change crosses (the same command
+  CI runs, blocking on an OPEN gate), cites APR-0011 for the ruling that editing CLAUDE.md is not
+  itself a gated act, and states the `sources` versus `triggers` distinction in gates.yaml. The
+  sentence above the old table ("read them there, not from any list restated in prose") duplicated
+  the new subsection's first point, so it was folded in rather than kept twice.
+
+  NOT DONE HERE: gates.yaml still lists CLAUDE.md under `sources` for `platform_config`,
+  `security_policy`, and `destructive_data_change`, but CLAUDE.md no longer carries the prose
+  those pointers meant. Editing gates.yaml crosses `platform_config`, so that correction is out
+  of scope here. The two defects this item already flagged above -- approvals.Cover matching a
+  closure by gate id alone rather than checking relevance to the change, and the filing-branch
+  self-close under the merge fallback -- still need their own items; neither is opened here.
 serves: [governance]
 required_gates: []
 dependencies: []
+branch: docs/39-reconcile-gate-table
