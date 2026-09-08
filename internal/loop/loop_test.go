@@ -241,12 +241,20 @@ func TestC24_AQuestionLineParksTheRunBlockedAndExitsThree(t *testing.T) {
 
 func TestC25_ValidateRecordsRCAndAnOutputRefForEachCheck(t *testing.T) {
 	root := fixture(t, nil)
-	checker := &fakeChecker{Script: [][]Check{{
-		{Name: "go-build", Command: "go build ./...", RC: 0},
-		{Name: "go-test", Command: "go test ./...", RC: 0},
-		{Name: "validate-docs", Command: "python3 scripts/validate_docs.py", RC: 0},
-		{Name: "check-gates", Command: "python3 scripts/check_gates.py --base origin/main", RC: 0},
-	}}}
+	// Two Script entries: step 7 now calls the checker twice per successful pass, once
+	// for the pre-commit checks (go-build, go-test, validate-docs) and once for
+	// PostCommitChecks (check-gates) after the commit. The step-7 entry this test reads
+	// back holds both sets, four checks total, same as before the split.
+	checker := &fakeChecker{Script: [][]Check{
+		{
+			{Name: "go-build", Command: "go build ./...", RC: 0},
+			{Name: "go-test", Command: "go test ./...", RC: 0},
+			{Name: "validate-docs", Command: "python3 scripts/validate_docs.py", RC: 0},
+		},
+		{
+			{Name: "check-gates", Command: "python3 scripts/check_gates.py --base origin/main", RC: 0},
+		},
+	}}
 	out := mustRun(t, context.Background(), Options{
 		Root: root, Item: "WI-0001",
 		Adapter: passAdapter("sess-1", "done"), Control: &fakeControl{}, Checker: checker, Now: fixedNow(),
@@ -269,6 +277,87 @@ func TestC25_ValidateRecordsRCAndAnOutputRefForEachCheck(t *testing.T) {
 		p := filepath.Join(RunDir(root, out.RunID), c.Output)
 		if _, err := os.Stat(p); err != nil {
 			t.Errorf("check %s Output %q does not resolve under the run directory: %v", c.Name, c.Output, err)
+		}
+	}
+}
+
+// TestC25_TheGateCheckRunsAfterTheCommit pins the defect a real run's check logs
+// surfaced: check_gates.py's changed_paths() diffs COMMITS against origin/main
+// (scripts/check_gates.py:58-68), so running check-gates before control.Commit
+// examines nothing — a fresh pass's uncommitted edits are invisible to it. Step 7 must
+// call the pre-commit checks (DefaultChecks), then control.Commit, then the
+// post-commit check (PostCommitChecks: check-gates), then control.Push, in that order,
+// and the step-7 record must show all four checks, pre-commit names first.
+func TestC25_TheGateCheckRunsAfterTheCommit(t *testing.T) {
+	root := fixture(t, nil)
+	control := &fakeControl{}
+	checker := &fakeChecker{Script: [][]Check{
+		{
+			{Name: "go-build", Command: "go build ./...", RC: 0},
+			{Name: "go-test", Command: "go test ./...", RC: 0},
+			{Name: "validate-docs", Command: "python3 scripts/validate_docs.py", RC: 0},
+		},
+		{
+			{Name: "check-gates", Command: "python3 scripts/check_gates.py --base origin/main", RC: 0},
+		},
+	}}
+	start := argvLen()
+
+	out := mustRun(t, context.Background(), Options{
+		Root: root, Item: "WI-0001",
+		Adapter: passAdapter("sess-1", "done"), Control: control, Checker: checker, Now: fixedNow(),
+	})
+	if out.Exit != 0 {
+		t.Fatalf("Exit = %d, want 0", out.Exit)
+	}
+
+	seq := argvFrom(start)
+	commitIdx, pushIdx, preCheckIdx, postCheckIdx := -1, -1, -1, -1
+	checkCalls := 0
+	for i, argv := range seq {
+		switch {
+		case len(argv) >= 4 && argv[0] == "git" && argv[3] == "commit":
+			commitIdx = i
+		case len(argv) >= 4 && argv[0] == "git" && argv[3] == "push":
+			pushIdx = i
+		case len(argv) >= 1 && argv[0] == "fakeChecker":
+			checkCalls++
+			if checkCalls == 1 {
+				preCheckIdx = i
+				if len(argv) < 3 || !strings.Contains(argv[2], "go-build") {
+					t.Errorf("first checker invocation did not request the pre-commit checks: %v", argv)
+				}
+			}
+			if checkCalls == 2 {
+				postCheckIdx = i
+				if len(argv) < 3 || argv[2] != "check-gates" {
+					t.Errorf("second checker invocation did not request check-gates alone: %v", argv)
+				}
+			}
+		}
+	}
+	if commitIdx == -1 || pushIdx == -1 || preCheckIdx == -1 || postCheckIdx == -1 {
+		t.Fatalf("did not find all four expected calls in the sequence: %v", seq)
+	}
+	if checkCalls != 2 {
+		t.Fatalf("fakeChecker was invoked %d time(s) in one pass, want 2", checkCalls)
+	}
+	if !(preCheckIdx < commitIdx && commitIdx < postCheckIdx && postCheckIdx < pushIdx) {
+		t.Errorf("wrong order: preCheck=%d commit=%d postCheck=%d push=%d, want preCheck<commit<postCheck<push\nfull sequence: %v",
+			preCheckIdx, commitIdx, postCheckIdx, pushIdx, seq)
+	}
+
+	s7, ok := out.Record.Step(1, 7)
+	if !ok {
+		t.Fatal("no step 7 entry recorded")
+	}
+	wantNames := []string{"go-build", "go-test", "validate-docs", "check-gates"}
+	if len(s7.Checks) != len(wantNames) {
+		t.Fatalf("step 7 Checks = %d entries, want %d: %+v", len(s7.Checks), len(wantNames), s7.Checks)
+	}
+	for i, name := range wantNames {
+		if s7.Checks[i].Name != name {
+			t.Errorf("step 7 Checks[%d].Name = %q, want %q (pre-commit names before check-gates)", i, s7.Checks[i].Name, name)
 		}
 	}
 }
@@ -366,6 +455,80 @@ func TestC26_ThePRBodyCarriesTheEvidenceBlocks(t *testing.T) {
 	entry := rest[:end]
 	if !strings.Contains(entry, "result: pass") {
 		t.Errorf("P-checks proof entry does not show result: pass:\n%s", entry)
+	}
+}
+
+// TestC26_AnOpenGateRendersAsCrossedInThePRBody exercises RenderPRBody's check-gates
+// log parser (parseGateLines / gateLineRE in packet.go) with a real-shaped OPEN gate
+// line, which nothing had exercised directly before this fix. An open gate must still
+// render into the PR body's evidence/v1 package as `state: crossed` with a null
+// approval_record (ADR-019), and must never re-enter step 3 or block the run: the
+// human closes it at the PR, per POL-001 M5.
+func TestC26_AnOpenGateRendersAsCrossedInThePRBody(t *testing.T) {
+	root := fixture(t, nil)
+	control := &fakeControl{}
+	checker := &fakeChecker{
+		Script: [][]Check{
+			{
+				{Name: "go-build", Command: "go build ./...", RC: 0},
+				{Name: "go-test", Command: "go test ./...", RC: 0},
+				{Name: "validate-docs", Command: "python3 scripts/validate_docs.py", RC: 0},
+			},
+			{
+				{Name: "check-gates", Command: "python3 scripts/check_gates.py --base origin/main", RC: 0},
+			},
+		},
+		Content: map[string]string{
+			// Copied from scripts/check_gates.py's own output code (main(), the
+			// `lines.append(f"  {gate['id']}  [{status}]  approver: {gate.get('approver')}")`
+			// line), the shape RenderPRBody's gateLineRE parses.
+			"check-gates": "Gates triggered by 1 changed file(s) against origin/main:\n\n" +
+				"  platform_config  [OPEN]  approver: human.cto\n" +
+				"    OPEN  .agentic/registries/gates.yaml  -- no approval record names this path\n\n" +
+				"1 gate(s) OPEN. A human must approve and a record must be written to .agentic/approvals/ before this merges.\n",
+		},
+	}
+
+	out := mustRun(t, context.Background(), Options{
+		Root: root, Item: "WI-0001",
+		Adapter: passAdapter("sess-1", "done"), Control: control, Checker: checker, Now: fixedNow(),
+	})
+
+	if out.Exit != 0 {
+		t.Fatalf("Exit = %d, want 0", out.Exit)
+	}
+	if out.Record.State != "awaiting_human" {
+		t.Errorf("State = %q, want awaiting_human", out.Record.State)
+	}
+	if out.Record.Handoff == nil || out.Record.Handoff.PRURL == "" {
+		t.Fatalf("Handoff = %+v, want a non-empty PRURL", out.Record.Handoff)
+	}
+
+	step3Count := 0
+	for _, s := range out.Record.Steps {
+		if s.N == 3 && s.Pass == 1 {
+			step3Count++
+		}
+	}
+	if step3Count != 1 {
+		t.Errorf("step 3 entries = %d, want 1 (an open gate must never re-enter)", step3Count)
+	}
+
+	foundCreatePR := false
+	for _, c := range control.Calls {
+		if c == "CreatePR" {
+			foundCreatePR = true
+		}
+	}
+	if !foundCreatePR {
+		t.Error("CreatePR was not called; an open gate must not block the run")
+	}
+
+	body := control.CreatedBody
+	for _, want := range []string{"id: platform_config", "state: crossed", "approval_record: null"} {
+		if !strings.Contains(body, want) {
+			t.Errorf("PR body missing %q:\n%s", want, body)
+		}
 	}
 }
 
@@ -603,6 +766,76 @@ func TestC29_ThreeFailingChecksParkTheRunBlocked(t *testing.T) {
 		if c == "CreatePR" {
 			t.Fatal("CreatePR was called on a blocked run")
 		}
+	}
+}
+
+// TestC29_AFailingGateCheckDoesNotReenter is requirement 2 of the same fix, from the
+// other direction: check-gates runs WITHOUT --strict (DefaultChecks' comment,
+// checks.go) so a real check_gates.py returns 0 even with a gate OPEN, but this pins
+// the case where PostCommitChecks' rc is non-zero anyway (a script error, or a future
+// change) — it must still be recorded as data only. Deciding what an open gate means
+// is the human's job at the gate, never the loop's inside step 7.
+func TestC29_AFailingGateCheckDoesNotReenter(t *testing.T) {
+	root := fixture(t, nil)
+	control := &fakeControl{}
+	checker := &fakeChecker{Script: [][]Check{
+		{
+			{Name: "go-build", Command: "go build ./...", RC: 0},
+			{Name: "go-test", Command: "go test ./...", RC: 0},
+			{Name: "validate-docs", Command: "python3 scripts/validate_docs.py", RC: 0},
+		},
+		{
+			{Name: "check-gates", Command: "python3 scripts/check_gates.py --base origin/main", RC: 1},
+		},
+	}}
+
+	out := mustRun(t, context.Background(), Options{
+		Root: root, Item: "WI-0001",
+		Adapter: passAdapter("sess-1", "done"), Control: control, Checker: checker, Now: fixedNow(),
+	})
+
+	if out.Exit != 0 {
+		t.Fatalf("Exit = %d, want 0", out.Exit)
+	}
+	if out.Record.State != "awaiting_human" {
+		t.Errorf("State = %q, want awaiting_human", out.Record.State)
+	}
+
+	step3Count := 0
+	for _, s := range out.Record.Steps {
+		if s.N == 3 && s.Pass == 1 {
+			step3Count++
+		}
+	}
+	if step3Count != 1 {
+		t.Errorf("step 3 entries = %d, want 1 (a failing gate check must never re-enter)", step3Count)
+	}
+
+	foundCreatePR := false
+	for _, c := range control.Calls {
+		if c == "CreatePR" {
+			foundCreatePR = true
+		}
+	}
+	if !foundCreatePR {
+		t.Error("CreatePR was not called; a failing gate check must not block the run")
+	}
+
+	s7, ok := out.Record.Step(1, 7)
+	if !ok {
+		t.Fatal("no step 7 entry recorded")
+	}
+	var gateCheck *Check
+	for i := range s7.Checks {
+		if s7.Checks[i].Name == "check-gates" {
+			gateCheck = &s7.Checks[i]
+		}
+	}
+	if gateCheck == nil {
+		t.Fatal("step 7 has no check-gates entry")
+	}
+	if gateCheck.RC != 1 {
+		t.Errorf("check-gates RC = %d, want 1 (recorded as data, unmodified)", gateCheck.RC)
 	}
 }
 
