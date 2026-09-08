@@ -99,6 +99,14 @@ These come from `docs/vision/PRINCIPLES.md` and constrain every change:
   `docs/schemas/*.yaml`, `examples/project.yaml`, and `ISA.md` are exempt. `ISA.md` carries ISA
   front matter instead, per the ISA format spec; it is not a lifecycle-managed document and has no
   `status`, `tier`, or approval fields to set.
+- **An ISA claim declares its polarity in a closed marker set.** A claim's text in `ISA.md` may
+  open with exactly one of `Anti:` (what must not happen), `Advisory:` (a standing or advisory
+  check), or `Antecedent:` (a precondition another claim reads through); no marker means the claim
+  is direct — something built, then probed. Anything else opening `Word:` is a validator error, and
+  new markers need a decision rather than a passing invention. This is a repo-local convention, not
+  something the ISA format spec defines. It exists so the `serves` join can run backwards: anti and
+  advisory claims close as a property of other work, so an orphan report must partition them out
+  rather than list them as gaps. The polarity table is in `ISA.md` under `## Language`.
 - **Only `approved` and `accepted` artifacts carry authority.** A `draft` document may guide your
   work but must never be cited as binding, and a drafted requirement is not approved intent. See
   `docs/spec/AUTHORITY_MODEL.md`.
