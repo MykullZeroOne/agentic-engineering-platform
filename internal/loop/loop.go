@@ -542,7 +542,7 @@ func Run(ctx context.Context, o Options) (Outcome, error) {
 			if perr := control.Push(worktree, branch); perr != nil {
 				return Outcome{}, perr
 			}
-			prBody, berr := RenderPRBody(rec, *item)
+			prBody, berr := RenderPRBody(rec, *item, headSHA, o.Root)
 			if berr != nil {
 				return Outcome{}, berr
 			}

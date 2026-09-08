@@ -2,6 +2,7 @@ package loop
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -316,6 +317,55 @@ func TestC26_TheLoopCommitsPushesAndOpensThePR(t *testing.T) {
 	}
 	if !strings.Contains(control.CreatedBody, "evidence/v1") {
 		t.Error("PR body missing `evidence/v1`")
+	}
+}
+
+// TestC26_ThePRBodyCarriesTheEvidenceBlocks is SPEC-EVIDENCE-PACKAGE's schema
+// projected into the PR body (ADR-017): identity, claims, proofs, gates, and open,
+// not just the label and the raw run record.
+func TestC26_ThePRBodyCarriesTheEvidenceBlocks(t *testing.T) {
+	root := fixture(t, nil)
+	control := &fakeControl{StatusFiles: []string{"internal/loop/loop.go", "docs/foo.md"}}
+	mustRun(t, context.Background(), Options{
+		Root: root, Item: "WI-0001",
+		Adapter: passAdapter("sess-1", "done"), Control: control, Checker: passChecker(), Now: fixedNow(),
+	})
+
+	body := control.CreatedBody
+	for _, want := range []string{
+		"schema: evidence/v1",
+		"head_commit: abc1234",
+		"claims:",
+		"proofs:",
+		"gates:",
+		"open:",
+	} {
+		if !strings.Contains(body, want) {
+			t.Errorf("PR body missing %q:\n%s", want, body)
+		}
+	}
+
+	for _, f := range control.StatusFiles {
+		want := fmt.Sprintf("change: %s changed", f)
+		if !strings.Contains(body, want) {
+			t.Errorf("PR body missing claim %q:\n%s", want, body)
+		}
+	}
+
+	idx := strings.Index(body, "id: P-checks")
+	if idx == -1 {
+		t.Fatalf("PR body missing a P-checks proof entry:\n%s", body)
+	}
+	rest := body[idx:]
+	end := strings.Index(rest[1:], "- id:")
+	if end == -1 {
+		end = len(rest)
+	} else {
+		end++
+	}
+	entry := rest[:end]
+	if !strings.Contains(entry, "result: pass") {
+		t.Errorf("P-checks proof entry does not show result: pass:\n%s", entry)
 	}
 }
 
