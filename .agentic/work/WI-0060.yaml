@@ -37,6 +37,7 @@ description: |
   This pull request crosses architecture_decision and cannot be merged by an agent. ADR-023 is
   written `proposed`: the principal agreed to the ten-step shape, not to prose they had not yet
   read, and an approval record binds to a content hash. The record comes after they read it.
+serves: [ISC-28]
 required_gates:
   - architecture_decision
 dependencies: []
