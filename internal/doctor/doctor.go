@@ -14,7 +14,9 @@ package doctor
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"sort"
+	"strings"
 
 	"github.com/MykullZeroOne/agentic-engineering-platform/internal/config"
 )
@@ -88,6 +90,7 @@ func Run(root config.Root) (*Report, error) {
 	gates := r.checkRegistries(proj)
 	r.checkHumanGates(proj, gates)
 	r.checkWorkStore(proj)
+	r.checkRoles(proj)
 	return r.rep, nil
 }
 
@@ -260,6 +263,100 @@ func (r *run) checkWorkStore(proj *config.Project) {
 			}
 		}
 	}
+}
+
+// bannedRoleKeys are the keys ADR-002 forbids in a role definition, at any depth.
+var bannedRoleKeys = map[string]bool{"runtime": true, "model": true, "provider": true}
+
+// checkRoles validates every role definition against ADR-002.
+//
+// Two independent rules, because a role can violate the decision two ways. A `runtime`,
+// `model` or `provider` KEY at any depth is a structural violation regardless of its
+// value. A VALUE equal to one of project.yaml's runtime_preferences provider tokens is a
+// violation regardless of the key it hides under -- `preferred_stack: codex-subscription`
+// is the same decision as `provider: codex-subscription` wearing a different name.
+func (r *run) checkRoles(proj *config.Project) {
+	paths, err := filepath.Glob(filepath.Join(config.RolesDir(r.root), "*.yaml"))
+	if err != nil {
+		r.err(".agentic/roles/", "%v", err)
+		return
+	}
+	if len(paths) == 0 {
+		// A project with no roles is a project that has not defined any, not a broken one.
+		return
+	}
+
+	providers := map[string]bool{}
+	for _, token := range proj.RuntimePreferences {
+		providers[token] = true
+	}
+
+	for _, p := range paths {
+		r.rep.Checked["roles"]++
+		rel, err := filepath.Rel(string(r.root), p)
+		if err != nil {
+			rel = p
+		}
+
+		tree, err := config.LoadRoleTree(p)
+		if err != nil {
+			r.err(rel, "%v", err)
+			continue
+		}
+		for _, msg := range scanRoleTree(tree, "", providers) {
+			r.err(rel, "%s", msg)
+		}
+
+		role, err := config.LoadRole(r.root, strings.TrimSuffix(filepath.Base(p), ".yaml"))
+		if err != nil {
+			r.err(rel, "%v", err)
+			continue
+		}
+		if role.ID == "" {
+			r.err(rel, "role has no id")
+		}
+		if role.Function == "" {
+			r.err(rel, "function is empty; the provider cannot be resolved")
+		} else if len(proj.RuntimePreferences) > 0 {
+			if _, ok := proj.RuntimePreferences[role.Function]; !ok {
+				r.err(rel, "function %q resolves to no entry in runtime_preferences; the provider cannot be resolved", role.Function)
+			}
+		}
+	}
+}
+
+// scanRoleTree walks a decoded YAML tree and returns one message per violation, each
+// naming the dotted path where it was found so the reader knows what to open.
+func scanRoleTree(node any, path string, providers map[string]bool) []string {
+	var out []string
+	switch v := node.(type) {
+	case map[string]any:
+		keys := make([]string, 0, len(v))
+		for k := range v {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
+		for _, k := range keys {
+			childPath := k
+			if path != "" {
+				childPath = path + "." + k
+			}
+			if bannedRoleKeys[k] {
+				out = append(out, fmt.Sprintf("key %q at %s is not allowed in a role definition (ADR-002)", k, childPath))
+			}
+			out = append(out, scanRoleTree(v[k], childPath, providers)...)
+		}
+	case []any:
+		for i, item := range v {
+			childPath := fmt.Sprintf("%s[%d]", path, i)
+			out = append(out, scanRoleTree(item, childPath, providers)...)
+		}
+	case string:
+		if providers[v] {
+			out = append(out, fmt.Sprintf("value %q at %s is a provider token from runtime_preferences and is not allowed in a role definition (ADR-002)", v, path))
+		}
+	}
+	return out
 }
 
 func (r *run) workVocabularies(proj *config.Project) (types, states, prios map[string]bool) {
