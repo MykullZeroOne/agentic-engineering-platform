@@ -895,6 +895,92 @@ func TestC30_AClosedPROpensPassTwoOnTheSameRunID(t *testing.T) {
 	}
 }
 
+// TestC30_EachPassKeepsItsOwnPRBody guards against RUN-0066-1's real defect: both
+// passes wrote their PR body to the same handoff/pr-body.md, so pass 2 overwrote
+// pass 1's file and pass 1's `pull_request` evidence entry (EV-6) ended up pointing
+// at content it never produced. Each pass must get its own file.
+func TestC30_EachPassKeepsItsOwnPRBody(t *testing.T) {
+	root := fixture(t, nil)
+	control := &fakeControl{}
+	adapter := &fakeAdapter{Sessions: []fakeSession{
+		{SessionID: "sess-1", Texts: []string{"pass one"}, Result: runtime.Result{Status: runtime.StatusSucceeded, ExitCode: 0}},
+		{SessionID: "sess-2", Texts: []string{"pass two"}, Result: runtime.Result{Status: runtime.StatusSucceeded, ExitCode: 0}},
+	}}
+
+	first := mustRun(t, context.Background(), Options{
+		Root: root, Item: "WI-0001",
+		Adapter: adapter, Control: control, Checker: passChecker(), Now: fixedNow(),
+	})
+	if first.Exit != 0 {
+		t.Fatalf("pass 1 Exit = %d, want 0", first.Exit)
+	}
+
+	control.PR = PR{State: PRClosed, Review: "please add a test"}
+	second := mustRun(t, context.Background(), Options{
+		Root: root, Item: "WI-0001",
+		Adapter: adapter, Control: control, Checker: passChecker(), Now: fixedNow(),
+	})
+	if second.Exit != 0 {
+		t.Fatalf("pass 2 Exit = %d, want 0", second.Exit)
+	}
+
+	rec := second.Record
+	if rec.Pass != 2 {
+		t.Fatalf("Pass = %d, want 2", rec.Pass)
+	}
+
+	handoffDir := filepath.Join(RunDir(root, rec.RunID), "handoff")
+	pass1Path := filepath.Join(handoffDir, "pass-1-pr-body.md")
+	pass2Path := filepath.Join(handoffDir, "pass-2-pr-body.md")
+
+	pass1Content, err := os.ReadFile(pass1Path)
+	if err != nil {
+		t.Fatalf("reading %s: %v (want a distinct file per pass, not one shared handoff/pr-body.md)", pass1Path, err)
+	}
+	pass2Content, err := os.ReadFile(pass2Path)
+	if err != nil {
+		t.Fatalf("reading %s: %v", pass2Path, err)
+	}
+
+	pass1Marker := fmt.Sprintf("evidence_id: EV-%s-pass-1", rec.RunID)
+	pass2Marker := fmt.Sprintf("evidence_id: EV-%s-pass-2", rec.RunID)
+	if !strings.Contains(string(pass1Content), pass1Marker) {
+		t.Errorf("pass-1 file missing %q; got:\n%s", pass1Marker, pass1Content)
+	}
+	if strings.Contains(string(pass1Content), pass2Marker) {
+		t.Errorf("pass-1 file was overwritten by pass 2: contains %q", pass2Marker)
+	}
+	if !strings.Contains(string(pass2Content), pass2Marker) {
+		t.Errorf("pass-2 file missing %q; got:\n%s", pass2Marker, pass2Content)
+	}
+
+	var pass1Evidence, pass2Evidence *Evidence
+	for i := range rec.Evidence {
+		e := &rec.Evidence[i]
+		if e.Kind != "pull_request" {
+			continue
+		}
+		switch e.Pass {
+		case 1:
+			pass1Evidence = e
+		case 2:
+			pass2Evidence = e
+		}
+	}
+	if pass1Evidence == nil {
+		t.Fatal("no pass-1 pull_request evidence entry")
+	}
+	if pass2Evidence == nil {
+		t.Fatal("no pass-2 pull_request evidence entry")
+	}
+	if pass1Evidence.Path != filepath.Join("handoff", "pass-1-pr-body.md") {
+		t.Errorf("pass-1 pull_request evidence Path = %q, want handoff/pass-1-pr-body.md", pass1Evidence.Path)
+	}
+	if pass2Evidence.Path != filepath.Join("handoff", "pass-2-pr-body.md") {
+		t.Errorf("pass-2 pull_request evidence Path = %q, want handoff/pass-2-pr-body.md", pass2Evidence.Path)
+	}
+}
+
 func TestC30_AReturnPassResetsTheStateToWorking(t *testing.T) {
 	root := fixture(t, nil)
 	control := &fakeControl{}

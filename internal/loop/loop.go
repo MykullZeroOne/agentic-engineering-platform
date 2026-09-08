@@ -596,7 +596,7 @@ func Run(ctx context.Context, o Options) (Outcome, error) {
 				return Outcome{}, cerr
 			}
 
-			bodyRel := filepath.Join("handoff", "pr-body.md")
+			bodyRel := filepath.Join("handoff", fmt.Sprintf("pass-%d-pr-body.md", rec.Pass))
 			bodyAbs := filepath.Join(RunDir(o.Root, runID), bodyRel)
 			if err := os.MkdirAll(filepath.Dir(bodyAbs), 0o755); err != nil {
 				return Outcome{}, err
