@@ -183,6 +183,22 @@ func Run(ctx context.Context, o Options) (Outcome, error) {
 			return Outcome{}, err
 		}
 
+		// C1.1: a blocked run re-invoked with no answer enters no step and starts no
+		// session. Blocked is set only at step 6 (a question) or step 6/7 (the
+		// re-entry limit), and in either case there is nothing to resume into short
+		// of a human unblocking it — falling through to Resume() would pick up
+		// wherever the record's last unexited/unentered step points, which is
+		// exactly the advance this claim forbids.
+		if rec.State == "blocked" {
+			if o.Out != nil {
+				fmt.Fprintln(o.Out, rec.Question)
+			}
+			if err := SaveRecord(o.Root, rec, now()); err != nil {
+				return Outcome{}, err
+			}
+			return Outcome{RunID: runID, Record: rec, Exit: 3}, nil
+		}
+
 		if rec.Handoff != nil && rec.Handoff.State == "open" {
 			worktree := WorktreePath(o.Root, runID)
 			pr, verr := control.ViewPR(worktree, rec.Handoff.PRURL)
@@ -374,6 +390,7 @@ func Run(ctx context.Context, o Options) (Outcome, error) {
 			last := &rec.Steps[len(rec.Steps)-1]
 			last.Exited = nowStr()
 			last.Delegates = []Delegate{{Kind: "runtime_session", Provider: provider, SessionID: sid}}
+			last.Transcript = transcriptRel
 			if err := SaveRecord(o.Root, rec, now()); err != nil {
 				return Outcome{}, err
 			}
@@ -381,10 +398,12 @@ func Run(ctx context.Context, o Options) (Outcome, error) {
 
 		case 5: // collect
 			entered := nowStr()
-			if sid == "" {
-				if s4, ok := rec.Step(rec.Pass, 4); ok && len(s4.Delegates) > 0 {
+			var transcriptRel string
+			if s4, ok := rec.Step(rec.Pass, 4); ok {
+				if sid == "" && len(s4.Delegates) > 0 {
 					sid = s4.Delegates[0].SessionID
 				}
+				transcriptRel = s4.Transcript
 			}
 			filesChanged, cerr := control.Status(worktree)
 			if cerr != nil {
@@ -395,8 +414,6 @@ func Run(ctx context.Context, o Options) (Outcome, error) {
 				N: 5, Name: StepNames[4], Pass: rec.Pass, Entered: entered, Exited: nowStr(),
 				SessionID: sid, ExitStatus: &exitStatus, FilesChanged: filesChanged,
 			})
-			attempt := countStepEntries(rec, rec.Pass, 3)
-			transcriptRel := filepath.Join("sessions", fmt.Sprintf("%d-%d.jsonl", rec.Pass, attempt))
 			rec.AddEvidence("transcript", sid, transcriptRel, now())
 			if err := SaveRecord(o.Root, rec, now()); err != nil {
 				return Outcome{}, err

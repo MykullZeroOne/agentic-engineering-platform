@@ -232,15 +232,21 @@ func BranchName(w config.WorkItem) string {
 	return fmt.Sprintf("%s/%s-%s", w.Type, itemNumber(w.ID), kebab(w.Title, 48))
 }
 
-// commitSubject is the Conventional Commit subject line: <type>: <title>, truncated
-// under 72 characters. It is also the PR title (POL-001 makes the title the squash
-// subject).
+// commitSubject is the Conventional Commit subject line: <type>: <title>, the title
+// kept exactly as written. It is also the PR title (POL-001 makes the title the
+// squash subject). When the line would exceed 72 bytes it is cut at the last space
+// before byte 72, with no ellipsis: a truncated commit subject is still meant to read
+// as a sentence fragment, not a label that says it was cut short.
 func commitSubject(w config.WorkItem) string {
-	subj := fmt.Sprintf("%s: %s", w.Type, strings.ToLower(w.Title))
-	if len(subj) > 72 {
-		subj = strings.TrimSpace(subj[:69]) + "..."
+	subj := fmt.Sprintf("%s: %s", w.Type, w.Title)
+	if len(subj) <= 72 {
+		return subj
 	}
-	return subj
+	cut := subj[:72]
+	if idx := strings.LastIndex(cut, " "); idx > 0 {
+		cut = cut[:idx]
+	}
+	return strings.TrimRight(cut, " ")
 }
 
 // CommitMessage builds the branch commit message. The `Closes WI-NNNN` trailer lives

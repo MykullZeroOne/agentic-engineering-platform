@@ -131,6 +131,10 @@ type Step struct {
 	Checks       []Check    `yaml:"checks,omitempty"`
 	Gate         *Gate      `yaml:"gate,omitempty"`
 	Artifacts    []string   `yaml:"artifacts,omitempty"`
+	// Transcript is the run-relative path to step 4's session transcript, set on the
+	// step-4 entry itself. Step 5 reads it from here instead of recomputing it, so a
+	// resumed pass (step 4 entered twice, step 3 once) cannot point at the wrong file.
+	Transcript string `yaml:"transcript,omitempty"`
 }
 
 // Evidence is one piece of proof the run produced, keyed to the run rather than the
