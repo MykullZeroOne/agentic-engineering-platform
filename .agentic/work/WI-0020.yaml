@@ -2,7 +2,7 @@ id: WI-0020
 store: local
 project: PRJ-mykullzeroone/agentic-engineering-platform
 type: spec
-work_state: intake
+work_state: in_progress
 priority: normal
 title: Move the merge and branching policy out of CLAUDE.md into tier 3
 description: |
@@ -30,7 +30,35 @@ description: |
   the new blocking check, and the gate covering tier 3 has not been decided -- no gate
   triggers on docs/policies/ at all today. Deciding that trigger is part of this work, not a
   prerequisite discovered halfway through it.
+
+  DONE HERE, 2026-09-08: POL-001 is approved (APR-0022), so the CLAUDE.md side of this item is
+  unblocked. Collapsed the "Branching strategy" and "Merging strategy" sections into one
+  "Branching and merging" section: it now names POL-001 as the artifact with authority, uses
+  POL-001's rule ids (B1-B7, M1-M6) instead of restating rule text, and keeps only the
+  reasoning and incident history POL-001 deliberately leaves out (the B2 carve-outs' twenty-PR
+  day, the B6 rebase-vs-merge-commit story behind PR #9, the M1 missing-trailer story behind
+  PRs #8 and #9, the no-local-git-test-for-a-merged-branch note, the M4 single-identity
+  suspension with the 2026-09-01 adversarial-review numbers, and "revert first, diagnose
+  second"). The naming grammar block and the gate-table pointer are kept as-is. The
+  "Change classes that always require human approval" table moved inside the new section
+  unedited; reconciling its rows against POL-001/gates.yaml is WI-0039, not this item.
+
+  Also rewrote the "Open gaps" paragraph: tier 3 now has one artifact (POL-001), so that
+  clause no longer says tier 3 has none. Also dropped the evidence-package clause: checked
+  SPEC-EVIDENCE-PACKAGE's front matter, it is tier 0 and approved (APR-0016) and its body
+  defines an `evidence/v1` schema, so "the evidence package has no defined structure" is now
+  false in CLAUDE.md's own terms. `docs/spec/REGISTRIES.md`'s known-gaps entry for the
+  evidence package is more precise than what CLAUDE.md said (it already distinguishes "shape"
+  from "schema" and calls the schema still missing) but is arguably also stale given
+  SPEC-EVIDENCE-PACKAGE's `## Schema` section; that file is tier 0 and gated
+  (`constitutional_change`), so it was left untouched here.
+
+  NOT DONE HERE: the gate table under "Change classes" is unreconciled with POL-001 and
+  `.agentic/registries/gates.yaml`; that is WI-0039. `docs/spec/REGISTRIES.md`'s known-gaps
+  entry is still stale on tier 3 and possibly on the evidence package; it is tier 0 and gated,
+  so it was not touched here.
 serves: [governance]
 required_gates: []
 dependencies:
 - WI-0006
+branch: spec/20-claude-md-points-at-pol-001
