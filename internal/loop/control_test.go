@@ -146,3 +146,61 @@ func TestC26_CommitSubjectKeepsCaseAndCutsAtAWordBoundary(t *testing.T) {
 		t.Errorf("commitSubject(short) = %q, want %q", got, want)
 	}
 }
+
+// TestC23_ControlStatusWorksWithARelativeDir pins the fix for a real `devctl run`
+// failure: `git -C .agentic/runs/RUN-.../worktree status --porcelain` reported
+// "fatal: cannot change to '.../worktree': No such file or directory" when the loop
+// was invoked with a relative --root. GHControl.run set cmd.Dir to the relative dir
+// AND the caller's argv carried the same relative dir as `-C dir`; git resolved the
+// `-C` argument against its own (already-changed) working directory, doubling the
+// path onto itself. Before the fix, Status of a relative dir fails with exactly that
+// "cannot change to" error; after it, an absolute dir is resolved once and used
+// consistently for both cmd.Dir and `-C`.
+func TestC23_ControlStatusWorksWithARelativeDir(t *testing.T) {
+	parent := t.TempDir()
+	const repoName = "repo"
+	repoDir := filepath.Join(parent, repoName)
+	if err := os.Mkdir(repoDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	git := func(args ...string) {
+		t.Helper()
+		cmd := exec.Command("git", args...)
+		cmd.Dir = repoDir
+		if out, err := cmd.CombinedOutput(); err != nil {
+			t.Fatalf("git %v: %v\n%s", args, err, out)
+		}
+	}
+	git("init", "-q")
+	git("config", "user.email", "test@example.com")
+	git("config", "user.name", "Test")
+
+	filePath := filepath.Join(repoDir, "a.txt")
+	if err := os.WriteFile(filePath, []byte("one\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	git("add", "-A")
+	git("commit", "-q", "-m", "initial")
+
+	if err := os.WriteFile(filePath, []byte("two\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	t.Chdir(parent)
+
+	g := GHControl{}
+	paths, err := g.Status(repoName)
+	if err != nil {
+		t.Fatalf("Status(%q) with a relative dir: %v", repoName, err)
+	}
+	found := false
+	for _, p := range paths {
+		if p == "a.txt" {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("Status(%q) = %v, want a.txt among the changed paths", repoName, paths)
+	}
+}

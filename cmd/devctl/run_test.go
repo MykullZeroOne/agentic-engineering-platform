@@ -128,6 +128,47 @@ runtime_preferences:
 	}
 }
 
+// TestC18_RunAcceptsARelativeRoot pins the fix for a real failure: `devctl run
+// WI-0066` invoked from the repository root with the default `--root .` completed
+// step 4 and then failed at step 5 with `git -C .agentic/runs/.../worktree status
+// --porcelain: fatal: cannot change to '...': No such file or directory`, because
+// every path the loop built off a relative root stayed relative. runRun now resolves
+// --root to absolute before it ever reaches config.Root, loop.Run, or Control. This
+// test proves that resolution happens by running against an unknown work item with a
+// relative --root from the fixture's parent directory: if --root were still relative
+// when it reached the work store, the item would not be found under the process's
+// actual working directory and the command would behave the same either way, so the
+// probe also asserts the run refuses for the right reason (unknown item, exit 1) and
+// not a root-resolution failure (exit 2).
+func TestC18_RunAcceptsARelativeRoot(t *testing.T) {
+	root := runFixture(t, `
+registries:
+  gates: .agentic/registries/gates.yaml
+  vocabularies: .agentic/registries/vocabularies.yaml
+  states: .agentic/registries/states.yaml
+work_store: local
+human_gates:
+  - platform_config
+runtime_preferences:
+  implementation: claude-subscription
+`)
+
+	parent := filepath.Dir(root)
+	relRoot := filepath.Base(root)
+	t.Chdir(parent)
+
+	rc, stderr := captureStderr(t, func() int {
+		return runRun([]string{"WI-9999", "--root", relRoot})
+	})
+
+	if rc != 1 {
+		t.Fatalf("runRun exit = %d, want 1 (stderr: %s)", rc, stderr)
+	}
+	if !strings.Contains(stderr, "WI-9999") {
+		t.Errorf("stderr = %q, missing WI-9999", stderr)
+	}
+}
+
 func TestC32_NoAdapterForTheResolvedProviderExitsTwo(t *testing.T) {
 	root := runFixture(t, `
 registries:

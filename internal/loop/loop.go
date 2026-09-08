@@ -80,6 +80,17 @@ func Run(ctx context.Context, o Options) (Outcome, error) {
 	}
 	nowStr := func() string { return now().UTC().Format(time.RFC3339) }
 
+	// A relative root is resolved to absolute here too, defensively: cmd/devctl's
+	// runRun already does this before calling in, but a library caller that hands in
+	// a relative root would otherwise get record, worktree and checker paths built
+	// off it, and Control's git/gh invocations would shell out with a working
+	// directory that silently doubles the relative path onto itself.
+	if o.Root != "" {
+		if abs, aerr := filepath.Abs(string(o.Root)); aerr == nil {
+			o.Root = config.Root(abs)
+		}
+	}
+
 	// --- Resolve, before writing anything. ---
 
 	proj, err := config.LoadProject(o.Root)

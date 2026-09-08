@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -66,6 +67,14 @@ type GHControl struct {
 	Log func(argv []string)
 }
 
+// run shells out to name with args, in dir. dir is resolved to an absolute path
+// before it becomes cmd.Dir: several callers also pass dir as a `-C dir` argument
+// inside args (so git's own error messages name the directory), and a relative dir
+// applied as cmd.Dir gets applied a second time when git resolves a relative -C
+// against its now-changed working directory — `<dir>/<dir>`, which only fails to
+// exist. Every caller that builds a `-C dir` argument resolves dir to absolute itself
+// before calling run, so the same absolute value lands in both cmd.Dir and argv and
+// the two applications agree.
 func (g GHControl) run(dir, name string, args ...string) (string, error) {
 	argv := append([]string{name}, args...)
 	if g.Log != nil {
@@ -73,7 +82,11 @@ func (g GHControl) run(dir, name string, args ...string) (string, error) {
 	}
 	cmd := exec.Command(name, args...)
 	if dir != "" {
-		cmd.Dir = dir
+		abs, err := filepath.Abs(dir)
+		if err != nil {
+			return "", fmt.Errorf("resolve %s: %w", dir, err)
+		}
+		cmd.Dir = abs
 	}
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
@@ -95,7 +108,11 @@ func (g GHControl) RemoveWorktree(repo, dir string) error {
 }
 
 func (g GHControl) Status(dir string) ([]string, error) {
-	out, err := g.run(dir, "git", "-C", dir, "status", "--porcelain")
+	abs, err := filepath.Abs(dir)
+	if err != nil {
+		return nil, fmt.Errorf("resolve %s: %w", dir, err)
+	}
+	out, err := g.run(abs, "git", "-C", abs, "status", "--porcelain")
 	if err != nil {
 		return nil, err
 	}
@@ -114,13 +131,17 @@ func (g GHControl) Status(dir string) ([]string, error) {
 }
 
 func (g GHControl) Commit(dir, msg string) (string, error) {
-	if _, err := g.run(dir, "git", "-C", dir, "add", "-A"); err != nil {
+	abs, err := filepath.Abs(dir)
+	if err != nil {
+		return "", fmt.Errorf("resolve %s: %w", dir, err)
+	}
+	if _, err := g.run(abs, "git", "-C", abs, "add", "-A"); err != nil {
 		return "", err
 	}
-	if _, err := g.run(dir, "git", "-C", dir, "commit", "-m", msg); err != nil {
+	if _, err := g.run(abs, "git", "-C", abs, "commit", "-m", msg); err != nil {
 		return "", err
 	}
-	out, err := g.run(dir, "git", "-C", dir, "rev-parse", "HEAD")
+	out, err := g.run(abs, "git", "-C", abs, "rev-parse", "HEAD")
 	if err != nil {
 		return "", err
 	}
@@ -128,7 +149,11 @@ func (g GHControl) Commit(dir, msg string) (string, error) {
 }
 
 func (g GHControl) Push(dir, branch string) error {
-	_, err := g.run(dir, "git", "-C", dir, "push", "-u", "origin", branch)
+	abs, err := filepath.Abs(dir)
+	if err != nil {
+		return fmt.Errorf("resolve %s: %w", dir, err)
+	}
+	_, err = g.run(abs, "git", "-C", abs, "push", "-u", "origin", branch)
 	return err
 }
 

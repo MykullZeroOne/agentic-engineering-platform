@@ -11,6 +11,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 
@@ -194,8 +195,18 @@ func runRun(args []string) int {
 	roleID := fs.String("role", "", "role id (default engineer.primary)")
 	_ = fs.Parse(args[1:])
 
+	// Resolved to absolute before it becomes config.Root: every record, worktree, and
+	// checker path the loop builds is a filepath.Join off this value, and a relative
+	// root gets shelled out to git/gh twice (once via exec.Cmd.Dir, once via -C),
+	// which only cancels out when the value was already absolute.
+	absRoot, aerr := filepath.Abs(*root)
+	if aerr != nil {
+		fmt.Fprintf(os.Stderr, "devctl run: resolve --root %s: %v\n", *root, aerr)
+		return 2
+	}
+
 	out, err := loop.Run(context.Background(), loop.Options{
-		Root:     config.Root(*root),
+		Root:     config.Root(absRoot),
 		Item:     item,
 		Provider: *runtimeToken,
 		RoleID:   *roleID,
