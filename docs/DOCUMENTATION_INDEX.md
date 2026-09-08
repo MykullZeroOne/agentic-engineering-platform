@@ -163,7 +163,7 @@ Policies block when violated; standards inform review. Tier 3.
 
 | ID | Document | Status | Path |
 | --- | --- | --- | --- |
-| `POL-001` | Branching and Merging | `draft` | [docs/policies/POL-001-BRANCHING-AND-MERGING.md](docs/policies/POL-001-BRANCHING-AND-MERGING.md) |
+| `POL-001` | Branching and Merging | `approved` | [docs/policies/POL-001-BRANCHING-AND-MERGING.md](docs/policies/POL-001-BRANCHING-AND-MERGING.md) |
 
 ## Reference
 

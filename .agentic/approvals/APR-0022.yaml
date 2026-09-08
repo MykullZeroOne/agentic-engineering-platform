@@ -1,0 +1,63 @@
+# Approval record, per ADR-019.
+#
+# First closure of rule_change, the tier-3 gate APR-0021 created. POL-001 moves draft to
+# approved: the branching and merging rules now bind because a tier-3 artifact a human closed
+# says so, not because an agent guide carried them ungated.
+
+id: APR-0022
+gate: rule_change
+surface: chat
+session: 019yz4N5xiPXWMdfy4BNK6aj
+
+approver: MykullZeroOne
+approved_on: 2026-09-08
+recorded_on: 2026-09-08
+
+hash_scheme: legacy/truncated-32
+
+artifacts:
+  - id: POL-001
+    kind: policy
+    path: docs/policies/POL-001-BRANCHING-AND-MERGING.md
+    title: Branching and Merging
+    content_hash: legacy/truncated-32:sha256:87612059fd9788592703c23ecb5ffee5
+
+request: >
+  POL-001 landed on main as draft in #42 (WI-0006). The principal asked to be walked through
+  it before approving. Presented: thirteen rules lifted from CLAUDE.md with matching wording,
+  seven branching and six merging, plus the revert rule and the two B2 carve-outs; each rule's
+  enforcement stage, four real checks and nine prose; that every claim resolves
+  (check_gates.py --strict runs in the docs workflow so M5 is a check, SPEC-EVIDENCE-PACKAGE
+  exists and is approved, the three known gaps are still gaps); what approval changes (the
+  rules bind by a closed tier-3 artifact, the policy wins where CLAUDE.md disagrees, the two
+  do not disagree today, CLAUDE.md keeps the rules until WI-0020); the mechanics (rule_change
+  fires on path and status transition, closed by this record against the body hash); and one
+  caution, that B4 was bent by #42 itself and has no check, which the policy's own known-gaps
+  section admits.
+
+statement: >
+  approve POL-001, write APR-0022 and open the PR
+
+  -- given after the walkthrough above, naming the policy and the record.
+
+scope_note: >
+  Approves docs/policies/POL-001-BRANCHING-AND-MERGING.md at the body content it carries on
+  main at 2f08923. Status moves draft to approved. The document-level enforcement stage stays
+  prose; the per-rule stages stand as written.
+
+  What is decided: trunk-based development on a protected main; one item, one branch, one
+  pull request, with the two narrow carve-outs; branch from main, short-lived, in a worktree,
+  updated by rebase or merge, force-push only with lease on your own branch; squash merge
+  only, closing a named item, with green required checks, an evidence package, every
+  triggered gate closed by a record, and an up-to-date branch; independent review suspended
+  repository-wide and never cited as met; revert first, diagnose second.
+
+  What this does NOT approve:
+
+  - It does not remove the rules from CLAUDE.md. That is WI-0020, ordinary work; until it
+    lands both sources hold the rules and this policy has precedence.
+  - It does not close any of the three known gaps: M1 has no trailer check, a pull request
+    that files its own item has no convention, and B4 and B5 are unobserved. Approving the
+    policy approves the admission, not a fix.
+  - It does not lift the review suspension. M4 stays suspended until WI-0016.
+  - It does not create docs/standards/ or any standard.
