@@ -16,5 +16,6 @@ description: |
   still running), and ISC-41 (escalation gains a hook point). Done when a hard hook failing on a
   lifecycle transition blocks it, and validation.docs runs through the engine rather than beside
   it.
+serves: [ISC-37, ISC-38, ISC-38.1, ISC-41]
 required_gates: []
 dependencies: [WI-0042]

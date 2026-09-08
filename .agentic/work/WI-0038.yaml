@@ -53,6 +53,7 @@ description: |
   Declaring the gate was still the right instinct at the time. Before WI-0040, an undeclared
   gate would have auto-closed the question at merge; declared, it surfaced. The mechanism then
   turned out to be broken in a different way, which the declaration is what exposed.
+serves: [governance]
 required_gates: []
 dependencies: []
 branch: docs/38-isa-root-carve-out

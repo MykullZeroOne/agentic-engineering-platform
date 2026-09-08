@@ -37,5 +37,6 @@ description: |
   and docs/policies/ is one of the recorded known gaps with no artifacts in it. Either
   CLAUDE.md becomes a gate trigger path or the policy moves to where its tier says it
   belongs; that needs a decision, so it is not taken here.
+serves: [governance]
 required_gates: []
 branch: docs/15-independent-review

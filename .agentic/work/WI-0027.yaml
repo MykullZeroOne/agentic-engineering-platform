@@ -118,6 +118,7 @@ description: |
 
   Nothing here changes PRINCIPLES. Absorbing Kairo's non-negotiables as citation is not amending
   AEP's principles, which is tier 0 and gated.
+serves: [governance]
 required_gates: []
 dependencies: []
 branch: adr/27-absorb-kairo-v2-corpus

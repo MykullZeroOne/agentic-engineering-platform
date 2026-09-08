@@ -56,6 +56,7 @@ description: |
   Honest limit: this is a guess at which ceremony is load-bearing, made after one heavy day. If
   the batching carve-out starts hiding approvals in large pull requests, it is the first thing to
   reverse.
+serves: [governance]
 required_gates: []
 dependencies: []
 branch: chore/37-cut-ceremony

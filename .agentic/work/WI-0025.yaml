@@ -154,6 +154,7 @@ description: |
 
   Numbering note: ADR-020 and WI-0024 are in flight on PR #19, so ADR-021, PRD-009 and WI-0025
   are the next free numbers on both sequences.
+serves: [ISC-48]
 required_gates: []
 dependencies: []
 branch: adr/25-kairo-provenance-dependency

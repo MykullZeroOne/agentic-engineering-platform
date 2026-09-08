@@ -15,6 +15,7 @@ description: |
   Still to do, and deliberately not done here: create docs/policies/ and docs/standards/, and
   decide whether one directory or two follows from one entity. The decision removed the blocker;
   it did not write the artifacts.
+serves: [ISC-39]
 required_gates:
 - constitutional_change
 branch: spec/18-resolve-open-decisions

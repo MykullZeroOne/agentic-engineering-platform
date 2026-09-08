@@ -38,6 +38,7 @@ description: |
   Deliberately not done: the skill schema, which is WI-0010's other half; where packages are
   stored, which is a platform_config change; and tier 3, which is WI-0006. This is a tier 0 spec
   describing a data shape, not a Rule about how work is done.
+serves: [ISC-29]
 required_gates: []
 dependencies: []
 branch: spec/26-evidence-package-schema

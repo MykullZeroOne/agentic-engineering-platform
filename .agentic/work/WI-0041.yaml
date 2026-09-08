@@ -34,6 +34,7 @@ description: |
   WI-0016 and WI-0020 have simply never merged, which is the correct state for open work. The
   message that lists them conflates never-merged with merged-but-unidentifiable, which is a
   reporting defect worth its own item and not a finding about these seven.
+serves: [governance]
 required_gates: []
 dependencies: []
 branch: chore/41-advance-merged-work-states

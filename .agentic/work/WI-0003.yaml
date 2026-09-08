@@ -9,6 +9,7 @@ description: |
   ControlledVocabulary is an entity in the model with nowhere to live. states.yaml holds state
   axes and a type is not a state, so work-item types, priorities and capability tokens have no
   registry. Surfaced while writing SPEC-LOCAL-WORK-STORE, which had to enumerate types inline.
+serves: [governance]
 required_gates:
 - platform_config
 branch: claude/docs-processes-review-4vyl8q

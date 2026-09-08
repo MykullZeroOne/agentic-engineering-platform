@@ -9,6 +9,7 @@ description: |
   ADR-014 clause 7 tiers gates by reversibility and is accepted but unimplementable: all twelve
   gates are blocking with the same approver, so the registry cannot distinguish approving a
   production release from approving a typo. Assign reversible / consequential / irreversible.
+serves: [governance]
 required_gates:
 - platform_config
 branch: spec/18-resolve-open-decisions

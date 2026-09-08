@@ -10,6 +10,7 @@ description: |
   against a namespace with no defined membership, so neither security gate can fire. Define the
   namespace as a closed registry, deny-beats-allow precedence, and wildcard expansion at grant
   time rather than check time. Recorded as a known gap in SPEC-REGISTRIES.
+serves: [ISC-5]
 required_gates:
 - platform_config
 dependencies:

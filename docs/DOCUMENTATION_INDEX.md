@@ -79,6 +79,7 @@ Immutable once accepted. Reverse by superseding. Tier 1.
 | `ADR-020` | The Hook Engine | `proposed` | [docs/adr/ADR-020-HOOK-ENGINE.md](docs/adr/ADR-020-HOOK-ENGINE.md) |
 | `ADR-021` | Port Kairo's Provenance and Knowledge-Index Layer | `accepted` | [docs/adr/ADR-021-KAIRO-PROVENANCE-PORT.md](docs/adr/ADR-021-KAIRO-PROVENANCE-PORT.md) |
 | `ADR-022` | Absorb Kairo's V2 Corpus by Translation | `accepted` | [docs/adr/ADR-022-ABSORB-KAIRO-V2-CORPUS.md](docs/adr/ADR-022-ABSORB-KAIRO-V2-CORPUS.md) |
+| `ADR-023` | The Universal Agent Loop | `proposed` | [docs/adr/ADR-023-UNIVERSAL-AGENT-LOOP.md](docs/adr/ADR-023-UNIVERSAL-AGENT-LOOP.md) |
 
 ## Product requirements
 
@@ -120,6 +121,7 @@ Normative platform design. Tier 2.
 | `DES-ORGANIZATION` | Agent Organization | `draft` | [docs/agents/ORGANIZATION.md](docs/agents/ORGANIZATION.md) |
 | `DES-PLANNING-ORCHESTRATION-LOOP` | Planning and Orchestration | `draft` | [docs/agents/PLANNING_ORCHESTRATION_LOOP.md](docs/agents/PLANNING_ORCHESTRATION_LOOP.md) |
 | `DES-QA-REVIEW-INTEGRATION-LOOPS` | QA, Review, and Integration Loops | `draft` | [docs/agents/QA_REVIEW_INTEGRATION_LOOPS.md](docs/agents/QA_REVIEW_INTEGRATION_LOOPS.md) |
+| `DES-RELEASE-LOOP` | Release Loop | `draft` | [docs/agents/RELEASE_LOOP.md](docs/agents/RELEASE_LOOP.md) |
 | `DES-ROLE-RUNTIME-CONTRACT` | Role / Agent / Runtime Contract | `draft` | [docs/agents/ROLE_RUNTIME_CONTRACT.md](docs/agents/ROLE_RUNTIME_CONTRACT.md) |
 | `DES-UNIVERSAL-AGENT-LOOP` | Universal Agent Loop | `draft` | [docs/agents/UNIVERSAL_AGENT_LOOP.md](docs/agents/UNIVERSAL_AGENT_LOOP.md) |
 | | **Architecture** | | |
@@ -164,6 +166,7 @@ Non-normative. Carries no authority in conflict resolution.
 | `GUIDE-IMPLEMENTATION-ROADMAP` | Implementation Roadmap | `draft` | [docs/roadmap/IMPLEMENTATION_ROADMAP.md](docs/roadmap/IMPLEMENTATION_ROADMAP.md) |
 | `GUIDE-PRODUCT-VISION` | Product Vision | `draft` | [docs/vision/PRODUCT_VISION.md](docs/vision/PRODUCT_VISION.md) |
 | `EX-IDEA-TO-DELIVERY` | Example — From Human Idea to Delivery | `draft` | [examples/IDEA_TO_DELIVERY.md](examples/IDEA_TO_DELIVERY.md) |
+| `EX-SCENARIOS` | Scenarios | `draft` | [examples/SCENARIOS.md](examples/SCENARIOS.md) |
 
 ## Registries
 

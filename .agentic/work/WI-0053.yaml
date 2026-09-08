@@ -14,5 +14,6 @@ description: |
   Serves ISC-28 and ISC-8, and re-verifies ISC-30 (an agent never merges across a human gate) at
   the seam where it would actually be violated. Done when the scenario completes and the ISA's
   Phase 1 claims close on its provenance.
+serves: [ISC-28, ISC-8, ISC-30]
 required_gates: []
 dependencies: [WI-0044, WI-0047, WI-0048, WI-0050, WI-0051, WI-0052]

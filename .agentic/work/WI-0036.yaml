@@ -60,6 +60,7 @@ description: |
   ADR-020 REMAINS `proposed`. This change does not accept it. It goes back for another review
   before acceptance, because the last two reviews found four P1s and eighteen findings in
   documents I believed were finished.
+serves: [ISC-37]
 required_gates: []
 dependencies:
 - WI-0024

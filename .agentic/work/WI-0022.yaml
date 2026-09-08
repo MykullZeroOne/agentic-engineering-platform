@@ -38,5 +38,6 @@ description: |
 
   Not fixed: everything remains legacy/truncated-32. canonical/v2 needs structured base data
   that does not exist (ADR-017, WI-0008).
+serves: [governance]
 required_gates: []
 branch: fix/22-retroactive-records

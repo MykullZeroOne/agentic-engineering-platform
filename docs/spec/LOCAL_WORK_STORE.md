@@ -79,6 +79,8 @@ description: >
   Prose. What needs doing and why. The one prose field: everything an agent
   filters, sorts or routes on is structured above.
 
+serves: [ISC-23]              # what this advances -- see Serves
+
 # Optional linkage. Present when known, omitted when not -- never null-padded.
 requirement_refs: [REQ-001-006]
 specification_ref: ADS-001
@@ -94,6 +96,33 @@ pull_request: 4
 assignee: null
 agent_role: null
 ```
+
+### Serves
+
+`serves` names what a work item advances. It is a list, and every entry must resolve:
+
+| Entry | Resolves against | Means |
+| --- | --- | --- |
+| `ISC-<n>` | a claim in `ISA.md` | this item advances a stated criterion for done |
+| `PRD-<nnn>` | a document in `docs/prd/` | this item advances an approved product requirement |
+| `governance` | nothing; it is a literal | this item improves how the repository governs itself, not the product |
+
+`governance` is deliberately a first-class value rather than an escape hatch. Work on the
+validator, the gate check, the approval machinery and the work store is real and worth doing. The
+point is not to discourage it. The point is to make its share **visible**, because it was not.
+
+An audit on 2026-09-04 found that 38 of the first 41 work items were governance and three were
+product. Nobody chose that ratio; nothing displayed it. A field that every item must fill turns
+the question "where is the effort going" from an investigation into a query.
+
+An item that cannot name anything it serves is the finding. Either the target is missing from
+`ISA.md`, or the work does not advance the product and should say `governance`, or it should not
+be done.
+
+**Enforcement is advisory first.** A missing `serves` is a warning; an entry that does not resolve
+is an error. This follows WI-0012 and WI-0013, where the gate check was introduced advisory and
+made blocking one change later, once the existing debt was cleared. Flipping the warning to an
+error is a separate change, after the backfill.
 
 ### Types
 

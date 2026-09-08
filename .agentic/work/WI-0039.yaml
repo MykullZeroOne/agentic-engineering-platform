@@ -56,5 +56,6 @@ description: |
   exists, is a different one. The general defect -- filing an item on a branch named for it is
   self-closing under the fallback -- is the item-filing convention gap made concrete, and it
   needs a decision of its own rather than a workaround per item.
+serves: [governance]
 required_gates: []
 dependencies: []
