@@ -1,0 +1,26 @@
+---
+description: Go product code — devctl, internal packages, tests required on change
+globs: cmd/**/*.go,internal/**/*.go,go.mod,go.sum
+alwaysApply: false
+---
+
+# Go / devctl
+
+Applies when editing `cmd/devctl` or `internal/`.
+
+## Build and test
+
+```bash
+go build ./...
+go test ./...
+```
+
+## Architecture
+
+- `internal/runtime` — provider adapters; no imports from `internal/loop` (dependency direction is loop → runtime)
+- `internal/loop` — universal agent loop (`devctl run`); run records under `.agentic/runs/`
+- Adding a runtime provider is one entry in `internal/runtime/adapters.go`
+
+## Runtime
+
+Provider tokens (`claude-subscription`, `codex-subscription`) live in `.agentic/project.yaml` `runtime_preferences`, never in role files (ADR-002).

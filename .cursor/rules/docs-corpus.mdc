@@ -1,0 +1,30 @@
+---
+description: Documentation corpus conventions — front matter, tiers, registries, index
+globs: docs/**/*.md,scripts/**/*.py,.agentic/**/*.yaml
+alwaysApply: false
+---
+
+# Documentation corpus
+
+Applies when editing docs, scripts, or `.agentic/` configuration.
+
+## Lifecycle
+
+- Every doc under `docs/` carries front matter per @docs/spec/DOCUMENT_LIFECYCLE.md
+- Only `approved` and `accepted` artifacts carry authority (@docs/spec/AUTHORITY_MODEL.md)
+- Gate IDs, hook points, and state tokens come from `.agentic/registries/` only (@docs/spec/REGISTRIES.md)
+- Regenerate @docs/DOCUMENTATION_INDEX.md with `python3 scripts/build_index.py` when adding documents
+
+## Validation
+
+```bash
+pip install -r requirements-docs.txt
+python3 scripts/build_index.py
+python3 scripts/validate_docs.py
+python3 scripts/test_validate_docs.py   # when scripts/ changes
+python3 scripts/check_gates.py --strict --base origin/main
+```
+
+## Gates
+
+`platform_config` triggers on `.agentic/project.yaml`, `.agentic/registries/**`, `.agentic/hooks/**`, and `.agentic/roles/*.yaml`. Crossing it needs an approval record.
