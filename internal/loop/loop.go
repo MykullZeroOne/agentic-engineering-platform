@@ -181,7 +181,6 @@ func Run(ctx context.Context, o Options) (Outcome, error) {
 				"hook engine (WI-0052): hooks.yaml bindings are declarative and none were executed",
 				"work.validate_state: the run records the work state it found and enforces no dispatchability rule",
 				"memory and retrieval: hydrate reads three files; consolidate writes one candidate stub",
-				"Codex adapter: absent, and one entry in the adapter map away",
 				"independent review (POL-001 M4): suspended repository-wide, not satisfied",
 			},
 		}

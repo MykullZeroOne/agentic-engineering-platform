@@ -179,7 +179,7 @@ work_store: local
 human_gates:
   - platform_config
 runtime_preferences:
-  implementation: codex-subscription
+  implementation: unknown-subscription
 `)
 	itemPath := filepath.Join(root, ".agentic", "work", "WI-0001.yaml")
 	if err := os.MkdirAll(filepath.Dir(itemPath), 0o755); err != nil {
@@ -206,8 +206,8 @@ description: A work item used only by devctl's own tests.
 	if rc != 2 {
 		t.Fatalf("runRun exit = %d, want 2 (stderr: %s)", rc, stderr)
 	}
-	if !strings.Contains(stderr, "codex-subscription") {
-		t.Errorf("stderr = %q, missing codex-subscription", stderr)
+	if !strings.Contains(stderr, "unknown-subscription") {
+		t.Errorf("stderr = %q, missing unknown-subscription", stderr)
 	}
 	if !strings.Contains(stderr, "--runtime") {
 		t.Errorf("stderr = %q, missing --runtime", stderr)

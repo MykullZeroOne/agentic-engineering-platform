@@ -51,19 +51,27 @@ func TestC16_AdaptersAreSelectedByProviderToken(t *testing.T) {
 		t.Fatal("New(claude-subscription): got nil Adapter, want non-nil")
 	}
 
-	_, err = New("codex-subscription")
+	codex, err := New("codex-subscription")
+	if err != nil {
+		t.Fatalf("New(codex-subscription): unexpected error %v", err)
+	}
+	if codex == nil {
+		t.Fatal("New(codex-subscription): got nil Adapter, want non-nil")
+	}
+
+	_, err = New("unknown-subscription")
 	if err == nil {
-		t.Fatal("New(codex-subscription): want error, got nil")
+		t.Fatal("New(unknown-subscription): want error, got nil")
 	}
 	if !errors.Is(err, ErrNoAdapter) {
-		t.Errorf("New(codex-subscription) error = %v; want errors.Is(err, ErrNoAdapter)", err)
+		t.Errorf("New(unknown-subscription) error = %v; want errors.Is(err, ErrNoAdapter)", err)
 	}
-	if !strings.Contains(err.Error(), "codex-subscription") {
-		t.Errorf("New(codex-subscription) error = %v; want it to name the provider", err)
+	if !strings.Contains(err.Error(), "unknown-subscription") {
+		t.Errorf("New(unknown-subscription) error = %v; want it to name the provider", err)
 	}
 
 	got := Providers()
-	want := []string{"claude-subscription"}
+	want := []string{"claude-subscription", "codex-subscription"}
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("Providers() = %v, want %v", got, want)
 	}
