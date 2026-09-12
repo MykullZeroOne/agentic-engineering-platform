@@ -1,0 +1,16 @@
+id: WI-0072
+store: local
+project: PRJ-mykullzeroone/agentic-engineering-platform
+type: chore
+work_state: done
+priority: normal
+title: Advance the work states of the items merged by the Codex adapter pass
+description: |
+  Bookkeeping after #66 and #67 land: WI-0071 (reconcile Codex adapter evidence into
+  ISA.md) and any older merged items the same pass finds stale. WI-0046 is deliberately
+  not advanced: #66 served it partially and ISC-25 remains open. #67 (Cursor rules and
+  hooks) carries no work item. This item lands `done` by hand because a pull request
+  that files an item has nothing to close (POL-001, known gaps).
+serves: [governance]
+required_gates: []
+dependencies: []

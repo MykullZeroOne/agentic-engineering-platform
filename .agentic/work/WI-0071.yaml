@@ -1,0 +1,18 @@
+id: WI-0071
+store: local
+project: PRJ-mykullzeroone/agentic-engineering-platform
+type: docs
+work_state: done
+priority: normal
+title: Reconcile the Codex adapter evidence into ISA.md
+description: |
+  After #66 landed the codex-subscription adapter, CLAUDE.md says a checked claim in
+  ISA.md records that a probe passed and points at the proof. This item records the
+  adapter claims that merge spans: ISC-23 (Claude adapter produces a run record through
+  the loop) and ISC-24 (Codex adapter Result shape matches Claude's). ISC-25 remains
+  open: no provider-swap probe yet. WI-0046 stays open for that.
+
+  Only true once #66 has merged; the stubs name the tests and commit the probes ran on.
+serves: [ISC-23, ISC-24]
+required_gates: []
+dependencies: []
