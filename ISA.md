@@ -3,9 +3,9 @@ task: "Ideal state for the Agentic Engineering Platform"
 slug: 20260901-120000_agentic-engineering-platform
 project: agentic-engineering-platform
 phase: scoping
-progress: 5/57
+progress: 7/57
 started: 2026-09-01T12:00:00Z
-updated: 2026-09-08T19:30:00Z
+updated: 2026-09-12T15:30:00Z
 principal_stated_goal: null
 context_sufficient: true
 interview_invoked: true
@@ -203,8 +203,8 @@ Why: turning approved intent into a dependency-ordered plan is where a solo huma
 ### F3 · Execution across interchangeable runtimes
 Why: this is the claim the whole product rests on. If a Codex-implemented story and a Claude-implemented story differ in anything but the code, "role != model" was a slogan.
 
-- [ ] ISC-23: A Claude Code adapter executes an agent identity against a work item and returns a run record.
-- [ ] ISC-24: A Codex adapter does the same, producing a run record of identical shape (after: ISC-23).
+- [x] ISC-23: A Claude Code adapter executes an agent identity against a work item and returns a run record.
+- [x] ISC-24: A Codex adapter does the same, producing a run record of identical shape (after: ISC-23).
 - [ ] ISC-25: Switching a role's `runtime_preferences` entry between providers requires no change to the role definition (after: ISC-24).
 - [x] ISC-26: An agent run spanning multiple runtime sessions attaches its evidence to the run, not the session.
 - [x] ISC-27: A run that fails mid-flight is resumable without re-deriving context from the human.
@@ -338,6 +338,7 @@ Why: AEP is worth nothing if adopting it requires a greenfield repository, and i
 - 2026-09-01: Independent review is recorded as suspended, not satisfied (WI-0015), and this ISA does not claim it. Whether an agent reviewer satisfies it is held as fog, not asserted as ISC-closable.
 
 - 2026-09-08: First reconcile of evidence into this file, from the Simple First Mile's task ISA (WI-0069). Five claims go `[x]` on probes that passed on #56, #57, #58 and the dogfood run behind #59 and #62 (RUN-0066-1, two passes, two sessions, complete); each stub names the test or scenario and the commit. ISC-36 stays open: no interface element exists to probe. ISC-23 is only partially evidenced (the adapter executes a session; the run record is the loop's) and is not checked. The `--runtime` override the dogfood needed is a standing question for `project.yaml`'s `implementation` preference, which still names a provider with no adapter.
+- 2026-09-12: Second reconcile (WI-0071), from the Codex adapter pass (#66). ISC-23 and ISC-24 go `[x]`: ISC-23's probe is the loop producing a durable run record whose step-4 delegate names a Claude session (TestC20 and the Simple First Mile dogfood run); ISC-24's probe is adapter-level Result shape parity (TestC24_CodexAndClaudeProduceTheSameResultShape). ISC-25 stays open: no provider-swap integration test yet. WI-0046 stays open for ISC-25 and the full "same work item through both adapters" scenario. `implementation: codex-subscription` in project.yaml now resolves without a `--runtime` override (#66).
 ## Verification
 
 - ISC-2: unit + seam — `TestC8_RoleNamingProviderFails`, `TestC8_RoleNamingModelKeyAtDepthFails`, `TestC8_RoleWithAProviderValueUnderAnInnocentKeyFails` (internal/doctor) and `devctl doctor` rc 1 on a poisoned role; #56 @ a3a27ef
@@ -345,6 +346,8 @@ Why: AEP is worth nothing if adopting it requires a greenfield repository, and i
 - ISC-27: integration + scenario — `TestC28_ACancelledRunResumesAtStepFourOnTheSameRunID` (#58 @ 324731f), and the dogfood run RUN-0066-1 resumed twice after crashes at steps 4 and 5 with no human input before parking at step 7 (#59), then resumed at step 7 of pass 2 and completed through step 10 after #62 merged
 - ISC-30: reflect + suite — `Control` has no merge method (`TestC2_ControlInterfaceHasNoMergeMethod`) and the suite-wide argv guard recorded no merge across 178 commands (#58 @ 096d070); by construction the loop merges nothing, gated or not
 - ISC-53: scenario — `devctl run WI-0066 --runtime claude-subscription` on this repository parked `awaiting_human` at step 7 with #59 open and `.agentic/` byte-identical outside `runs/` (2026-09-08, integration of #56–#58 @ 096d070)
+- ISC-23: integration — `TestC20_AFullRunRecordsTenStepsInADROrder` (internal/loop) records step-4 `runtime_session` delegate and a durable `record.yaml`; plus claude adapter Start/Wait probes TestC13–C15 (internal/runtime); Simple First Mile dogfood RUN-0066-1 (#56–#58 @ 096d070)
+- ISC-24: integration — `TestC24_CodexAndClaudeProduceTheSameResultShape` (internal/runtime); #66 @ 3000d3d — adapter `Result` fields (Status, ExitCode, Text, SessionID) match across providers
 
 ## Remaining Work
 

@@ -13,6 +13,12 @@ description: |
   Serves ISC-23, ISC-24 and ISC-25 directly, and ISC-8 (a full cycle with no metered API
   credentials present). Done when the same work item runs through both adapters and the two run
   records differ only in provider metadata.
+
+  Partially served (2026-09-12): #66 added codex-subscription to the adapter map
+  (internal/runtime/codex.go). ISC-23 and ISC-24 are checked in ISA.md on adapter and loop
+  probes; this item stays open for ISC-25 (provider swap with unchanged role file) and the
+  end-to-end "same work item, both adapters, run records differ only in provider metadata"
+  scenario.
 serves: [ISC-23, ISC-24, ISC-25, ISC-8]
 required_gates: []
 dependencies: [WI-0045]
