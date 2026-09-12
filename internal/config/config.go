@@ -20,6 +20,7 @@ import (
 // unknown keys are ignored rather than rejected, because a project may legitimately
 // carry configuration this version of devctl predates.
 type Project struct {
+	Project    string            `yaml:"project"`
 	Registries map[string]string `yaml:"registries"`
 	WorkStore  string            `yaml:"work_store"`
 	HumanGates []string          `yaml:"human_gates"`

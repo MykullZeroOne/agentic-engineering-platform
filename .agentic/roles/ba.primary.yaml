@@ -1,0 +1,50 @@
+# The BA / product analyst durable identity (WI-0050).
+#
+# ADR-002: names no model and no provider. Runtime resolves from function against
+# .agentic/project.yaml runtime_preferences (planning → claude-subscription).
+
+id: ba.primary
+role: ba
+role_version: 1
+
+function: planning
+
+parent: null
+specialists:
+  - compliance.primary
+  - legal.preflight
+
+capabilities:
+  - product-analysis
+  - specification
+
+skills: []
+
+tools:
+  allow:
+    - repository.read
+    - knowledge.search
+    - knowledge.context
+  deny:
+    - repository.write
+    - shell.exec
+    - github.merge
+
+memory:
+  namespace: agent/ba.primary
+  inherit:
+    - function/planning
+    - project
+
+completion:
+  human_owned: true
+  criteria:
+    - readiness_gate_satisfied
+    - specialist_preflight_complete
+    - human_product_spec_approval
+
+human_gates:
+  - product_spec
+
+returns_from:
+  - human

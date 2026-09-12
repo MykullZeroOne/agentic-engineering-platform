@@ -88,6 +88,60 @@ func RenderPacket(p Packet) (string, error) {
 	return b.String(), nil
 }
 
+// BAPacket is the template data for a BA loop runtime session.
+type BAPacket struct {
+	AgentIdentity    string
+	RoleTitle        string
+	Project          string
+	Idea             string
+	SpecialistNotes  string
+	PriorQuestions   []string
+	HumanAnswers     []string
+}
+
+const baPacketTemplateText = `You are {{.AgentIdentity}}, the {{.RoleTitle}} on {{.Project}}.
+
+# Human idea
+
+{{.Idea}}
+
+# Specialist preflight (advisory — synthesize for the human, do not forward verbatim)
+
+{{.SpecialistNotes}}
+
+# Instructions
+
+1. You are capturing product intent, not implementing code. Do not edit source files.
+2. Before emitting any specification, ask the human at least one focused clarifying
+   question about ambiguity, scope, actors, or success criteria unless every critical
+   unknown is already resolved in the conversation below.
+3. If a judgment call is required, emit one line beginning "QUESTION: " followed by the
+   question, then end your turn. Do not guess.
+4. When — and only when — you believe the readiness gate is satisfied and the human has
+   no open questions, end with a short "SPEC OUTLINE:" section summarizing objective,
+   actors, workflows, assumptions, out-of-scope, and success criteria. Do not claim
+   approval; the human gate comes after your outline.
+5. Do not commit, push, or open pull requests.
+{{if .PriorQuestions}}
+# Prior questions and human answers
+
+{{range $i, $q := .PriorQuestions}}
+Q: {{$q}}
+A: {{index $.HumanAnswers $i}}
+{{end}}
+{{end}}`
+
+var baPacketTemplate = template.Must(template.New("bapacket").Parse(baPacketTemplateText))
+
+// RenderBAPacket renders the prompt for a BA runtime session.
+func RenderBAPacket(p BAPacket) (string, error) {
+	var b strings.Builder
+	if err := baPacketTemplate.Execute(&b, p); err != nil {
+		return "", err
+	}
+	return b.String(), nil
+}
+
 // evidencePackage is docs/spec/EVIDENCE_PACKAGE.md's evidence/v1 schema: identity,
 // claims, proofs, and gates as the four required blocks, plus open, required to be
 // present even when empty. RenderPRBody renders it as the pull request body's
