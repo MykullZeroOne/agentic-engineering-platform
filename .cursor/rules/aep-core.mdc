@@ -1,0 +1,28 @@
+---
+description: AEP non-negotiables — work store, gates, human authority, validate before push
+alwaysApply: true
+---
+
+# AEP core rules
+
+This repository is the **Agentic Engineering Platform** reference instance. Follow the configured organization, not generic agent defaults.
+
+## Authority (read first)
+
+- @CLAUDE.md — agent working agreement, validate-before-push, branching (POL-001)
+- @.agentic/project.yaml — runtime preferences, human gates, work store
+- @.agentic/hooks/hooks.yaml — when checks must run (Cursor hooks in @.cursor/hooks.json are the IDE adapter)
+- @docs/DOCUMENTATION_INDEX.md — corpus reading order
+- @docs/policies/POL-001-BRANCHING-AND-MERGING.md — branch naming, squash merge, trailers
+
+## Non-negotiables
+
+1. **Human at the top.** Never set `human_approved: true` or close a gate without an approval record under `.agentic/approvals/` (ADR-019).
+2. **One work store.** Work state lives only in `.agentic/work/`. No `TODO.md`, no checkbox task lists in docs.
+3. **Role ≠ model.** Role files under `.agentic/roles/` never name a provider or model; resolve runtime from `project.yaml` `runtime_preferences`.
+4. **Agents never merge.** `engineer.primary` denies `github.merge`; open PRs, humans merge (ISC-30).
+5. **Validate before push.** Run `python3 scripts/validate_docs.py`, `python3 scripts/check_gates.py --strict --base origin/main`, and `go test ./...` when `cmd/` or `internal/` change.
+
+## Branching
+
+Per POL-001: `<type>/<work-item-number>-<kebab-summary>` (e.g. `feat/50-ba-loop`). Squash merge only; `Closes WI-NNNN` in the commit message.

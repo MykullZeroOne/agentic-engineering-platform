@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "hooks": {
+    "sessionStart": [
+      {
+        "command": ".cursor/hooks/session-start.sh"
+      }
+    ],
+    "beforeShellExecution": [
+      {
+        "command": ".cursor/hooks/block-merge.sh",
+        "matcher": "gh pr merge|gh api .*merges"
+      },
+      {
+        "command": ".cursor/hooks/pre-commit.sh",
+        "matcher": "git commit"
+      },
+      {
+        "command": ".cursor/hooks/before-pr.sh",
+        "matcher": "git push|gh pr create|gh pr ready"
+      }
+    ],
+    "beforeReadFile": [
+      {
+        "command": ".cursor/hooks/block-secrets.sh",
+        "failClosed": true
+      }
+    ]
+  }
+}
