@@ -54,6 +54,13 @@ type Record struct {
 	Handoff       *Handoff   `yaml:"handoff"`
 	Stubbed       []string   `yaml:"stubbed"`
 	Question      string     `yaml:"question"`
+	// Intent is set on BA runs: the human idea this run is shaping into a specification.
+	Intent *Intent `yaml:"intent,omitempty"`
+}
+
+// Intent is the human product idea a BA run serves.
+type Intent struct {
+	Idea string `yaml:"idea"`
 }
 
 // Runtime records which provider and model executed the session, and whether that
@@ -280,6 +287,58 @@ func NewRunID(r config.Root, item string) (string, error) {
 		}
 	}
 	return fmt.Sprintf("%s%d", prefix, max+1), nil
+}
+
+const intentRunPrefix = "RUN-INTENT-"
+
+// NewIntentRunID returns the next RUN-INTENT-<n> id.
+func NewIntentRunID(r config.Root) (string, error) {
+	entries, err := os.ReadDir(RunsDir(r))
+	if err != nil && !os.IsNotExist(err) {
+		return "", err
+	}
+	max := 0
+	for _, e := range entries {
+		if !e.IsDir() {
+			continue
+		}
+		name := e.Name()
+		if !strings.HasPrefix(name, intentRunPrefix) {
+			continue
+		}
+		if n, err := strconv.Atoi(strings.TrimPrefix(name, intentRunPrefix)); err == nil && n > max {
+			max = n
+		}
+	}
+	return fmt.Sprintf("%s%d", intentRunPrefix, max+1), nil
+}
+
+// FindOpenIntentRun returns the newest incomplete intent run, if any.
+func FindOpenIntentRun(r config.Root) (string, bool, error) {
+	entries, err := os.ReadDir(RunsDir(r))
+	if err != nil {
+		if os.IsNotExist(err) {
+			return "", false, nil
+		}
+		return "", false, err
+	}
+	var newest string
+	for _, e := range entries {
+		if !e.IsDir() || !strings.HasPrefix(e.Name(), intentRunPrefix) {
+			continue
+		}
+		rec, err := LoadRecord(r, e.Name())
+		if err != nil || rec.Complete || rec.Intent == nil {
+			continue
+		}
+		if newest == "" || e.Name() > newest {
+			newest = e.Name()
+		}
+	}
+	if newest == "" {
+		return "", false, nil
+	}
+	return newest, true, nil
 }
 
 // Step returns the LAST recorded entry for step n in pass p, and whether one exists.

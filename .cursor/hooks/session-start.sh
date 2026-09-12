@@ -19,6 +19,7 @@ AEP (Agentic Engineering Platform) session — follow the repository's configure
 - Work state: .agentic/work/ only; never invent a parallel backlog in markdown
 - Reading order: docs/DOCUMENTATION_INDEX.md
 - Role for implementation: .agentic/roles/engineer.primary.yaml (tools.deny includes github.merge — agents never merge)
+- Role for product intent: .agentic/roles/ba.primary.yaml — use devctl intent run IDEA and devctl intent resume RUN-ID [--answer TEXT]; see .cursor/rules/ba-loop.mdc
 - Before pushing or opening a PR: python3 scripts/validate_docs.py and python3 scripts/check_gates.py --strict --base origin/main
 - Go changes: go build ./... && go test ./...
 EOF

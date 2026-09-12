@@ -33,7 +33,7 @@ Not mapped in Cursor (platform/CI/`devctl` only):
 | `pre-commit.sh` | `scripts/validate_docs.py` | deny |
 | `block-merge.sh` | `engineer.primary` `tools.deny: github.merge` | deny |
 | `block-secrets.sh` | `.env`, keys, `auth.json` | deny (`failClosed: true`) |
-| `session-start.sh` | Injects AEP context | always allow |
+| `session-start.sh` | Injects AEP context (engineer + BA / `devctl intent`) | always allow |
 
 CI remains authoritative for merges; these hooks apply when the **agent** drives shell commands
 from Cursor or Cloud Agents (which load project `.cursor/hooks.json`).

@@ -30,6 +30,8 @@ usage:
   devctl work show WI-NNNN [--root DIR]
   devctl work advance [--dry-run] [--ref REF] [--root DIR]
   devctl run WI-NNNN [--runtime TOKEN] [--role ID] [--root DIR]
+  devctl intent run IDEA [--root DIR] [--runtime TOKEN] [--role ID]
+  devctl intent resume RUN-ID [--answer TEXT] [--root DIR] [--runtime TOKEN]
 
 commands:
   doctor   Report whether a project's .agentic/ configuration is coherent.
@@ -45,6 +47,10 @@ commands:
            the pull request it opens is the next thing a human acts on. Exit
            codes: 0 parked or complete, 1 unknown work item, 2 a configuration
            error, 3 blocked on a question a human must answer.
+  intent   Run the BA loop (WI-0050) for a human product idea. "intent run"
+           opens a new intent run; "intent resume" continues one, optionally
+           with --answer to a blocked question. Parks on product_spec without
+           closing the gate. Same exit codes as run.
 `
 
 func main() {
@@ -59,6 +65,8 @@ func main() {
 		os.Exit(runWork(os.Args[2:]))
 	case "run":
 		os.Exit(runRun(os.Args[2:]))
+	case "intent":
+		os.Exit(runIntent(os.Args[2:]))
 	case "-h", "--help", "help":
 		fmt.Print(usage)
 		os.Exit(0)
@@ -224,6 +232,60 @@ func runRun(args []string) int {
 			return 2
 		}
 	}
+	return out.Exit
+}
+
+func runIntent(args []string) int {
+	if len(args) == 0 {
+		fmt.Fprint(os.Stderr, "devctl intent: expected `run` or `resume`\n\n"+usage)
+		return 2
+	}
+	sub, rest := args[0], args[1:]
+
+	fs := flag.NewFlagSet("intent "+sub, flag.ExitOnError)
+	root := fs.String("root", ".", "project root: the directory holding .agentic/")
+	runtimeToken := fs.String("runtime", "", "override the resolved provider")
+	roleID := fs.String("role", "", "role id (default ba.primary)")
+	answer := fs.String("answer", "", "human answer to a blocked question (resume only)")
+	_ = fs.Parse(rest)
+
+	absRoot, aerr := filepath.Abs(*root)
+	if aerr != nil {
+		fmt.Fprintf(os.Stderr, "devctl intent: resolve --root %s: %v\n", *root, aerr)
+		return 2
+	}
+
+	opts := loop.IntentOptions{
+		Root:     config.Root(absRoot),
+		Provider: *runtimeToken,
+		RoleID:   *roleID,
+	}
+
+	switch sub {
+	case "run":
+		if fs.NArg() < 1 {
+			fmt.Fprint(os.Stderr, "devctl intent run: expected an idea string\n")
+			return 2
+		}
+		opts.Idea = strings.Join(fs.Args(), " ")
+	case "resume":
+		if fs.NArg() < 1 {
+			fmt.Fprint(os.Stderr, "devctl intent resume: expected a run id, e.g. RUN-INTENT-1\n")
+			return 2
+		}
+		opts.RunID = fs.Arg(0)
+		opts.Answer = *answer
+	default:
+		fmt.Fprintf(os.Stderr, "devctl intent: unknown subcommand %q\n\n%s", sub, usage)
+		return 2
+	}
+
+	out, err := loop.RunIntent(context.Background(), opts)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "devctl intent: %v\n", err)
+		return 2
+	}
+	fmt.Fprintf(os.Stdout, "run %s state=%s\n", out.RunID, out.Record.State)
 	return out.Exit
 }
 

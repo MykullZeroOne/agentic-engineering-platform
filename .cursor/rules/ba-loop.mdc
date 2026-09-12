@@ -1,0 +1,59 @@
+---
+description: BA / product intent loop — devctl intent, clarifying questions, product_spec gate
+globs: .agentic/roles/ba.primary.yaml,.agentic/runs/RUN-INTENT-*/**
+alwaysApply: false
+---
+
+# BA loop (product intent)
+
+Applies when capturing or refining a **human product idea** before implementation.
+Authority: @docs/agents/BA_LOOP.md (draft), @.agentic/roles/ba.primary.yaml, WI-0050.
+
+## Prefer the implemented loop
+
+Run the durable BA loop via `devctl`, not ad-hoc chat-only analysis:
+
+```bash
+# Open a new intent run (creates .agentic/runs/RUN-INTENT-<n>/)
+devctl intent run "One-line product idea or objective"
+
+# Resume after a blocked question (exit code 3)
+devctl intent resume RUN-INTENT-1 --answer "Human answer here"
+
+# Optional: override runtime (default resolves planning → claude-subscription)
+devctl intent run "..." --runtime claude-subscription
+```
+
+Exit codes match `devctl run`: 0 parked or complete, 2 configuration error,
+3 blocked on a question the human must answer.
+
+The loop writes a run record, specialist preflight under `specialists/`, and parks
+on the human-owned `product_spec` gate. PRD/ADS projection (WI-0051) is stubbed;
+review `handoff/pass-*-spec-review.md` until that lands.
+
+## Runtime note
+
+Step 4 delegates to the **provider CLI** (`claude` or `codex` per
+`.agentic/project.yaml` `runtime_preferences.planning`), not to this Cursor session.
+Orchestrate from Cursor; the CLI session is the BA delegate. Requires the chosen
+provider on PATH and authenticated.
+
+## When continuing in Cursor chat
+
+If the human is answering a blocked question or refining intent in chat instead of
+`--answer`, treat the conversation as input to the loop:
+
+1. Read the open run: `.agentic/runs/RUN-INTENT-<n>/record.yaml`
+2. Synthesize specialist notes from `specialists/` — advisory only, never forward verbatim
+3. Ask focused clarifying questions before any specification (at least one when ambiguity remains)
+4. Use `QUESTION: ` prefix when stopping for human judgment; use `SPEC OUTLINE:` only when
+   readiness criteria in BA_LOOP.md are satisfied and no open questions remain
+5. Never close `product_spec` or write approval records without explicit human instruction
+6. Prefer recording answers via `devctl intent resume ... --answer` so the run record stays authoritative
+
+## Non-negotiables (BA profile)
+
+- **Human at the top.** `product_spec` passes only on explicit human approval (ISC-10).
+- **Specialists are advisory.** Compliance and legal preflight report to the BA lead; they do not speak to the human directly (ADR-005).
+- **No implementation.** `ba.primary` denies `repository.write` and `shell.exec` — capture intent, do not ship code in the same session.
+- **One work store.** Intent runs live under `.agentic/runs/`; product work items appear later via grooming, not parallel markdown backlogs.
