@@ -9,12 +9,59 @@ import (
 	"testing"
 )
 
-// fakeOpts configures the fake claude binary.
 type fakeOpts struct {
 	Stream []string // stream-json lines to emit on stdout, one per element
 	Exit   int      // process exit code
 	Stderr string   // text written to stderr
 	Sleep  string   // seconds to sleep before emitting anything, for cancel tests
+}
+
+// fakeOpts configures a fake CLI binary used by fakeClaude and fakeCodex.
+
+// fakeCodex installs a fake `codex` first on PATH for the duration of t and returns
+// the directory it records into. Recordings are numbered per invocation: argv.1,
+// cwd.1, stdin.1, argv.2, ...
+func fakeCodex(t *testing.T, o fakeOpts) (recDir string) {
+	t.Helper()
+
+	binDir := t.TempDir()
+	recDir = t.TempDir()
+
+	script := "#!/bin/sh\n" +
+		"# Fake `codex`. Written by fakeCodex; never committed as a fixture.\n" +
+		"d=\"$FAKE_CODEX_DIR\"\n" +
+		"mkdir -p \"$d\"\n" +
+		"i=$(cat \"$d/n\" 2>/dev/null || echo 0); i=$((i + 1)); echo \"$i\" > \"$d/n\"\n" +
+		"for a in \"$@\"; do printf '%s\\n' \"$a\"; done > \"$d/argv.$i\"\n" +
+		"pwd > \"$d/cwd.$i\"\n" +
+		"cat > \"$d/stdin.$i\"\n" +
+		"if [ -n \"$FAKE_CODEX_SLEEP\" ]; then sleep \"$FAKE_CODEX_SLEEP\"; fi\n" +
+		"if [ -n \"$FAKE_CODEX_STDERR\" ]; then printf '%s' \"$FAKE_CODEX_STDERR\" >&2; fi\n" +
+		"if [ -n \"$FAKE_CODEX_STREAM\" ]; then cat \"$FAKE_CODEX_STREAM\"; fi\n" +
+		"exit \"${FAKE_CODEX_EXIT:-0}\"\n"
+
+	scriptPath := filepath.Join(binDir, "codex")
+	if err := os.WriteFile(scriptPath, []byte(script), 0o755); err != nil {
+		t.Fatalf("writing fake codex script: %v", err)
+	}
+
+	var streamPath string
+	if len(o.Stream) > 0 {
+		streamPath = filepath.Join(recDir, "stream.jsonl")
+		body := strings.Join(o.Stream, "\n") + "\n"
+		if err := os.WriteFile(streamPath, []byte(body), 0o644); err != nil {
+			t.Fatalf("writing fake stream fixture: %v", err)
+		}
+	}
+
+	t.Setenv("FAKE_CODEX_DIR", recDir)
+	t.Setenv("FAKE_CODEX_STREAM", streamPath)
+	t.Setenv("FAKE_CODEX_EXIT", strconv.Itoa(o.Exit))
+	t.Setenv("FAKE_CODEX_STDERR", o.Stderr)
+	t.Setenv("FAKE_CODEX_SLEEP", o.Sleep)
+	t.Setenv("PATH", binDir+string(os.PathListSeparator)+os.Getenv("PATH"))
+
+	return recDir
 }
 
 // fakeClaude installs a fake `claude` first on PATH for the duration of t and returns
@@ -133,6 +180,23 @@ func streamLines(sessionID string, texts ...string) []string {
 	)
 	result := fmt.Sprintf(`{"type":"result","session_id":%q,"is_error":false,"result":%q}`, sessionID, text)
 	return []string{init, assistant, result}
+}
+
+// codexStreamLines returns a well-formed codex exec --json transcript: thread.started,
+// a command_execution item, an agent_message, and turn.completed, all carrying threadID.
+func codexStreamLines(threadID string, texts ...string) []string {
+	text := "hello"
+	if len(texts) > 0 {
+		text = texts[0]
+	}
+	started := fmt.Sprintf(`{"type":"thread.started","thread_id":%q}`, threadID)
+	itemStart := `{"type":"item.started","item":{"id":"item_1","type":"command_execution","command":"bash -lc ls","status":"in_progress"}}`
+	itemDone := fmt.Sprintf(
+		`{"type":"item.completed","item":{"id":"item_2","type":"agent_message","text":%q}}`,
+		text,
+	)
+	turnDone := `{"type":"turn.completed","usage":{"input_tokens":1,"output_tokens":1}}`
+	return []string{started, itemStart, itemDone, turnDone}
 }
 
 // drainEvents reads every event off a session until the channel closes.

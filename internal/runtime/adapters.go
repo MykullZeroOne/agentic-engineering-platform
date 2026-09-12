@@ -13,6 +13,7 @@ var ErrNoAdapter = errors.New("no runtime adapter for provider")
 // adding a provider: one entry, and nothing above it changes.
 var adapters = map[string]func() Adapter{
 	"claude-subscription": func() Adapter { return &claudeAdapter{} },
+	"codex-subscription":  func() Adapter { return &codexAdapter{} },
 }
 
 // New returns the adapter for a provider token, or an error wrapping ErrNoAdapter.
